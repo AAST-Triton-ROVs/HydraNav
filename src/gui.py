@@ -50,8 +50,14 @@ class GUI:
         self.__light_background_image = pygame.image.load(
             f"{self.__assets_dir}/light/background.png"
         )
+        self.__light_background_image = pygame.transform.scale(
+            self.__light_background_image, self.__display_size()
+        )
         self.__dark_background_image = pygame.image.load(
             f"{self.__assets_dir}/dark/background.png"
+        )
+        self.__dark_background_image = pygame.transform.scale(
+            self.__dark_background_image, self.__display_size()
         )
 
         joystick_width = 125

@@ -14,14 +14,13 @@ class GCS:
         self.dispatcher = EventDispatcher()
 
         self.controller = Controller(self.dispatcher)
-        self.notifier = Notifier(self.dispatcher)
         self.gui = GUI("GCS", self.dispatcher, self.clock)
+        self.notifier = Notifier(self.dispatcher)
         
-        self.gui.init_ui()
-
         self.dispatcher.subscribe("controller_button", self.on_controller_button)
         self.dispatcher.subscribe("gui_key", self.on_gui_key)
 
+        self.gui.init_ui()
         self.controller.update_connection_status()
 
     def on_controller_button(self, key: int):
