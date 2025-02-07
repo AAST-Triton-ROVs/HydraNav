@@ -14,8 +14,8 @@ class GCS:
         self.dispatcher = EventDispatcher()
 
         self.controller = Controller(self.dispatcher)
-        self.gui = GUI("GCS", self.dispatcher, self.clock)
         self.notifier = Notifier(self.dispatcher)
+        self.gui = GUI("GCS", self.dispatcher, self.clock)
         
         self.gui.init_ui()
 
