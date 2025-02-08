@@ -1,11 +1,12 @@
 import pygame
 from events import EventDispatcher
 from pathlib import Path
+from logger import Logging
 
 
 class Notifier:
     def __init__(
-        self, dispatcher: EventDispatcher, audio_assests_path: str = "./assets/audio"
+        self, dispatcher: EventDispatcher, logging: Logging, audio_assests_path: str = "./assets/audio"
     ):
         pygame.mixer.init()
 
@@ -13,6 +14,7 @@ class Notifier:
 
         self.__audio_assets_path = Path(audio_assests_path)
         self.__dispatcher = dispatcher
+        self.__logging = logging
 
         self.__dispatcher.subscribe(
             "controller_connected", lambda _: self.play("controller_connected")
@@ -31,16 +33,16 @@ class Notifier:
         else:
             self.volume += inc
 
-        print(self.volume)
-
         pygame.mixer.music.set_volume(self.volume)
         self.__dispatcher.dispatch("notifier_volume_change", self.volume)
 
     def volume_up(self):
         self.__change_volume(10)
+        self.__logging.logger.info(f"Notifier volume up: {self.volume}")
 
     def volume_down(self):
         self.__change_volume(-10)
+        self.__logging.logger.info(f"Notifier volume down: {self.volume}")
 
     def play(self, file: str, blocking: bool = False):
         path = Path(self.__audio_assets_path, f"{file}.wav")

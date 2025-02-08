@@ -1,6 +1,5 @@
 from typing import Any, Callable, Dict
 
-
 class Event:
     def __init__(self, event_type: str, data: Any = None):
         self.event_type: str = event_type
@@ -12,7 +11,6 @@ class EventDispatcher:
         self.listeners: Dict[str, list[Callable[[Any], None]]] = {}
 
     def subscribe(self, event_type: str, listener: Callable[[Any], None]):
-        print(f"subscribe: {listener} to {event_type}")
         if event_type not in self.listeners:
             self.listeners[event_type] = []
 
@@ -20,7 +18,6 @@ class EventDispatcher:
 
     def unsubscribe(self, event_type: str, listener: Callable[[Any], None]):
         if event_type in self.listeners:
-            print(f"unsubscribe: {listener} from {event_type}")
             self.listeners[event_type].remove(listener)
 
     def dispatch(self, event: Event | str, data: Any = None):
@@ -29,5 +26,4 @@ class EventDispatcher:
 
         if event.event_type in self.listeners:
             for listener in self.listeners[event.event_type]:
-                print(f"Running listener: {listener}")
                 listener(event.data)

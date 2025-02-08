@@ -4,6 +4,7 @@ from typing import Optional
 import pygame
 
 from events import EventDispatcher, Event
+from logger import Logging
 
 __exports__ = ["Controller"]
 
@@ -39,12 +40,14 @@ class Controller:
     def __init__(
         self,
         dispatcher: EventDispatcher,
+        logging: Logging,
         deadzone_factor: float = 2,
         joystick_roundoff: int = 1,
         joystick_multiplier: int = 100,
     ) -> None:
         pygame.joystick.init()
         self.__dispatcher = dispatcher
+        self.__logging = logging
         self.__deadzone: float = 0.5
         self.__deadzone_factor: float = deadzone_factor
         self.__joystick_roundoff: int = joystick_roundoff
@@ -204,11 +207,13 @@ class Controller:
                     self.__joystick = pygame.joystick.Joystick(event.device_index)
                     self.calibrate()
                     self.__dispatcher.dispatch("controller_connected")
+                    self.__logging.logger.info("Controller connected")
                     return
                 else:
                     if self.__joystick is not None:
                         self.__joystick.quit()
                     self.__dispatcher.dispatch("controller_disconnected")
+                    self.__logging.logger.info("Controller disconnected")
                     return
         except Exception:
             return self.update_connection_status()
@@ -246,6 +251,8 @@ class Controller:
 
         max_axis_value = max(abs(value) for value in axes_values)
         deadzone = max_axis_value * self.__deadzone_factor
+        
+        self.__logging.logger.success(f"Controller deadzones calculated: {deadzone}")
 
         return deadzone
 
@@ -304,9 +311,15 @@ class Controller:
             for i in range(self.__joystick.get_numbuttons())
         ]
 
+        buttons_pressed = []
         for i, button_pressed in enumerate(button_events):
             if button_pressed:
-                self.__dispatcher.dispatch("controller_button", i)
+                buttons_pressed.append(i)
+                
+        buttons_pressed_set = set(buttons_pressed)
+                
+        self.__dispatcher.dispatch("controller_button", buttons_pressed_set)
+        self.__logging.logger.info(f"Controller buttons pressed: {buttons_pressed_set}")
 
     def __process_hat(self) -> None:
         """
@@ -334,6 +347,7 @@ class Controller:
             self.__dispatcher.dispatch(
                 Event("controller_hat", hat_direction)
             )
+            self.__logging.logger.info(f"Controller hat pressed: {hat_direction}")
 
     def __process_joystick_value(self, value: float, deadzone: float) -> float:
         """

@@ -1,6 +1,7 @@
 from typing import Optional, Tuple
 import pygame
 from events import EventDispatcher
+from logger import Logging
 
 # armed or disarmed
 # max gain
@@ -23,30 +24,30 @@ class GUI:
         self,
         title: str,
         dispatcher: EventDispatcher,
+        logger: Logging,
         clock: pygame.time.Clock,
-        font_file: Optional[str] = None,
         assets_dir: Optional[str] = None,
         dark_mode: bool = False,
         joystick_range_min: float = -100.0,
         joystick_range_max: float = 100.0,
     ):
         self.__title = title
+        
         pygame.display.set_caption(self.__title)
         icon = pygame.image.load("assets/icon.png")
         pygame.display.set_icon(icon)
-
+        
         self.__screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        self.__font_file = font_file
+        self.__dark_mode = dark_mode
 
         self.__joystick_range_min = joystick_range_min
         self.__joystick_range_max = joystick_range_max
 
-        self.__assets_dir = assets_dir or "assets"
-        self.__dark_mode = dark_mode
-
         self.__dispatcher = dispatcher
         self.__clock = clock
+        self.__logging = logger
 
+        self.__assets_dir = assets_dir or "assets"
         self.__light_background_image = pygame.image.load(
             f"{self.__assets_dir}/light/background.png"
         )
@@ -59,6 +60,8 @@ class GUI:
         self.__dark_background_image = pygame.transform.scale(
             self.__dark_background_image, self.__display_size()
         )
+        self.__regular_font = f"{self.__assets_dir}/regular.ttf"
+        self.__mono_font = f"{self.__assets_dir}/monospace.ttf"
 
         joystick_width = 125
         display_size = self.__display_size()
@@ -121,7 +124,7 @@ class GUI:
         self.__dispatcher.subscribe(
             "notifier_volume_change",
             lambda data: self.render_text(
-                f"Volume: {str(data) + '%':<5}", 30, (100, 0), (0, 0, 0)
+                f"Volume: {str(data) + '%':<5}", 20, (80, 0), (0, 0, 0)
             ),
         )
 
@@ -158,6 +161,19 @@ class GUI:
     def init_ui(self):
         self.__set_theme("light")
 
+    def render_logging(self, position: tuple[int, int]):
+        bounding_rect = pygame.Rect(position, (position[0] + 150, position[1] + 200))
+        self.__clear_rect(bounding_rect)
+
+        y_offset = position[1]
+        font = pygame.font.Font(self.__mono_font, 10)
+        for msg in self.__logging.get_messages():
+            text_surface = font.render(msg, True, self.__process_color((0, 0, 0)))
+            self.__screen.blit(text_surface, (position[0], y_offset))
+            y_offset += 10
+
+        pygame.display.update(bounding_rect)
+
     def render_text(
         self,
         text: str,
@@ -166,7 +182,7 @@ class GUI:
         color: tuple[int, int, int],
         bg_color: Optional[tuple[int, int, int]] = None,
     ):
-        font = pygame.font.Font(self.__font_file, size)
+        font = pygame.font.Font(self.__regular_font, size)
         if bg_color:
             rendered_text = font.render(
                 text, True, self.__process_color(color), self.__process_color(bg_color)
@@ -196,7 +212,7 @@ class GUI:
         size: int,
         position: tuple[int, int],
     ):
-        font = pygame.font.Font(self.__font_file, size)
+        font = pygame.font.Font(self.__regular_font, size)
         rendered_text = font.render(text, True, (0, 0, 0))
         text_rect = rendered_text.get_rect()
 
@@ -252,17 +268,22 @@ class GUI:
         self.__dark_mode = not self.__dark_mode
         if self.__dark_mode:
             self.__set_theme("dark")
+            self.__logging.logger.info("GUI theme set to dark")
         else:
             self.__set_theme("light")
+            self.__logging.logger.info("GUI theme set to light")
 
     def update(self):
-        self.render_text(f"FPS: {round(self.__clock.get_fps())}", 30, (0, 0), (0, 0, 0))
+        self.render_text(f"FPS: {round(self.__clock.get_fps())}", 20, (0, 0), (0, 0, 0))
+        self.render_logging((0, 20))
 
         for event in pygame.event.get([pygame.KEYDOWN]):
             self.__dispatcher.dispatch("gui_key", event.key)
+            self.__logging.logger.info(f"GUI key <{pygame.key.name(event.key)}> pressed")
 
     def clear_screen(self):
         self.__screen.blit(self.__background_image, (0, 0))
         pygame.display.update(self.__background_image.get_rect())
 
         self.__dispatcher.dispatch("gui_screen_cleared")
+        self.__logging.logger.info("GUI screen cleared")
