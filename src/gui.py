@@ -65,6 +65,7 @@ class GUI:
 
         joystick_width = 125
         display_size = self.__display_size()
+        self.__logging.logger.info(f"GUI display size: {display_size}")
         self.__dispatcher.subscribe(
             "controller_left_joystick",
             lambda data: self.draw_joystick_circle(
@@ -105,7 +106,7 @@ class GUI:
             "controller_waiting_connection",
             lambda _: self.render_text(
                 "Controller Disconnected",
-                100,
+                50,
                 self.TEXT_POSITION_CENTER,
                 (255, 0, 0),
                 (0, 0, 0),
@@ -116,7 +117,7 @@ class GUI:
             "controller_connected",
             lambda _: self.remove_text(
                 "Controller Disconnected",
-                100,
+                50,
                 self.TEXT_POSITION_CENTER,
             ),
         )
@@ -246,6 +247,11 @@ class GUI:
                 display_size[0] // 2 - text_rect.width // 2,
                 display_size[1] // 2 - text_rect.height // 2,
             )
+        else:
+            position = (
+                self.__calc_relative_size(position[0]),
+                self.__calc_relative_size(position[1]),
+            )
 
         text_rect.topleft = position
         # 'clear' the screen by placing a part of the background image over the old text,
@@ -257,12 +263,16 @@ class GUI:
         bounding_rect = pygame.Rect(
             position,
             (
-                position[0] + self.__calc_relative_size(150),
+                position[0] + self.__calc_relative_size(200),
                 position[1] + self.__calc_relative_size(200),
             ),
         )
         self.__clear_rect(bounding_rect)
 
+        position = (
+            self.__calc_relative_size(position[0]),
+            self.__calc_relative_size(position[1]),
+        )
         y_offset = position[1]
         font = pygame.font.Font(self.__mono_font, self.__calc_relative_size(10))
         for msg in self.__logging.get_messages():
@@ -289,16 +299,16 @@ class GUI:
             rendered_text = font.render(text, True, self.__process_color(color))
         text_rect = rendered_text.get_rect()
 
+        position = (
+            self.__calc_relative_size(position[0]),
+            self.__calc_relative_size(position[1]),
+        )
+
         if position == self.TEXT_POSITION_CENTER:
             display_size = self.__display_size()
             position = (
                 display_size[0] // 2 - text_rect.width // 2,
                 display_size[1] // 2 - text_rect.height // 2,
-            )
-        else:
-            position = (
-                self.__calc_relative_size(position[0]),
-                self.__calc_relative_size(position[1]),
             )
 
         text_rect.topleft = position
