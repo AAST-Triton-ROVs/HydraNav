@@ -5,6 +5,7 @@ from events import EventDispatcher
 from gui import GUI
 from notifier import Notifier
 from logger import Logging
+from pi_telemetry import PiTelemetery
 
 class GCS:
     def __init__(self):
@@ -15,10 +16,10 @@ class GCS:
         self.logging = Logging()
 
         self.gui = GUI("GCS", self.dispatcher, self.logging, self.clock)
-        self.notifier = Notifier(self.dispatcher, self.logging)
         self.controller = Controller(self.dispatcher, self.logging)
+        self.notifier = Notifier(self.dispatcher, self.logging)
+        self.pi_telemetery = PiTelemetery(self.dispatcher, self.logging)
         
-        self.gui.init_ui()
         self.controller.update_connection_status()
 
         self.dispatcher.subscribe("controller_button", self.on_controller_button)
@@ -43,10 +44,12 @@ class GCS:
         while True:
             self.controller.update()
             self.gui.update()
+            self.pi_telemetery.update()
 
             self.clock.tick(60)
 
     def quit(self):
+        self.pi_telemetery.close()
         sys.exit()
 
 

@@ -24,6 +24,8 @@ class Notifier:
         )
 
         self.__dispatcher.subscribe("gui_screen_cleared", lambda _: self.__change_volume(0))
+        
+        self.__change_volume(0)
 
     def __change_volume(self, inc: int):
         if self.volume + inc > 100:

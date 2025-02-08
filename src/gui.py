@@ -126,11 +126,27 @@ class GUI:
             "notifier_volume_change",
             lambda data: self.render_text(
                 f"Volume: {str(data) + '%':<5}",
-                self.__calc_relative_size(20),
+                20,
                 (80, 0),
                 (0, 0, 0),
             ),
         )
+
+        self.__dispatcher.subscribe(
+            "telemetery",
+            lambda data: self.render_text(
+                f"{(
+                    f"| CPU {str(data.cpu_usage) + '%':^10} | CPU TEMP {str(data.cpu_temp) + '°C':^10} | "
+                    f"RAM {str(data.ram_usage) + '%':^10} | DISK {str(data.disk_usage) + '%':^10} | "
+                    f"NETWORK {str(data.network_usage[0]) + 'B/s':^10} {str(data.network_usage[1]) + 'B/s':^10} | GPU {str(data.gpu_usage) + '%':^10} | "
+                    f"GPU TEMP {str(data.gpu_temp) + '°C':^10} |"
+                ):<160}",
+                20,
+                (220, 0),
+                (0, 0, 0),
+            ),
+        )
+        self.__set_theme("light")
 
     def __calc_relative_size(self, size: int) -> int:
         return int(size * (self.__display_size()[1] / 1080))
@@ -211,9 +227,6 @@ class GUI:
 
         pygame.display.update(bounding_rect)
 
-    def init_ui(self):
-        self.__set_theme("light")
-
     def remove_joystick_circle(
         self, center: tuple[int, int], radius: int, dot_size: int
     ):
@@ -263,8 +276,8 @@ class GUI:
         bounding_rect = pygame.Rect(
             position,
             (
-                position[0] + self.__calc_relative_size(200),
-                position[1] + self.__calc_relative_size(200),
+                position[0] + self.__calc_relative_size(500),
+                position[1] + self.__calc_relative_size(500),
             ),
         )
         self.__clear_rect(bounding_rect)
