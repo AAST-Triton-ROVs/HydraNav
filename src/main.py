@@ -15,7 +15,7 @@ class GCS:
         self.logging = Logging()
 
         self.gui = GUI("GCS", self.dispatcher, self.logging, self.clock)
-        self.notifier = Notifier(self.dispatcher)
+        self.notifier = Notifier(self.dispatcher, self.logging)
         self.controller = Controller(self.dispatcher, self.logging)
         
         self.gui.init_ui()
