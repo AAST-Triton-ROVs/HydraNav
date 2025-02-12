@@ -10,13 +10,13 @@ class EventDispatcher:
     def __init__(self):
         self.listeners: Dict[str, list[Callable[[Any], None]]] = {}
 
-    def subscribe(self, event_type: str, listener: Callable[[Any], None]):
+    def subscribe(self, event_type: str, listener: Callable):
         if event_type not in self.listeners:
             self.listeners[event_type] = []
 
         self.listeners[event_type].append(listener)
 
-    def unsubscribe(self, event_type: str, listener: Callable[[Any], None]):
+    def unsubscribe(self, event_type: str, listener: Callable):
         if event_type in self.listeners:
             self.listeners[event_type].remove(listener)
 

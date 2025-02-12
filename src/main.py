@@ -6,6 +6,8 @@ from gui import GUI
 from notifier import Notifier
 from logger import Logging
 from pi_telemetry import PiTelemetery
+from rov import ROV
+
 
 class GCS:
     def __init__(self):
@@ -15,35 +17,30 @@ class GCS:
         self.dispatcher = EventDispatcher()
         self.logging = Logging()
 
-        self.gui = GUI("GCS", self.dispatcher, self.logging, self.clock)
+        # self.gui = GUI(self.dispatcher, self.logging)
         self.controller = Controller(self.dispatcher, self.logging)
         self.notifier = Notifier(self.dispatcher, self.logging)
         self.pi_telemetery = PiTelemetery(self.dispatcher, self.logging)
-        
+        self.rov = ROV(self.dispatcher, self.logging, port=14550)
+
         self.controller.update_connection_status()
 
         self.dispatcher.subscribe("controller_button", self.on_controller_button)
-        self.dispatcher.subscribe("gui_key", self.on_gui_key)
-    def on_controller_button(self, key: int):
-        match key:
-            case 10:
-                self.controller.calibrate()
 
-    def on_gui_key(self, key: int):
-        match key:
-            case pygame.K_q:
-                self.quit()
-            case pygame.K_t:
-                self.gui.toggle_theme()
-            case pygame.K_UP:
-                self.notifier.volume_up()
-            case pygame.K_DOWN:
-                self.notifier.volume_down()
+    def on_controller_button(self, key: set):
+        if key == {8}:
+            self.controller.calibrate()
+        elif key == {6}:
+            self.notifier.play("dua")
 
     def run(self):
         while True:
+            # time_delta = (
+            #     self.clock.tick(60) / 1000.0
+            # )  # .tick return the time sinze last frame in milliseconds so we must divide it by 1000.0
+
             self.controller.update()
-            self.gui.update()
+            # self.gui.update(time_delta)
             self.pi_telemetery.update()
 
             self.clock.tick(60)

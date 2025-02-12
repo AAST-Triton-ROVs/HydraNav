@@ -22,10 +22,13 @@ class Notifier:
         self.__dispatcher.subscribe(
             "controller_disconnected", lambda _: self.play("controller_disconnected")
         )
+        
+        self.__dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
+        self.__dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
 
         self.__dispatcher.subscribe("gui_screen_cleared", lambda _: self.__change_volume(0))
         
-        self.__change_volume(0)
+        self.__change_volume(self.volume)
 
     def __change_volume(self, inc: int):
         if self.volume + inc > 100:

@@ -1,9 +1,8 @@
 from dimits import Dimits # type: ignore
-from time import sleep
 import tqdm # type: ignore
 
 
-dt = Dimits("en_US-hfc_male-medium")
+dt = Dimits("en_US-hfc_female-medium")
 
 with open("assets/audio/audio_lines") as file:
     lines = file.readlines()

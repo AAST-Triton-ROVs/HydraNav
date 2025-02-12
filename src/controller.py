@@ -13,25 +13,28 @@ LEFT_Y_AXIS_INDX = 1
 RIGHT_X_AXIS_INDX = 3
 RIGHT_Y_AXIS_INDX = 4
 
+
 class Controller:
     """
     Controller class for handling joystick input and dispatching events.
-    
+
     Attributes:
         HAT_UP (tuple): Tuple representing the upward direction of the hat switch.
         HAT_DOWN (tuple): Tuple representing the downward direction of the hat switch.
         HAT_LEFT (tuple): Tuple representing the left direction of the hat switch.
         HAT_RIGHT (tuple): Tuple representing the right direction of the hat switch.
-    
+
     Events:
         - `controller_waiting_connection`: When the controller is not connected.
         - `controller_connected`: When the controller is connected.
         - `controller_disconnected`: When the controller is disconnected.
+        - `controller_joystick`: Dispatched with a tuple of (x, y, z, w) values.
         - `controller_left_joystick`: Dispatched with a tuple of (x, y) values.
-        - `controller_right_joystick`: Dispatched with a tuple of (z, w) values.
+        - `controller_right_joystick`: Dispatched with a tuple of (x, y) values.
         - `controller_button`: Dispatched when button is pressed, with the button index.
         - `controller_hat`: Dispatched when hat button is pressed, with the hat direction as tuple.
     """
+
     HAT_UP = (0, 1)
     HAT_DOWN = (0, -1)
     HAT_LEFT = (-1, 0)
@@ -53,6 +56,8 @@ class Controller:
         self.__joystick_roundoff: int = joystick_roundoff
         self.__joystick_multiplier: int = joystick_multiplier
         self.__joystick: Optional[pygame.joystick.JoystickType] = None
+
+        self.__previous_hat_value = (0, 0)
 
     def max_value(self) -> float:
         """
@@ -233,7 +238,7 @@ class Controller:
         """
         if self.__joystick is None:
             return None
-        
+
         try:
             axes_values = [
                 self.__joystick.get_axis(i)
@@ -251,7 +256,7 @@ class Controller:
 
         max_axis_value = max(abs(value) for value in axes_values)
         deadzone = max_axis_value * self.__deadzone_factor
-        
+
         self.__logging.logger.success(f"Controller deadzones calculated: {deadzone}")
 
         return deadzone
@@ -292,6 +297,7 @@ class Controller:
 
         self.__dispatcher.dispatch("controller_left_joystick", (x, y))
         self.__dispatcher.dispatch("controller_right_joystick", (z, w))
+        self.__dispatcher.dispatch("controller_joysticks", (x, y, z, w))
 
     def __process_buttons(self) -> None:
         """
@@ -306,20 +312,14 @@ class Controller:
         """
         if self.__joystick is None:
             return
-        button_events = [
-            self.__joystick.get_button(i)
-            for i in range(self.__joystick.get_numbuttons())
-        ]
+        buttons_pressed = {
+            e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONDOWN])
+        }
 
-        buttons_pressed = []
-        for i, button_pressed in enumerate(button_events):
-            if button_pressed:
-                buttons_pressed.append(i)
-                
-        buttons_pressed_set = set(buttons_pressed)
-                
-        self.__dispatcher.dispatch("controller_button", buttons_pressed_set)
-        self.__logging.logger.info(f"Controller buttons pressed: {buttons_pressed_set}")
+        if len(buttons_pressed) == 0:
+            return
+        self.__dispatcher.dispatch("controller_button", buttons_pressed)
+        self.__logging.logger.info(f"Controller buttons pressed: {buttons_pressed}")
 
     def __process_hat(self) -> None:
         """
@@ -338,32 +338,36 @@ class Controller:
         hat_events = [
             self.__joystick.get_hat(i) for i in range(self.__joystick.get_numhats())
         ]
+        hat_events = [(int(i[0]), int(i[1])) for i in hat_events]
 
         for direction in hat_events:
-            hat_direction = (int(direction[0]), int(direction[1]))
-            if hat_direction == (0, 0):
+            if direction == (0, 0):
+                self.__previous_hat_value = (0, 0)
                 continue
-            
-            self.__dispatcher.dispatch(
-                Event("controller_hat", hat_direction)
-            )
-            self.__logging.logger.info(f"Controller hat pressed: {hat_direction}")
+
+            if direction == self.__previous_hat_value:
+                continue
+
+            self.__dispatcher.dispatch(Event("controller_hat", direction))
+            self.__logging.logger.info(f"Controller hat pressed: {direction}")
+
+            self.__previous_hat_value = (int(direction[0]), int(direction[1]))
 
     def __process_joystick_value(self, value: float, deadzone: float) -> float:
         """
         Processes the joystick value by applying a deadzone and scaling.
 
-        This method takes a joystick input value, applies a deadzone threshold to 
-        ignore small movements, and scales the value based on predefined 
+        This method takes a joystick input value, applies a deadzone threshold to
+        ignore small movements, and scales the value based on predefined
         round-off and multiplier settings.
 
         Args:
             value (float): The raw joystick input value.
-            deadzone (float): The threshold below which the joystick input is 
+            deadzone (float): The threshold below which the joystick input is
                               considered as zero.
 
         Returns:
-            float: The processed joystick value after applying the deadzone and 
+            float: The processed joystick value after applying the deadzone and
                    scaling.
         """
         return (

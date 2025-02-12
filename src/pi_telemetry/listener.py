@@ -1,56 +1,20 @@
-from dataclasses import dataclass
-import struct
 import queue
+import struct
 import socket
 from threading import Thread
 import time
-from typing import Optional, Tuple
-from events import EventDispatcher
+from typing import Optional
 from logger import Logging
-
-__exports__ = ["Telemetery", "TelemeteryData"]
-
-
-class PiTelemetery:
-    def __init__(
-        self,
-        dispatcher: EventDispatcher,
-        logging: Logging,
-        host: str = "0.0.0.0",
-        port=2500,
-    ):
-        self.__dispatcher = dispatcher
-        self.__logging = logging
-        self.__host = host
-        self.__port = port
-        self.__queue: queue.Queue = queue.Queue()
-
-        self.__listener_thread = TelemetryListener(
-            self.__logging, self.__queue, self.__host, self.__port
-        )
-        self.__listener_thread.start()
-
-    def update(self):
-        try:
-            recieved_data: TelemeteryData = self.__queue.get(block=False)
-        except queue.Empty:
-            return
-        else:
-            self.__dispatcher.dispatch("telemetery", recieved_data)
-
-    def close(self):
-        self.__listener_thread.close_connection()
-
+from pi_telemetry.data import TelemeteryData
 
 class TelemetryListener(Thread):
     def __init__(self, logging: Logging, queue: queue.Queue, host: str, port: int):
-        super().__init__()
+        super().__init__(daemon=True)
         self.host = host
         self.port = port
         self.server_socket: Optional[socket.socket] = None
         self.logging = logging
         self.queue = queue
-        self.daemon = True
 
     def close_connection(self):
         if self.server_socket:
@@ -96,15 +60,4 @@ class TelemetryListener(Thread):
             )
 
             data = connection.recv(buffer_size)
-                
-                
-            
-@dataclass
-class TelemeteryData:
-    cpu_usage: int
-    cpu_temp: int
-    ram_usage: int
-    disk_usage: int
-    gpu_usage: int
-    gpu_temp: int
-    network_usage: Tuple[int, int]
+           
