@@ -1,17 +1,67 @@
 import glob
+import json
 import os
 from typing import Optional
+
+import jsonschema
+import jsonschema.exceptions
 import pygame
 
-from events import EventDispatcher, Event
+from events import Event, EventDispatcher
 from logger import Logging
 
 __exports__ = ["Controller"]
 
-LEFT_X_AXIS_INDX = 0
-LEFT_Y_AXIS_INDX = 1
-RIGHT_X_AXIS_INDX = 3
-RIGHT_Y_AXIS_INDX = 4
+CONFIG_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Controller Schema",
+    "type": "object",
+    "properties": {
+        "displayName": {"type": "string"},
+        "pygameName": {"type": "string"},
+        "buttons": {"type": "integer"},
+        "axes": {"type": "integer"},
+        "hats": {"type": "integer"},
+        "mappings": {
+            "type": "object",
+            "additionalProperties": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": ["button", "axis", "trigger", "hat"],
+                            },
+                            "mapping": {"type": "array", "items": {"type": "integer"}},
+                        },
+                        "required": ["type", "mapping"],
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": ["button", "axis", "trigger", "hat"],
+                            },
+                            "axis": {
+                                "oneOf": [
+                                    {"type": "integer"},
+                                    {"type": "array", "items": {"type": "integer"}},
+                                ]
+                            },
+                        },
+                        "required": ["type", "axis"],
+                    },
+                    {"type": "array", "items": {"type": "integer"}},
+                ]
+            },
+        },
+    },
+    "required": ["displayName", "pygameName", "buttons", "axes", "hats", "mappings"],
+}
+
+CONFIG_DIRECTORY = "assets/controller/configurations"
 
 
 class Controller:
@@ -35,11 +85,6 @@ class Controller:
         - `controller_hat`: Dispatched when hat button is pressed, with the hat direction as tuple.
     """
 
-    HAT_UP = (0, 1)
-    HAT_DOWN = (0, -1)
-    HAT_LEFT = (-1, 0)
-    HAT_RIGHT = (1, 0)
-
     def __init__(
         self,
         dispatcher: EventDispatcher,
@@ -58,6 +103,16 @@ class Controller:
         self.__joystick: Optional[pygame.joystick.JoystickType] = None
 
         self.__previous_hat_value = (0, 0)
+
+        self.__config_library: dict[str, dict] = {}
+        self.__current_config_name: Optional[str] = None
+
+        self.__library_button_mappings: dict[frozenset, str] = {}
+        self.__library_hat_mappings: dict[tuple, str] = {}
+        self.__library_joystick_mappings: dict[str, tuple] = {}
+        self.__library_trigger_mappings: dict[int, str] = {}
+
+        self.__load_config_libary()
 
     def max_value(self) -> float:
         """
@@ -179,6 +234,7 @@ class Controller:
         try:
             self.__process_axes()
             self.__process_buttons()
+            self.__process_triggers()
             self.__process_hat()
         except Exception:
             return False
@@ -210,9 +266,10 @@ class Controller:
                 if event.type == pygame.JOYDEVICEADDED:
                     pygame.joystick.init()
                     self.__joystick = pygame.joystick.Joystick(event.device_index)
-                    self.calibrate()
                     self.__dispatcher.dispatch("controller_connected")
                     self.__logging.logger.info("Controller connected")
+                    self.autoload_config()
+                    self.calibrate()
                     return
                 else:
                     if self.__joystick is not None:
@@ -240,16 +297,17 @@ class Controller:
             return None
 
         try:
+            joysticks: list[int] = []
+            for joystick in self.__library_joystick_mappings.values():
+                print(joystick)
+                joysticks.extend(list(joystick))
+
+            print(f"{joysticks = }")
+
             axes_values = [
                 self.__joystick.get_axis(i)
                 for i in range(self.__joystick.get_numaxes())
-                if i
-                in [
-                    LEFT_X_AXIS_INDX,
-                    LEFT_Y_AXIS_INDX,
-                    RIGHT_X_AXIS_INDX,
-                    RIGHT_Y_AXIS_INDX,
-                ]
+                if i in joysticks
             ]
         except Exception:
             return None
@@ -276,6 +334,7 @@ class Controller:
         """
         if self.__joystick is None:
             return
+
         filtered_axes = [
             self.__process_joystick_value(
                 self.__joystick.get_axis(i),
@@ -284,20 +343,26 @@ class Controller:
             for i in range(self.__joystick.get_numaxes())
         ]
 
-        x, y, z, w = (0.0, 0.0, 0.0, 0.0)
-        for i, j in enumerate(filtered_axes):
-            if i == 0:
-                x = j
-            elif i == 1:
-                y = j
-            elif i == 3:
-                z = j
-            elif i == 4:
-                w = j
+        joystick_values = {}
+        for name, axes in self.__library_joystick_mappings.items():
+            joystick_values[name] = tuple(filtered_axes[axis] for axis in axes)
 
-        self.__dispatcher.dispatch("controller_left_joystick", (x, y))
-        self.__dispatcher.dispatch("controller_right_joystick", (z, w))
-        self.__dispatcher.dispatch("controller_joysticks", (x, y, z, w))
+        self.__dispatcher.dispatch("controller_joysticks", joystick_values)
+
+    def __process_triggers(self) -> None:
+        if self.__joystick is None:
+            return
+
+        if len(self.__library_trigger_mappings) == 0:
+            return
+
+        for axis_index, trigger_name in self.__library_trigger_mappings.items():
+            value = self.__joystick.get_axis(axis_index)
+            if value > 0.5:
+                self.__dispatcher.dispatch("controller_button", trigger_name)
+                self.__logging.logger.info(f"Controller trigger {trigger_name} pressed")
+
+            self.__previous_trigger_value = value
 
     def __process_buttons(self) -> None:
         """
@@ -312,14 +377,22 @@ class Controller:
         """
         if self.__joystick is None:
             return
-        buttons_pressed = {
-            e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONDOWN])
-        }
+
+        buttons_pressed = frozenset(
+            {e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONDOWN])}
+        )
 
         if len(buttons_pressed) == 0:
             return
-        self.__dispatcher.dispatch("controller_button", buttons_pressed)
-        self.__logging.logger.info(f"Controller buttons pressed: {buttons_pressed}")
+
+        print(self.__library_button_mappings)
+        button_mapping = self.__library_button_mappings.get(buttons_pressed)
+        if button_mapping is None:
+            self.__logging.logger.error(f"{buttons_pressed} is not mapped to anything")
+            return
+
+        self.__dispatcher.dispatch("controller_button", button_mapping)
+        self.__logging.logger.info(f"Controller buttons pressed: {button_mapping}")
 
     def __process_hat(self) -> None:
         """
@@ -347,9 +420,12 @@ class Controller:
 
             if direction == self.__previous_hat_value:
                 continue
+            
+            controller_button = self.__library_hat_mappings[direction]
+            print(self.__library_hat_mappings)
 
-            self.__dispatcher.dispatch(Event("controller_hat", direction))
-            self.__logging.logger.info(f"Controller hat pressed: {direction}")
+            self.__dispatcher.dispatch("controller_button", controller_button)
+            self.__logging.logger.info(f"Controller hat pressed: {controller_button}")
 
             self.__previous_hat_value = (int(direction[0]), int(direction[1]))
 
@@ -375,3 +451,209 @@ class Controller:
             if abs(value) > deadzone
             else round(value)
         )
+
+    def __load_config_libary(self):
+        """
+        Load the configuration library from valid configuration files.
+
+        This method retrieves valid configuration files and their names, then
+        populates the configuration library with these configurations.
+
+        Returns:
+            None
+        """
+        configs = self.__get_valid_config()
+        names = self.__get_valid_config_names()
+
+        self.__config_library = {}
+        for name, config in zip(names, configs):
+            self.__config_library[name] = config
+
+        self.__logging.logger.success("Loaded config library")
+
+        self.__logging.logger.debug(f"{self.__config_library = }")
+
+    def __generate_library_mappings(self):
+        if not self.__current_config_name:
+            return
+
+        mappings: dict[str, dict] = self.__config_library[self.__current_config_name][
+            "mappings"
+        ]
+
+        for name, mapping in mappings.items():
+            if mapping["type"] == "button":
+                self.__library_button_mappings[frozenset(set(mapping["mapping"]))] = (
+                    name
+                )
+
+            if mapping["type"] == "hat":
+                self.__library_hat_mappings[tuple(mapping["mapping"])] = name
+
+            if mapping["type"] == "axis":
+                self.__library_joystick_mappings[name] = tuple(mapping["axis"])
+
+            if mapping["type"] == "trigger":
+                self.__library_trigger_mappings[mapping["axis"]] = name
+
+    def __validate_configuration(self, config: dict) -> bool:
+        """
+        Validate a configuration against the predefined schema.
+
+        Args:
+            config (dict): The configuration dictionary to validate.
+
+        Returns:
+            bool: True if the configuration is valid, False otherwise.
+        """
+        try:
+            jsonschema.validate(config, CONFIG_SCHEMA)
+        except jsonschema.exceptions.ValidationError as err:
+            self.__logging.logger.error(
+                f"Controller invalid configuration; err msg: {err}"
+            )
+            return False
+        else:
+            return True
+
+    def __get_valid_config_files(self) -> list[str]:
+        """
+        Retrieve valid configuration file paths.
+
+        This method checks each file in the configuration directory, validates
+        its content, and returns a list of valid configuration file paths.
+
+        Returns:
+            list[str]: A list of valid configuration file paths.
+        """
+        files_path = [
+            os.path.abspath(f"{CONFIG_DIRECTORY}/{x}")
+            for x in os.listdir(CONFIG_DIRECTORY)
+        ]
+
+        valid_config_paths = []
+        for file in files_path:
+            with open(file) as f:
+                try:
+                    data = json.load(f)
+                except json.JSONDecodeError as err:
+                    self.__logging.logger.error(
+                        f"Config decoding error; err msg: {err}"
+                    )
+                    continue
+                else:
+                    if self.__validate_configuration(data):
+                        valid_config_paths.append(file)
+        return valid_config_paths
+
+    def __get_valid_config(self) -> list[dict]:
+        """
+        Retrieve valid configurations.
+
+        This method reads and validates the content of each valid configuration
+        file, and returns a list of valid configuration dictionaries.
+
+        Returns:
+            list[dict]: A list of valid configuration dictionaries.
+        """
+        valid_configs = []
+        for file in self.__get_valid_config_files():
+            with open(file) as f:
+                data = json.load(f)
+                valid_configs.append(data)
+        return valid_configs
+
+    def __get_valid_config_names(self) -> list[str]:
+        """
+        Retrieve the names of valid configuration files.
+
+        This method extracts the names of valid configuration files by removing
+        their file extensions.
+
+        Returns:
+            list[str]: A list of valid configuration file names.
+        """
+        files = self.__get_valid_config_files()
+
+        return [os.path.basename(file).split(".")[0] for file in files]
+
+    def config_names(self) -> list[str]:
+        return list(self.__config_library.keys())
+
+    def reload_config_library(self):
+        """
+        Reload the configuration library.
+
+        This method reloads the configuration library by calling the
+        __load_config_libary method.
+
+        Returns:
+            None
+        """
+        self.__load_config_libary()
+
+    def autoload_config(self):
+        """
+        Automatically load the configuration for the connected joystick.
+
+        This method checks the connected joystick's name, number of buttons, and
+        number of axes, and loads the corresponding configuration from the
+        configuration library. If no matching configuration is found, it loads
+        the default configuration.
+
+        Returns:
+            None
+        """
+        if not self.__joystick:
+            return
+
+        pygame_name = self.__joystick.get_name()
+        num_buttons = self.__joystick.get_numbuttons()
+        num_hats = self.__joystick.get_numhats()
+        num_axes = self.__joystick.get_numaxes()
+
+        config_found = False
+        for name, config in self.__config_library.items():
+            if (
+                config["pygameName"] == pygame_name
+                and config["buttons"] == num_buttons
+                and config["hats"] == num_hats
+                and config["axes"] == num_axes
+            ):
+                self.__current_config_name = name
+                self.__logging.logger.info(
+                    f"Autoloaded {name} as the current configuration"
+                )
+                config_found = True
+                break
+
+        if not config_found:
+            self.__logging.logger.warning(
+                f"{pygame_name} with {num_buttons} buttons, {num_hats} hats and {num_axes} axes is not a known controller type, using similar config"
+            )
+            for name, config in self.__config_library.items():
+                if (
+                    config["buttons"] == num_buttons
+                    and config["hats"] == num_hats
+                    and config["axes"] == num_axes
+                ):
+                    self.__current_config_name = name
+                    self.__logging.logger.info(
+                        f"Autoloaded similar config {name} as the current configuration"
+                    )
+                    break
+
+        self.__generate_library_mappings()
+
+    def manual_config(self, config_name: str):
+        """
+        Manually set the configuration for the controller.
+
+        Args:
+            config_name (str): The name of the configuration to set.
+
+        Returns:
+            None
+        """
+        self.__current_config_name = config_name
+        self.__generate_library_mappings()

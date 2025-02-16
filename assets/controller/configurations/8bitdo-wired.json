@@ -1,0 +1,93 @@
+{
+  "displayName": "8BitDo 2C Ultimate Wired",
+  "pygameName": "8BitDo Ultimate 2C Wireless Controller",
+  "buttons": 11,
+  "axes": 6,
+  "hats": 1,
+  "mappings": {
+    "A": {
+      "type": "button",
+      "mapping": [0]
+    },
+    "B": {
+      "type": "button",
+      "mapping": [1]
+    },
+    "C": {
+      "type": "button",
+      "mapping": [3]
+    },
+    "D": {
+      "type": "button",
+      "mapping": [2]
+    },
+    "L": {
+      "type": "button",
+      "mapping": [6]
+    },
+    "M": {
+      "type": "button",
+      "mapping": [8]
+    },
+    "R": {
+      "type": "button",
+      "mapping": [7]
+    },
+    "LJ": {
+      "type": "axis",
+      "axis": [0, 1]
+    },
+    "L1": {
+      "type": "button",
+      "mapping": [4]
+    },
+    "L2": {
+      "type": "trigger",
+      "axis": 2
+    },
+    "L3": {
+      "type": "button",
+      "mapping": [9]
+    },
+    "L4": {
+      "type": "button",
+      "mapping": []
+    },
+    "RJ": {
+      "type": "axis",
+      "axis": [3, 4]
+    },
+    "R1": {
+      "type": "button",
+      "mapping": [5]
+    },
+    "R2": {
+      "type": "trigger",
+      "axis": 5
+    },
+    "R3": {
+      "type": "button",
+      "mapping": [10]
+    },
+    "R4": {
+      "type": "button",
+      "mapping": []
+    },
+    "1": {
+      "type": "hat",
+      "mapping": [0, -1]
+    },
+    "2": {
+      "type": "hat",
+      "mapping": [1, 0]
+    },
+    "3": {
+      "type": "hat",
+      "mapping": [0, 1]
+    },
+    "4": {
+      "type": "hat",
+      "mapping": [-1, 0]
+    }
+  }
+}

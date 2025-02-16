@@ -7,7 +7,7 @@ from typing import Optional
 from logger import Logging
 from pi_telemetry.data import TelemeteryData
 
-class TelemetryListener(Thread):
+class TelemetryDaemon(Thread):
     def __init__(self, logging: Logging, queue: queue.Queue, host: str, port: int):
         super().__init__(daemon=True)
         self.host = host
@@ -58,6 +58,4 @@ class TelemetryListener(Thread):
                     (unpacked_data[6], unpacked_data[7]),
                 )
             )
-
-            data = connection.recv(buffer_size)
            

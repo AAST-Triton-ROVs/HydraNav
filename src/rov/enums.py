@@ -39,7 +39,7 @@ class SystemModes(Enum):
     ```
     """
 
-    STABILIZE = 0
+    STABILIZATION = 0
     ACRO = 1
     ALT_HOLD = 2
     AUTO = 3

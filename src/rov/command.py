@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Commands(Enum):
+class ROVCommands(Enum):
     DISARM = 0
     ARM = 1
     

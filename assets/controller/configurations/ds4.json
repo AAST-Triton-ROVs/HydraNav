@@ -1,0 +1,93 @@
+{
+  "displayName": "DualShock 4 Alternate",
+  "pygameName": "PS4 Controller",
+  "buttons": 16,
+  "axes": 6,
+  "hats": 0,
+  "mappings": {
+    "A": {
+      "type": "button",
+      "mapping": [0]
+    },
+    "B": {
+      "type": "button",
+      "mapping": [1]
+    },
+    "C": {
+      "type": "button",
+      "mapping": [3]
+    },
+    "D": {
+      "type": "button",
+      "mapping": [2]
+    },
+    "L": {
+      "type": "button",
+      "mapping": [4]
+    },
+    "M": {
+      "type": "button",
+      "mapping": [5]
+    },
+    "R": {
+      "type": "button",
+      "mapping": [6]
+    },
+    "LJ": {
+      "type": "axis",
+      "axis": [0, 1]
+    },
+    "L1": {
+      "type": "button",
+      "mapping": [9]
+    },
+    "L2": {
+      "type": "trigger",
+      "axis": 4
+    },
+    "L3": {
+      "type": "button",
+      "mapping": [7]
+    },
+    "L4": {
+      "type": "button",
+      "mapping": []
+    },
+    "RJ": {
+      "type": "axis",
+      "axis": [2, 3]
+    },
+    "R1": {
+      "type": "button",
+      "mapping": [10]
+    },
+    "R2": {
+      "type": "trigger",
+      "axis": 5
+    },
+    "R3": {
+      "type": "button",
+      "mapping": [8]
+    },
+    "R4": {
+      "type": "button",
+      "mapping": []
+    },
+    "1": {
+      "type": "button",
+      "mapping": [12]
+    },
+    "2": {
+      "type": "button",
+      "mapping": [14]
+    },
+    "3": {
+      "type": "button",
+      "mapping": [11]
+    },
+    "4": {
+      "type": "button",
+      "mapping": [13]
+    }
+  }
+}

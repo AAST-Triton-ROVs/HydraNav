@@ -21,17 +21,15 @@ class GCS:
         self.controller = Controller(self.dispatcher, self.logging)
         self.notifier = Notifier(self.dispatcher, self.logging)
         self.pi_telemetery = PiTelemetery(self.dispatcher, self.logging)
-        self.rov = ROV(self.dispatcher, self.logging, port=14550)
+        # self.rov = ROV(self.dispatcher, self.logging)
 
         self.controller.update_connection_status()
 
         self.dispatcher.subscribe("controller_button", self.on_controller_button)
 
     def on_controller_button(self, key: set):
-        if key == {8}:
+        if key == "M":
             self.controller.calibrate()
-        elif key == {6}:
-            self.notifier.play("dua")
 
     def run(self):
         while True:
@@ -42,6 +40,7 @@ class GCS:
             self.controller.update()
             # self.gui.update(time_delta)
             self.pi_telemetery.update()
+            # self.rov.update()
 
             self.clock.tick(60)
 

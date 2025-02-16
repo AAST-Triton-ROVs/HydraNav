@@ -1,11 +1,20 @@
-from queue import Queue
+from queue import PriorityQueue, Queue
 from typing import Tuple
 from events import EventDispatcher
 from logger import Logging
 from rov.daemon import ROVConnectionDaemon
 from rov.enums import Directions, ControlChannels
-from rov.movement import Movement
-from rov.command import Commands
+from rov.movement import ROVMovement
+from rov.command import ROVCommands
+from rov.notification import (
+    Armed,
+    Disarmed,
+    GainChange,
+    ROVNotification,
+    SystemModeChanged,
+    VehicleConnected,
+    VehicleDisconnected,
+)
 
 __exports__ = ["ROV"]
 
@@ -18,8 +27,9 @@ class ROV:
         ip: str = "0.0.0.0",
         port: int = 2000,
     ):
-        self.__movement_queue: Queue[Movement] = Queue(1)
-        self.__command_queue: Queue[Commands] = Queue(1)
+        self.__movement_queue: Queue[ROVMovement] = Queue(1)
+        self.__command_queue: Queue[ROVCommands] = Queue(1)
+        self.__notification_queue: PriorityQueue[ROVNotification] = PriorityQueue()
 
         self.__dispatcher = dispatcher
         self.__logging = logging
@@ -29,28 +39,26 @@ class ROV:
         self.__connection_daemon = ROVConnectionDaemon(
             self.__movement_queue,
             self.__command_queue,
+            self.__notification_queue,
             self.__ip,
             self.__port,
             self.__logging,
         )
         self.__connection_daemon.start()
 
-        self.__dispatcher.subscribe(
-            "controller_left_joystick", self.__handle_left_joystick
-        )
-        self.__dispatcher.subscribe(
-            "controller_right_joystick", self.__handle_right_joystick
-        )
         self.__dispatcher.subscribe("controller_joysticks", self.__handle_joysticks)
         self.__dispatcher.subscribe("controller_button", self.__handle_buttons)
         self.__dispatcher.subscribe("controller_hat", self.__handle_hat)
 
-    def __handle_buttons(self, buttons: set):
-        if buttons == {0}:
+    def __handle_buttons(self, button: str):
+        if button == "A":
             self.arm()
-        elif buttons == {1}:
+        elif button == "B":
             self.disarm()
-        
+        elif button == "C":
+            self.flight_mode_stabilize()
+        elif button == "D":
+            self.flight_mode_manual()
 
     def __handle_hat(self, button: Tuple[int, int]):
         if button == (0, 1):
@@ -63,69 +71,53 @@ class ROV:
 
         if x == y == z == w == 0:
             self.stop_movement()
-
-    def __handle_left_joystick(self, move: Tuple[float, float]):
-        x, y = move
-        if x == y == 0:
             return
 
         if x > y:
             if y > 0:
                 self.move_lateral_right()
-            else:
+            elif y < 0:
                 self.move_forward()
         else:
             if x > 0:  # joystick to the bottom
                 self.move_backward()
-            else:
+            elif x < 0:
                 self.move_lateral_left()
 
-    def __handle_right_joystick(self, move: Tuple[float, float]):
-        x, y = move
-        if x == y == 0:
-            return
-
-        if x > y:
-            if x > 0:  # joystick to the left
+        if z > w:
+            if z > 0:  # joystick to the left
                 self.move_yaw_right()
-            else:
+            elif z < 0:
                 self.move_up()
         else:
-            if y > 0:  # joystick to the bottom
+            if w > 0:  # joystick to the bottom
                 self.move_down()
-            else:
+            elif w < 0:
                 self.move_yaw_left()
 
     def __move(self, channel: ControlChannels, direction: Directions):
-        self.__movement_queue.put(Movement(channel, direction))
+        self.__movement_queue.put(ROVMovement(channel, direction))
 
-    def __command(self, command: Commands):
+    def __command(self, command: ROVCommands):
         self.__command_queue.put(command)
 
     def gain_up(self):
-        self.__command(Commands.GAIN_UP)
-        
-        self.__dispatcher.dispatch("rov_gain_up")
+        self.__command(ROVCommands.GAIN_UP)
 
     def gain_down(self):
-        self.__command(Commands.GAIN_DOWN)
-        self.__dispatcher.dispatch("rov_gain_down")
+        self.__command(ROVCommands.GAIN_DOWN)
 
     def arm(self):
-        self.__command(Commands.ARM)
-        
-        self.__dispatcher.dispatch("rov_armed")
+        self.__command(ROVCommands.ARM)
 
     def disarm(self):
-        self.__command(Commands.DISARM)
-        
-        self.__dispatcher.dispatch("rov_disarmed")
+        self.__command(ROVCommands.DISARM)
 
     def flight_mode_manual(self):
-        self.__command(Commands.SYSTEM_MODE_MANUAL)
+        self.__command(ROVCommands.SYSTEM_MODE_MANUAL)
 
     def flight_mode_stabilize(self):
-        self.__command(Commands.SYSTEM_MODE_STABILIZE)
+        self.__command(ROVCommands.SYSTEM_MODE_STABILIZE)
 
     def stop_movement(self):
         self.__move(ControlChannels.FORWARD, Directions.NEUTRAL)
@@ -159,3 +151,20 @@ class ROV:
 
     def move_lateral_left(self):
         self.__move(ControlChannels.LATERAL, Directions.NEGATIVE)
+
+    def update(self):
+        while not self.__notification_queue.empty():
+            notification = self.__notification_queue.get()
+
+            if isinstance(notification, VehicleDisconnected):
+                self.__dispatcher.dispatch("rov_vehicle_disconnected")
+            elif isinstance(notification, VehicleConnected):
+                self.__dispatcher.dispatch("rov_vehicle_connected")
+            elif isinstance(notification, Armed):
+                self.__dispatcher.dispatch("rov_armed")
+            elif isinstance(notification, Disarmed):
+                self.__dispatcher.dispatch("rov_disarmed")
+            elif isinstance(notification, GainChange):
+                self.__dispatcher.dispatch("rov_gain_change", notification.new_gain)
+            elif isinstance(notification, SystemModeChanged):
+                self.__dispatcher.dispatch("rov_system_mode_changed", notification.mode)

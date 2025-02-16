@@ -6,7 +6,10 @@ from logger import Logging
 
 class Notifier:
     def __init__(
-        self, dispatcher: EventDispatcher, logging: Logging, audio_assests_path: str = "./assets/audio"
+        self,
+        dispatcher: EventDispatcher,
+        logging: Logging,
+        audio_assests_path: str = "./assets/audio",
     ):
         pygame.mixer.init()
 
@@ -22,13 +25,32 @@ class Notifier:
         self.__dispatcher.subscribe(
             "controller_disconnected", lambda _: self.play("controller_disconnected")
         )
-        
+        self.__dispatcher.subscribe("controller_button", self.__process_button)
+
         self.__dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
         self.__dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
+        self.__dispatcher.subscribe(
+            "rov_gain_change", lambda g: self.play(f"{g}_percent_gain")
+        )
+        self.__dispatcher.subscribe(
+            "rov_vehicle_connected", lambda _: self.play("vehicle_connected")
+        )
+        self.__dispatcher.subscribe(
+            "rov_vehicle_disconnected", lambda _: self.play("vehicle_disconnected")
+        )
+        self.__dispatcher.subscribe(
+            "rov_system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
+        )
 
-        self.__dispatcher.subscribe("gui_screen_cleared", lambda _: self.__change_volume(0))
-        
+        self.__dispatcher.subscribe(
+            "gui_screen_cleared", lambda _: self.__change_volume(0)
+        )
+
         self.__change_volume(self.volume)
+
+    def __process_button(self, button: str):
+        if button == "L":
+            self.play("dua")
 
     def __change_volume(self, inc: int):
         if self.volume + inc > 100:

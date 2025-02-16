@@ -3,7 +3,7 @@ from queue import Queue
 from events import EventDispatcher
 from logger import Logging
 from pi_telemetry.data import TelemeteryData
-from pi_telemetry.listener import TelemetryListener
+from pi_telemetry.daemon import TelemetryDaemon
 
 __exports__ = ["Telemetery", "TelemeteryData"]
 
@@ -20,9 +20,9 @@ class PiTelemetery:
         self.__logging = logging
         self.__host = host
         self.__port = port
-        self.__queue: Queue = Queue()
+        self.__queue: Queue = Queue(1)
 
-        self.__listener_thread = TelemetryListener(
+        self.__listener_thread = TelemetryDaemon(
             self.__logging, self.__queue, self.__host, self.__port
         )
         self.__listener_thread.start()
