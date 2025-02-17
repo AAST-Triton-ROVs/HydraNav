@@ -7,14 +7,13 @@ import jsonschema
 import jsonschema.exceptions
 import pygame
 
-from events import Event, EventDispatcher
+from events import EventDispatcher
 from logger import Logging
 
 __exports__ = ["Controller"]
 
 CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Controller Schema",
     "type": "object",
     "properties": {
         "displayName": {"type": "string"},
@@ -24,42 +23,36 @@ CONFIG_SCHEMA = {
         "hats": {"type": "integer"},
         "mappings": {
             "type": "object",
-            "additionalProperties": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "type": {
-                                "type": "string",
-                                "enum": ["button", "axis", "trigger", "hat"],
-                            },
-                            "mapping": {"type": "array", "items": {"type": "integer"}},
+            "patternProperties": {
+                "^[A-Z0-9]+$": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": ["button", "axis", "hat", "trigger"],
                         },
-                        "required": ["type", "mapping"],
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "type": {
-                                "type": "string",
-                                "enum": ["button", "axis", "trigger", "hat"],
-                            },
-                            "axis": {
-                                "oneOf": [
-                                    {"type": "integer"},
-                                    {"type": "array", "items": {"type": "integer"}},
-                                ]
-                            },
+                        "mapping": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                            "minItems": 0,
                         },
-                        "required": ["type", "axis"],
+                        "axis": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                            "minItems": 0,
+                        },
                     },
-                    {"type": "array", "items": {"type": "integer"}},
-                ]
+                    "required": ["type"],
+                    "additionalProperties": True,
+                }
             },
+            "additionalProperties": False,
         },
     },
     "required": ["displayName", "pygameName", "buttons", "axes", "hats", "mappings"],
+    "additionalProperties": False,
 }
+
 
 CONFIG_DIRECTORY = "assets/controller/configurations"
 
@@ -420,7 +413,7 @@ class Controller:
 
             if direction == self.__previous_hat_value:
                 continue
-            
+
             controller_button = self.__library_hat_mappings[direction]
             print(self.__library_hat_mappings)
 

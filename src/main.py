@@ -21,15 +21,35 @@ class GCS:
         self.controller = Controller(self.dispatcher, self.logging)
         self.notifier = Notifier(self.dispatcher, self.logging)
         self.pi_telemetery = PiTelemetery(self.dispatcher, self.logging)
-        # self.rov = ROV(self.dispatcher, self.logging)
+        self.rov = ROV(self.dispatcher, self.logging)
 
         self.controller.update_connection_status()
 
         self.dispatcher.subscribe("controller_button", self.on_controller_button)
 
-    def on_controller_button(self, key: set):
-        if key == "M":
+    def on_controller_button(self, button: set):
+        if button == "L":
+            self.notifier.play("dua")
+        elif button == "M":
             self.controller.calibrate()
+        elif button == "A":
+            self.rov.arm()
+        elif button == "B":
+            self.rov.disarm()
+        elif button == "C":
+            self.rov.flight_mode_stabilize()
+        elif button == "D":
+            self.rov.flight_mode_manual()
+        elif button == "3":
+            self.rov.gain_up()
+        elif button == "1":
+            self.rov.gain_down()
+        elif button == "2" or button == "R4":
+            # TODO: MAP TO GRIPPER FUNCTION
+            pass
+        elif button == "4" or button == "L4":
+            # TODO: MAP TO GRIPPER FUNCTION
+            pass
 
     def run(self):
         while True:
@@ -40,7 +60,7 @@ class GCS:
             self.controller.update()
             # self.gui.update(time_delta)
             self.pi_telemetery.update()
-            # self.rov.update()
+            self.rov.update()
 
             self.clock.tick(60)
 

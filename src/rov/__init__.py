@@ -47,24 +47,6 @@ class ROV:
         self.__connection_daemon.start()
 
         self.__dispatcher.subscribe("controller_joysticks", self.__handle_joysticks)
-        self.__dispatcher.subscribe("controller_button", self.__handle_buttons)
-        self.__dispatcher.subscribe("controller_hat", self.__handle_hat)
-
-    def __handle_buttons(self, button: str):
-        if button == "A":
-            self.arm()
-        elif button == "B":
-            self.disarm()
-        elif button == "C":
-            self.flight_mode_stabilize()
-        elif button == "D":
-            self.flight_mode_manual()
-
-    def __handle_hat(self, button: Tuple[int, int]):
-        if button == (0, 1):
-            self.gain_up()
-        elif button == (0, -1):
-            self.gain_down()
 
     def __handle_joysticks(self, move: Tuple[float, float, float, float]):
         x, y, z, w = move

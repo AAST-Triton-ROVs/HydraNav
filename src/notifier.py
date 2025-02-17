@@ -3,6 +3,7 @@ from events import EventDispatcher
 from pathlib import Path
 from logger import Logging
 
+__exports__ = ["Notifier"]
 
 class Notifier:
     def __init__(
@@ -25,7 +26,6 @@ class Notifier:
         self.__dispatcher.subscribe(
             "controller_disconnected", lambda _: self.play("controller_disconnected")
         )
-        self.__dispatcher.subscribe("controller_button", self.__process_button)
 
         self.__dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
         self.__dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
@@ -42,15 +42,7 @@ class Notifier:
             "rov_system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
 
-        self.__dispatcher.subscribe(
-            "gui_screen_cleared", lambda _: self.__change_volume(0)
-        )
-
         self.__change_volume(self.volume)
-
-    def __process_button(self, button: str):
-        if button == "L":
-            self.play("dua")
 
     def __change_volume(self, inc: int):
         if self.volume + inc > 100:
@@ -71,10 +63,8 @@ class Notifier:
         self.__change_volume(-10)
         self.__logging.logger.info(f"Notifier volume down: {self.volume}")
 
-    def play(self, file: str, blocking: bool = False):
+    def play(self, file: str):
         path = Path(self.__audio_assets_path, f"{file}.wav")
         pygame.mixer.music.load(path)
         pygame.mixer.music.play()
 
-        while pygame.mixer.get_busy() and blocking:
-            pygame.time.delay(100)
