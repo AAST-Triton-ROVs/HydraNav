@@ -28,28 +28,35 @@ class GCS:
         self.dispatcher.subscribe("controller_button", self.on_controller_button)
 
     def on_controller_button(self, button: set):
-        if button == "L":
-            self.notifier.play("dua")
-        elif button == "M":
-            self.controller.calibrate()
-        elif button == "A":
-            self.rov.arm()
-        elif button == "B":
-            self.rov.disarm()
-        elif button == "C":
-            self.rov.flight_mode_stabilize()
-        elif button == "D":
-            self.rov.flight_mode_manual()
-        elif button == "3":
-            self.rov.gain_up()
-        elif button == "1":
-            self.rov.gain_down()
-        elif button == "2" or button == "R4":
-            # TODO: MAP TO GRIPPER FUNCTION
-            pass
-        elif button == "4" or button == "L4":
-            # TODO: MAP TO GRIPPER FUNCTION
-            pass
+        match button:
+            case "L":
+                self.notifier.play("dua")
+            case "M":
+                self.controller.calibrate()
+            case "A":
+                self.rov.arm()
+            case "B":
+                self.rov.disarm()
+            case "C":
+                self.rov.flight_mode_stabilize()
+            case "D":
+                self.rov.flight_mode_manual()
+            case "3":
+                self.rov.gain_up()
+            case "1":
+                self.rov.gain_down()
+            case "R1":
+                self.rov.gripper.open()
+            case "L1":
+                self.rov.gripper.close()
+            case "R2":
+                self.rov.gripper.roll_right()
+            case "L2":
+                self.rov.gripper.roll_left()
+            case "2" | "R4":
+                self.rov.gripper.pitch_up()
+            case "4" | "L4":
+                self.rov.gripper.pitch_down()
 
     def run(self):
         while True:

@@ -4,6 +4,7 @@ from events import EventDispatcher
 from logger import Logging
 from rov.daemon import ROVConnectionDaemon
 from rov.enums import Directions, ControlChannels
+from rov.gripper import Gripper
 from rov.movement import ROVMovement
 from rov.command import ROVCommands
 from rov.notification import (
@@ -26,6 +27,7 @@ class ROV:
         logging: Logging,
         ip: str = "0.0.0.0",
         port: int = 2000,
+        gripper_port: int = 2500,
     ):
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)
@@ -45,6 +47,8 @@ class ROV:
             self.__logging,
         )
         self.__connection_daemon.start()
+
+        self.gripper = Gripper(self.__logging, self.__ip, gripper_port)
 
         self.__dispatcher.subscribe("controller_joysticks", self.__handle_joysticks)
 
