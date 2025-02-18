@@ -1,9 +1,10 @@
 from queue import PriorityQueue, Queue
 from threading import Thread
 import time
+from typing import Tuple
 from pymavlink import mavutil  # type: ignore
 
-from logger import Logging
+from logger import logging
 from rov.enums import ControlChannels, Directions, SystemModes
 from rov.movement import ROVMovement
 from rov.command import ROVCommands
@@ -44,16 +45,12 @@ class ROVConnectionDaemon(Thread):
         movement_queue: Queue[ROVMovement],
         command_queue: Queue[ROVCommands],
         notification_queue: PriorityQueue[ROVNotification],
-        ip: str,
-        port: int,
-        logging: Logging,
+        address: Tuple[str, int],
     ):
         super().__init__(daemon=True)
         self.__gain_index = 0
-        self.__logging = logging
 
-        self.__ip = ip
-        self.__port = port
+        self.__address = address
 
         self.__movement_queue: Queue[ROVMovement] = movement_queue
         self.__command_queue: Queue[ROVCommands] = command_queue
@@ -62,7 +59,9 @@ class ROVConnectionDaemon(Thread):
         self.__time_since_last_heartbeat = time.monotonic()
         self.__time_since_last_movement = time.monotonic()
 
-        self.__master = mavutil.mavlink_connection(f"udpin:{self.__ip}:{self.__port}")
+        self.__master = mavutil.mavlink_connection(
+            f"udpin:{self.__address[0]}:{self.__address[1]}"
+        )
 
     def __component_arm_disarm(self, act: int):
         self.__master.mav.command_long_send(
@@ -101,7 +100,7 @@ class ROVConnectionDaemon(Thread):
 
             break
 
-        self.__logging.logger.success("armed")
+        logging.logger.success("armed")
 
         return True
 
@@ -121,7 +120,7 @@ class ROVConnectionDaemon(Thread):
 
             break
 
-        self.__logging.logger.success("disarmed")
+        logging.logger.success("disarmed")
 
         return True
 
@@ -129,13 +128,13 @@ class ROVConnectionDaemon(Thread):
         if self.__gain_index + 1 < len(GAIN_LEVELS):
             self.__gain_index += 1
 
-        self.__logging.logger.info("Gain up")
+        logging.logger.info("Gain up")
 
     def gain_down(self):
         if self.__gain_index - 1 >= 0:
             self.__gain_index -= 1
 
-        self.__logging.logger.info("Gain down")
+        logging.logger.info("Gain down")
 
     def get_gain(self):
         return GAIN_LEVELS[self.__gain_index]
@@ -145,7 +144,7 @@ class ROVConnectionDaemon(Thread):
         pwm = self.__percent_to_pwm(GAIN_LEVELS[self.__gain_index], direction)
         rc_channel_values[channel.value - 1] = pwm
 
-        self.__logging.logger.debug(f"ROV {rc_channel_values = }")
+        logging.logger.debug(f"ROV {rc_channel_values = }")
 
         self.__master.mav.rc_channels_override_send(
             self.__master.target_system,
@@ -153,7 +152,7 @@ class ROVConnectionDaemon(Thread):
             *rc_channel_values,
         )
 
-        self.__logging.logger.info(
+        logging.logger.info(
             f"{channel.name} is set to {pwm} in {direction.name} direction"
         )
 
@@ -161,13 +160,13 @@ class ROVConnectionDaemon(Thread):
         response = self.__master.wait_heartbeat(timeout=TIME_OUT_SEC)
         if response is None:
             return False
-        self.__logging.logger.info("Recieved heartbeat")
+        logging.logger.info("Recieved heartbeat")
 
         return True
 
     def send_heartbeat(self):
         self.__master.mav.heartbeat_send(6, 8, 0, 0, 0)
-        self.__logging.logger.info("Sent Heartbeat")
+        logging.logger.info("Sent Heartbeat")
 
     def set_system_mode(self, mode: SystemModes) -> bool:
         self.__master.mav.set_mode_send(
@@ -181,14 +180,17 @@ class ROVConnectionDaemon(Thread):
                 type="COMMAND_ACK", blocking=True, timeout=TIME_OUT_SEC
             )
             if not ack_msg:
-                self.__logging.logger.error(f"Setting flight mode `{mode.name}` failed")
+                logging.logger.error(f"Setting flight mode `{mode.name}` failed")
                 return False
             ack_msg = ack_msg.to_dict()
 
-            if ack_msg["command"] != 11 and ack_msg["command"] != mavutil.mavlink.MAV_CMD_DO_SET_MODE:
+            if (
+                ack_msg["command"] != 11
+                and ack_msg["command"] != mavutil.mavlink.MAV_CMD_DO_SET_MODE
+            ):
                 continue
 
-            self.__logging.logger.success(f"Set flight mode to {mode.name}")
+            logging.logger.success(f"Set flight mode to {mode.name}")
             return True
 
     def run(self):
@@ -206,7 +208,7 @@ class ROVConnectionDaemon(Thread):
                 if not response:
                     is_connected = False
                     self.__notify(VehicleDisconnected())
-                    self.__logging.logger.critical(
+                    logging.logger.critical(
                         "No heartbeat from vehicle; Vehicle disconnected or unresponsive"
                     )
 

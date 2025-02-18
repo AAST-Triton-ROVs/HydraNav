@@ -19,21 +19,18 @@ from pygame_gui import UIManager, PackageResource
 class GUI:
     def __init__(self, dispatcher: EventDispatcher, logging: Logging):
         pygame.display.set_caption("Triton GCS")
-        self.window_surface = pygame.display.set_mode(
-            (0, 0), pygame.FULLSCREEN
-        )
+        self.window_surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         self.ui_manager = UIManager(
             self.__get_resolution(),
             # PackageResource(package="assets", resource="theme_2.json"),
         )
-        
 
     def update(self, time_delta: float | int):
         self.ui_manager.update(time_delta)
-        
+
         self.ui_manager.draw_ui(self.window_surface)
-        
+
         pygame.display.update()
-    
+
     def __get_resolution(self) -> Tuple[int, int]:
         return pygame.display.get_window_size()

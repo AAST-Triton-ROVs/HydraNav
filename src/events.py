@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict
 
+
 class Event:
     def __init__(self, event_type: str, data: Any = None):
         self.event_type: str = event_type

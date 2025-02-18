@@ -1,10 +1,11 @@
 import sys
+from typing import Tuple
 import pygame
 from controller import Controller
 from events import EventDispatcher
 from gui import GUI
 from notifier import Notifier
-from logger import Logging
+from logger import logging
 from pi_telemetry import PiTelemetery
 from rov import ROV
 
@@ -15,17 +16,52 @@ class GCS:
 
         self.clock = pygame.time.Clock()
         self.dispatcher = EventDispatcher()
-        self.logging = Logging()
 
         # self.gui = GUI(self.dispatcher, self.logging)
-        self.controller = Controller(self.dispatcher, self.logging)
-        self.notifier = Notifier(self.dispatcher, self.logging)
-        self.pi_telemetery = PiTelemetery(self.dispatcher, self.logging)
-        self.rov = ROV(self.dispatcher, self.logging)
+        self.controller = Controller(self.dispatcher)
+        self.notifier = Notifier(self.dispatcher)
+        self.pi_telemetery = PiTelemetery(self.dispatcher)
+        self.rov = ROV(self.dispatcher)
 
         self.controller.update_connection_status()
 
-        self.dispatcher.subscribe("controller_button", self.on_controller_button)
+        self.dispatcher.subscribe(
+            "controller_button",
+            self.on_controller_button,
+        )
+        self.dispatcher.subscribe(
+            "controller_joysticks",
+            self.handle_controller_joysticks,
+        )
+
+    def handle_controller_joysticks(self, move: Tuple[float, float, float, float]):
+        x, y, z, w = move
+
+        if x == y == z == w == 0:
+            self.rov.stop_movement()
+            return
+
+        if x > y:
+            if y > 0:
+                self.rov.move_lateral_right()
+            elif y < 0:
+                self.rov.move_forward()
+        else:
+            if x > 0:  # joystick to the bottom
+                self.rov.move_backward()
+            elif x < 0:
+                self.rov.move_lateral_left()
+
+        if z > w:
+            if z > 0:  # joystick to the left
+                self.rov.move_yaw_right()
+            elif z < 0:
+                self.rov.move_up()
+        else:
+            if w > 0:  # joystick to the bottom
+                self.rov.move_down()
+            elif w < 0:
+                self.rov.move_yaw_left()
 
     def on_controller_button(self, button: set):
         match button:

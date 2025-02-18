@@ -37,6 +37,7 @@ class ROVNotification:
 
         return self.priority < other.priority
 
+
 # SYSTEM CRITICAL
 class VehicleDisconnected(ROVNotification):
     def __init__(self):
@@ -57,11 +58,13 @@ class Disarmed(ROVNotification):
     def __init__(self):
         super().__init__(4)
 
+
 # CHANGE OF STATE
 class GainChange(ROVNotification):
     def __init__(self, new_gain: int):
         super().__init__(10)
         self.new_gain = new_gain
+
 
 class SystemModeChanged(ROVNotification):
     def __init__(self, mode: SystemModes):

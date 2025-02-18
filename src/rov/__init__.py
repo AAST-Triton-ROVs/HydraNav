@@ -1,7 +1,7 @@
 from queue import PriorityQueue, Queue
 from typing import Tuple
 from events import EventDispatcher
-from logger import Logging
+from logger import logging
 from rov.daemon import ROVConnectionDaemon
 from rov.enums import Directions, ControlChannels
 from rov.gripper import Gripper
@@ -24,62 +24,28 @@ class ROV:
     def __init__(
         self,
         dispatcher: EventDispatcher,
-        logging: Logging,
-        ip: str = "0.0.0.0",
-        port: int = 2000,
-        gripper_port: int = 2500,
+        address: Tuple[str, int] = ("0.0.0.0", 2000),
+        gripper_address: Tuple[str, int] = ("192.168.1.100", 2500),
     ):
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)
         self.__notification_queue: PriorityQueue[ROVNotification] = PriorityQueue()
 
         self.__dispatcher = dispatcher
-        self.__logging = logging
-        self.__ip = ip
-        self.__port = port
 
         self.__connection_daemon = ROVConnectionDaemon(
             self.__movement_queue,
             self.__command_queue,
             self.__notification_queue,
-            self.__ip,
-            self.__port,
-            self.__logging,
+            address,
         )
         self.__connection_daemon.start()
 
-        self.gripper = Gripper(self.__logging, self.__ip, gripper_port)
-
-        self.__dispatcher.subscribe("controller_joysticks", self.__handle_joysticks)
-
-    def __handle_joysticks(self, move: Tuple[float, float, float, float]):
-        x, y, z, w = move
-
-        if x == y == z == w == 0:
-            self.stop_movement()
-            return
-
-        if x > y:
-            if y > 0:
-                self.move_lateral_right()
-            elif y < 0:
-                self.move_forward()
-        else:
-            if x > 0:  # joystick to the bottom
-                self.move_backward()
-            elif x < 0:
-                self.move_lateral_left()
-
-        if z > w:
-            if z > 0:  # joystick to the left
-                self.move_yaw_right()
-            elif z < 0:
-                self.move_up()
-        else:
-            if w > 0:  # joystick to the bottom
-                self.move_down()
-            elif w < 0:
-                self.move_yaw_left()
+        self.gripper = Gripper(
+            address[0],
+            gripper_address[0],
+            gripper_address[1],
+        )
 
     def __move(self, channel: ControlChannels, direction: Directions):
         self.__movement_queue.put(ROVMovement(channel, direction))

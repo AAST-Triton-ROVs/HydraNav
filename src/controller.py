@@ -8,7 +8,7 @@ import jsonschema.exceptions
 import pygame
 
 from events import EventDispatcher
-from logger import Logging
+from logger import logging
 
 __exports__ = ["Controller"]
 
@@ -81,14 +81,12 @@ class Controller:
     def __init__(
         self,
         dispatcher: EventDispatcher,
-        logging: Logging,
         deadzone_factor: float = 2,
         joystick_roundoff: int = 1,
         joystick_multiplier: int = 100,
     ) -> None:
         pygame.joystick.init()
         self.__dispatcher = dispatcher
-        self.__logging = logging
         self.__deadzone: float = 0.5
         self.__deadzone_factor: float = deadzone_factor
         self.__joystick_roundoff: int = joystick_roundoff
@@ -260,7 +258,7 @@ class Controller:
                     pygame.joystick.init()
                     self.__joystick = pygame.joystick.Joystick(event.device_index)
                     self.__dispatcher.dispatch("controller_connected")
-                    self.__logging.logger.info("Controller connected")
+                    logging.logger.info("Controller connected")
                     self.autoload_config()
                     self.calibrate()
                     return
@@ -268,7 +266,7 @@ class Controller:
                     if self.__joystick is not None:
                         self.__joystick.quit()
                     self.__dispatcher.dispatch("controller_disconnected")
-                    self.__logging.logger.info("Controller disconnected")
+                    logging.logger.info("Controller disconnected")
                     return
         except Exception:
             return self.update_connection_status()
@@ -308,7 +306,7 @@ class Controller:
         max_axis_value = max(abs(value) for value in axes_values)
         deadzone = max_axis_value * self.__deadzone_factor
 
-        self.__logging.logger.success(f"Controller deadzones calculated: {deadzone}")
+        logging.logger.success(f"Controller deadzones calculated: {deadzone}")
 
         return deadzone
 
@@ -353,7 +351,7 @@ class Controller:
             value = self.__joystick.get_axis(axis_index)
             if value > 0.5:
                 self.__dispatcher.dispatch("controller_button", trigger_name)
-                self.__logging.logger.info(f"Controller trigger {trigger_name} pressed")
+                logging.logger.info(f"Controller trigger {trigger_name} pressed")
 
             self.__previous_trigger_value = value
 
@@ -381,11 +379,11 @@ class Controller:
         print(self.__library_button_mappings)
         button_mapping = self.__library_button_mappings.get(buttons_pressed)
         if button_mapping is None:
-            self.__logging.logger.error(f"{buttons_pressed} is not mapped to anything")
+            logging.logger.error(f"{buttons_pressed} is not mapped to anything")
             return
 
         self.__dispatcher.dispatch("controller_button", button_mapping)
-        self.__logging.logger.info(f"Controller buttons pressed: {button_mapping}")
+        logging.logger.info(f"Controller buttons pressed: {button_mapping}")
 
     def __process_hat(self) -> None:
         """
@@ -418,7 +416,7 @@ class Controller:
             print(self.__library_hat_mappings)
 
             self.__dispatcher.dispatch("controller_button", controller_button)
-            self.__logging.logger.info(f"Controller hat pressed: {controller_button}")
+            logging.logger.info(f"Controller hat pressed: {controller_button}")
 
             self.__previous_hat_value = (int(direction[0]), int(direction[1]))
 
@@ -462,9 +460,9 @@ class Controller:
         for name, config in zip(names, configs):
             self.__config_library[name] = config
 
-        self.__logging.logger.success("Loaded config library")
+        logging.logger.success("Loaded config library")
 
-        self.__logging.logger.debug(f"{self.__config_library = }")
+        logging.logger.debug(f"{self.__config_library = }")
 
     def __generate_library_mappings(self):
         if not self.__current_config_name:
@@ -502,9 +500,7 @@ class Controller:
         try:
             jsonschema.validate(config, CONFIG_SCHEMA)
         except jsonschema.exceptions.ValidationError as err:
-            self.__logging.logger.error(
-                f"Controller invalid configuration; err msg: {err}"
-            )
+            logging.logger.error(f"Controller invalid configuration; err msg: {err}")
             return False
         else:
             return True
@@ -530,9 +526,7 @@ class Controller:
                 try:
                     data = json.load(f)
                 except json.JSONDecodeError as err:
-                    self.__logging.logger.error(
-                        f"Config decoding error; err msg: {err}"
-                    )
+                    logging.logger.error(f"Config decoding error; err msg: {err}")
                     continue
                 else:
                     if self.__validate_configuration(data):
@@ -614,14 +608,12 @@ class Controller:
                 and config["axes"] == num_axes
             ):
                 self.__current_config_name = name
-                self.__logging.logger.info(
-                    f"Autoloaded {name} as the current configuration"
-                )
+                logging.logger.info(f"Autoloaded {name} as the current configuration")
                 config_found = True
                 break
 
         if not config_found:
-            self.__logging.logger.warning(
+            logging.logger.warning(
                 f"{pygame_name} with {num_buttons} buttons, {num_hats} hats and {num_axes} axes is not a known controller type, using similar config"
             )
             for name, config in self.__config_library.items():
@@ -631,7 +623,7 @@ class Controller:
                     and config["axes"] == num_axes
                 ):
                     self.__current_config_name = name
-                    self.__logging.logger.info(
+                    logging.logger.info(
                         f"Autoloaded similar config {name} as the current configuration"
                     )
                     break
