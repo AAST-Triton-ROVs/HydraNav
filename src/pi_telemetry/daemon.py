@@ -5,48 +5,52 @@ from threading import Thread
 import time
 from typing import Optional
 from logger import logging
-from pi_telemetry.data import TelemeteryData
+from pi_telemetry.data import TelemetryData
+
+BUFFER_SIZE = struct.calcsize("i" * 8)
+RECONNECT_DELAY = 2
 
 
 class TelemetryDaemon(Thread):
-    def __init__(self, queue: queue.Queue, host: str, port: int):
+    def __init__(self, queue: queue.Queue, base_ip: str, port: int):
         super().__init__(daemon=True)
-        self.host = host
-        self.port = port
+        self.address = (base_ip, port)
         self.server_socket: Optional[socket.socket] = None
+
         self.queue = queue
+
+    def __bind_socket(self):
+        while True:
+            try:
+                self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.server_socket.bind(self.address)
+                logging.logger.success(
+                    f"Telemetry daemon bound to {self.address[0]}:{self.address[1]}"
+                )
+                return
+            except socket.error as e:
+                logging.logger.error(f"Telemetry daemon bounding error: {e}, retrying")
+                time.sleep(RECONNECT_DELAY)
 
     def close_connection(self):
         if self.server_socket:
             self.server_socket.close()
 
     def run(self):
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.__bind_socket()
         while True:
             try:
-                self.server_socket.bind((self.host, self.port))
-                break
-            except OSError:
-                logging.logger.error(
-                    f"Telemetery cannot bind socket to {self.host}:{self.port}, retrying"
-                )
-                time.sleep(1)
-
-        self.server_socket.listen()
-        logging.logger.info(f"Telemetery server listening on {self.host}:{self.port}")
-
-        buffer_size = struct.calcsize("i" * 8)
-        while True:
-            connection, addr = self.server_socket.accept()
-            logging.logger.debug(f"Telemetery accepted connection from {addr[0]}")
-
-            data = connection.recv(buffer_size)
-            logging.logger.info("Telemetry data packet recieved")
+                data, server = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
+                logging.logger.info(f"Telemetry data packet recieved from {server}")
+            except socket.error as e:
+                logging.logger.error(f"Telemetry daemon socket error: {e}")
+                self.close_connection()
+                self.__bind_socket()
+                continue
 
             unpacked_data = struct.unpack("i" * 8, data)
             self.queue.put(
-                TelemeteryData(
+                TelemetryData(
                     unpacked_data[0],
                     unpacked_data[1],
                     unpacked_data[2],

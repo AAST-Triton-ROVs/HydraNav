@@ -3,7 +3,7 @@ from typing import Tuple
 
 
 @dataclass
-class TelemeteryData:
+class TelemetryData:
     cpu_usage: int
     cpu_temp: int
     ram_usage: int

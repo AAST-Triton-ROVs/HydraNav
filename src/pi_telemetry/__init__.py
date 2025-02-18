@@ -2,7 +2,7 @@ import queue
 from queue import Queue
 from events import EventDispatcher
 from logger import Logging
-from pi_telemetry.data import TelemeteryData
+from pi_telemetry.data import TelemetryData
 from pi_telemetry.daemon import TelemetryDaemon
 
 __exports__ = ["Telemetery", "TelemeteryData"]
@@ -25,7 +25,7 @@ class PiTelemetery:
 
     def update(self):
         try:
-            recieved_data: TelemeteryData = self.__queue.get(block=False)
+            recieved_data: TelemetryData = self.__queue.get(block=False)
         except queue.Empty:
             return
         else:

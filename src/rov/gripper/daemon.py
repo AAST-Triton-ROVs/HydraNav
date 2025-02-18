@@ -2,10 +2,11 @@ from queue import Queue
 import socket
 import struct
 from threading import Thread
-import time
-from typing import Tuple
-from logger import logging
 from rov.enums import GripperCommands
+from logger import logging
+import time
+
+RECONNECT_DELAY = 2
 
 
 class GripperDaemon(Thread):
@@ -14,25 +15,38 @@ class GripperDaemon(Thread):
     ):
         super().__init__(daemon=True)
         self.__command_queue = gripper_queue
-        self.__address = (base_ip, port)
         self.__pi_address = pi_ip, port
+        self.__address = base_ip, port
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    def run(self):
+    def __bind_socket(self):
         while True:
-            self.server_socket.bind(self.__address)
-            while True:
-                try:
-                    self.server_socket.connect(self.__address)
-                    break
-                except socket.error:
-                    logging.logger.error(
-                        f"Failed to connect to {self.__address[0]}:{self.__address[1]}"
-                    )
-                    time.sleep(1)
+            try:
+                self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.server_socket.bind(self.__address)
+                logging.logger.success(
+                    f"Gripper daemon bound to {self.__address[0]}:{self.__address[1]}"
+                )
+                return
+            except socket.error as e:
+                logging.logger.error(f"Gripper daemon bounding error: {e}, retrying")
+                time.sleep(RECONNECT_DELAY)
 
+    def close_connection(self):
+        if self.server_socket:
+            self.server_socket.close()
+
+    def run(self):
+        self.__bind_socket()
+        while True:
             if not self.__command_queue.empty():
                 command = self.__command_queue.get()
                 data = struct.pack("i", command.value)
-                self.server_socket.sendto(data, self.__pi_address)
+                try:
+                    self.server_socket.sendto(data, self.__pi_address)
+                except socket.error as e:
+                    logging.logger.error(f"Gripper daemon socket error: {e}")
+                    self.close_connection()
+                    self.__bind_socket()
+                    continue
