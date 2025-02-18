@@ -25,7 +25,7 @@ class ROV:
         self,
         dispatcher: EventDispatcher,
         address: Tuple[str, int] = ("0.0.0.0", 2000),
-        gripper_address: Tuple[str, int] = ("192.168.1.100", 2500),
+        gripper_address: Tuple[str, int] = ("192.168.1.100", 2005),
     ):
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)

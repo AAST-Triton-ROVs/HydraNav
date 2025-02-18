@@ -13,7 +13,7 @@ class PiTelemetery:
         self,
         dispatcher: EventDispatcher,
         host: str = "0.0.0.0",
-        port=2500,
+        port=2010,
     ):
         self.__dispatcher = dispatcher
         self.__host = host
