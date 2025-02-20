@@ -21,6 +21,7 @@ class GCS:
         self.controller = Controller(self.dispatcher)
         self.notifier = Notifier(self.dispatcher)
         self.pi_telemetery = PiTelemetery(self.dispatcher)
+        
         self.rov = ROV(self.dispatcher)
 
         self.controller.update_connection_status()

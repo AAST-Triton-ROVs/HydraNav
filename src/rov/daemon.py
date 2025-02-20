@@ -34,7 +34,7 @@ class ROVConnectionDaemon(Thread):
     [x] Send heartbeats
     [x] Stablize/destablize
     [x] Recieve ACK messages
-    [ ] Gripper Control
+    [X] Gripper Control
     [ ] Configure Ardusub parameters (FS_GCS_ENABLE, FS_LEAK_ENABLE, FS_PILOT_INPUT, FS_PILOT_TIMEOUT) [Read/write parameters]
     [ ] Pixhwak sensor readings (pressure, velocity, aceleration, leakage)
 
