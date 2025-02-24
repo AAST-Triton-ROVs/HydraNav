@@ -8,15 +8,14 @@ Revolutionary GCS from TritonROVs
 | 2015 | admin-daemon |
 
 # TODO:
-[ ] Add new ROV motor control backend
-    
+- [ ] Add new ROV motor control backend
+
     - Use MANUAL_CONTROL and send joystick values
-    - Set gain using MOT_GAIN
     - add command to change control backend on the fly
 
-[ ] Add toggle function for system state amd flight mode
-[ ] Support controller double pressing buttons
-[ ] Set autopilot parameters:
+- [ ] Add toggle function for system state and flight mode
+- [ ] Support controller double pressing buttons
+- [ ] Set autopilot parameters:
 
     - FRAME_CONFIG
     - FS_LEAK_ENABLE
@@ -25,3 +24,4 @@ Revolutionary GCS from TritonROVs
     - LEAK1_PIN
     - LEAK1_LOGIC
     - LOG_BACKEND_TYPE
+- [ ] Create testing infrastructure

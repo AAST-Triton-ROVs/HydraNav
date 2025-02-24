@@ -1,6 +1,6 @@
 {
   "displayName": "8BitDo 2C Ultimate Bluetooth",
-  "pygameName": "8BitDo Ultimate 2C Wireless Controller",
+  "pygameName": "8BitDo Ultimate 2C Wireless",
   "buttons": 16,
   "axes": 6,
   "hats": 1,

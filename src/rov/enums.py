@@ -51,7 +51,7 @@ class SystemModes(Enum):
 
 
 class GripperCommands(Enum):
-    RESET = 0
+    RESET = 100
     OPEN = 1
     CLOSE = -1
     PITCH_UP = 2

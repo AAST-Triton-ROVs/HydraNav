@@ -30,10 +30,10 @@ class GCS:
             "controller_button",
             self.on_controller_button,
         )
-        self.dispatcher.subscribe(
-            "controller_joysticks",
-            self.handle_controller_joysticks,
-        )
+        # self.dispatcher.subscribe(
+        #     "controller_joysticks",
+        #     self.handle_controller_joysticks,
+        # )
 
     def handle_controller_joysticks(self, move: Tuple[float, float, float, float]):
         x, y, z, w = move
@@ -46,7 +46,7 @@ class GCS:
             if y > 0:
                 self.rov.move_lateral_right()
             elif y < 0:
-                self.rov.move_forward()
+                self.rov.move_forward() 
         else:
             if x > 0:  # joystick to the bottom
                 self.rov.move_backward()
@@ -64,10 +64,11 @@ class GCS:
             elif w < 0:
                 self.rov.move_yaw_left()
 
-    def on_controller_button(self, button: set):
+    def on_controller_button(self, button: str):
+        print(button)
         match button:
             case "L":
-                self.notifier.play("dua")
+                self.notifier.play("bolbol")
             case "M":
                 self.controller.calibrate()
             case "A":

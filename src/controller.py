@@ -1,7 +1,7 @@
 import glob
 import json
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 import jsonschema
 import jsonschema.exceptions
@@ -71,11 +71,8 @@ class Controller:
         - `controller_waiting_connection`: When the controller is not connected.
         - `controller_connected`: When the controller is connected.
         - `controller_disconnected`: When the controller is disconnected.
-        - `controller_joystick`: Dispatched with a tuple of (x, y, z, w) values.
-        - `controller_left_joystick`: Dispatched with a tuple of (x, y) values.
-        - `controller_right_joystick`: Dispatched with a tuple of (x, y) values.
+        - `controller_joysticks`: Dispatched with a tuple of (x, y, z, w) values.
         - `controller_button`: Dispatched when button is pressed, with the button index.
-        - `controller_hat`: Dispatched when hat button is pressed, with the hat direction as tuple.
     """
 
     def __init__(
@@ -93,7 +90,8 @@ class Controller:
         self.__joystick_multiplier: int = joystick_multiplier
         self.__joystick: Optional[pygame.joystick.JoystickType] = None
 
-        self.__previous_hat_value = (0, 0)
+        self.__previous_hat_value: Tuple[int, int] = (0, 0)
+        self.__previous_trigger_value: float = 0.0
 
         self.__config_library: dict[str, dict] = {}
         self.__current_config_name: Optional[str] = None
@@ -208,10 +206,8 @@ class Controller:
             - "controller_waiting_connection": When the controller is not connected.
             - "controller_connected": When the controller is connected.
             - "controller_disconnected": When the controller is disconnected.
-            - "controller_left_joystick": When the left joystick is moved.
-            - "controller_right_joystick": When the right joystick is moved.
+            - "controller_joysticks": When the left joystick is moved.
             - "controller_button": When a button is pressed.
-            - "controller_hat": When the hat is moved.
 
         Returns:
             bool: True if the controller is connected and input events are processed successfully,
@@ -317,8 +313,7 @@ class Controller:
         This method retrieves the current axes values from the joystick, applies a deadzone filter
         to each axis value, and then maps the filtered values to specific axes (x, y, z, w). It
         dispatches two events:
-        - "controller_left_joystick" with a tuple of (x, y) values.
-        - "controller_right_joystick" with a tuple of (z, w) values.
+        - "controller_joysticks" with a tuple of (z, w) values.
 
         Returns:
             None
@@ -349,8 +344,8 @@ class Controller:
 
         for axis_index, trigger_name in self.__library_trigger_mappings.items():
             value = self.__joystick.get_axis(axis_index)
-            if value > 0.5:
-                self.__dispatcher.dispatch("controller_button", trigger_name)
+            if value > 0.5 and self.__previous_trigger_value <= 0.5:
+                self.__dispatcher.dispatch("controller_button_down", trigger_name)
                 logging.logger.info(f"Controller trigger {trigger_name} pressed")
 
             self.__previous_trigger_value = value
@@ -369,21 +364,31 @@ class Controller:
         if self.__joystick is None:
             return
 
-        buttons_pressed = frozenset(
+        buttons_pressed_down = frozenset(
             {e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONDOWN])}
         )
+        buttons_pressed_up = frozenset(
+            {e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONUP])}
+        )
 
-        if len(buttons_pressed) == 0:
+        if len(buttons_pressed_down) == 0 and len(buttons_pressed_up) == 0:
             return
 
-        print(self.__library_button_mappings)
-        button_mapping = self.__library_button_mappings.get(buttons_pressed)
-        if button_mapping is None:
-            logging.logger.error(f"{buttons_pressed} is not mapped to anything")
+        button_down_mapping = self.__library_button_mappings.get(buttons_pressed_down)
+        if button_down_mapping is None:
+            logging.logger.error(f"{buttons_pressed_down} is not mapped to anything")
             return
 
-        self.__dispatcher.dispatch("controller_button", button_mapping)
-        logging.logger.info(f"Controller buttons pressed: {button_mapping}")
+        button_up_mapping = self.__library_button_mappings.get(buttons_pressed_up)
+        if button_down_mapping is None:
+            logging.logger.error(f"{buttons_pressed_up} is not mapped to anything")
+            return
+
+        self.__dispatcher.dispatch("controller_button_down", button_down_mapping)
+        self.__dispatcher.dispatch("controller_button_up", button_up_mapping)
+        logging.logger.info(
+            f"Controller buttons pressed: down -> {button_down_mapping}, up -> {button_up_mapping}"
+        )
 
     def __process_hat(self) -> None:
         """
