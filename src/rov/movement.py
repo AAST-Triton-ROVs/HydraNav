@@ -1,13 +1,23 @@
-from rov.enums import ControlChannels, Directions
 
 
 class ROVMovement:
-    def __init__(self, channel: ControlChannels, direction: Directions):
-        self.channel = channel
-        self.direction = direction
+    def __init__(
+        self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
+    ):
+        self.forward = forward
+        self.lateral = lateral
+        self.throttle = throttle
+        self.yaw = yaw
+        self.roll = roll
 
     def __eq__(self, value):
         if not isinstance(value, ROVMovement):
             return False
 
-        return self.channel == value.channel and self.direction == value.direction
+        return (
+            self.forward == value.forward
+            and self.lateral == value.lateral
+            and self.throttle == value.throttle
+            and self.yaw == value.yaw
+            and self.roll == value.roll
+        )

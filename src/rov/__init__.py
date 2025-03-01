@@ -1,9 +1,8 @@
 from queue import PriorityQueue, Queue
 from typing import Tuple
 from events import EventDispatcher
-from logger import logging
-from rov.daemon import ROVConnectionDaemon
-from rov.enums import Directions, ControlChannels
+from numpy import interp
+from rov.daemon_full import ROVConnectionDaemonFull
 from rov.gripper import Gripper
 from rov.movement import ROVMovement
 from rov.command import ROVCommands
@@ -33,7 +32,7 @@ class ROV:
 
         self.__dispatcher = dispatcher
 
-        self.__connection_daemon = ROVConnectionDaemon(
+        self.__connection_daemon = ROVConnectionDaemonFull(
             self.__movement_queue,
             self.__command_queue,
             self.__notification_queue,
@@ -47,8 +46,17 @@ class ROV:
             gripper_address[1],
         )
 
-    def __move(self, channel: ControlChannels, direction: Directions):
-        self.__movement_queue.put(ROVMovement(channel, direction))
+    def __move(self,  forward: float, lateral: float, throttle: float, yaw: float, roll: float):
+        self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll))
+        
+    def move(self, forward: float, lateral: float, throttle: float, yaw: float, roll: float, min_joy_value: int =  -100, max_joy_value: int = 100):
+        self.__move(
+            interp(forward, [min_joy_value, max_joy_value], [-1.0, 1.0]),
+            interp(lateral, [min_joy_value, max_joy_value], [-1.0, 1.0]),
+            interp(throttle, [min_joy_value, max_joy_value], [-1.0, 1.0]),
+            interp(yaw, [min_joy_value, max_joy_value], [-1.0, 1.0]),
+            interp(roll, [min_joy_value, max_joy_value], [-1.0, 1.0]),
+        )
 
     def __command(self, command: ROVCommands):
         self.__command_queue.put(command)
@@ -70,39 +78,6 @@ class ROV:
 
     def flight_mode_stabilize(self):
         self.__command(ROVCommands.SYSTEM_MODE_STABILIZE)
-
-    def stop_movement(self):
-        self.__move(ControlChannels.FORWARD, Directions.NEUTRAL)
-
-    def move_roll_right(self):
-        self.__move(ControlChannels.ROLL, Directions.POSITIVE)
-
-    def move_roll_left(self):
-        self.__move(ControlChannels.ROLL, Directions.NEGATIVE)
-
-    def move_up(self):
-        self.__move(ControlChannels.THROTTLE, Directions.POSITIVE)
-
-    def move_down(self):
-        self.__move(ControlChannels.THROTTLE, Directions.NEGATIVE)
-
-    def move_yaw_right(self):
-        self.__move(ControlChannels.YAW, Directions.POSITIVE)
-
-    def move_yaw_left(self):
-        self.__move(ControlChannels.YAW, Directions.NEGATIVE)
-
-    def move_forward(self):
-        self.__move(ControlChannels.FORWARD, Directions.POSITIVE)
-
-    def move_backward(self):
-        self.__move(ControlChannels.FORWARD, Directions.NEGATIVE)
-
-    def move_lateral_right(self):
-        self.__move(ControlChannels.LATERAL, Directions.POSITIVE)
-
-    def move_lateral_left(self):
-        self.__move(ControlChannels.LATERAL, Directions.NEGATIVE)
 
     def update(self):
         while not self.__notification_queue.empty():

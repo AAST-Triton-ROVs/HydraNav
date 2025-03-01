@@ -2,6 +2,7 @@ from queue import PriorityQueue, Queue
 from threading import Thread
 import time
 from typing import Tuple
+from numpy import interp
 from pymavlink import mavutil  # type: ignore
 
 from logger import logging
@@ -26,7 +27,7 @@ GAIN_LEVELS = (25, 40, 50, 75, 90)
 TIME_OUT_SEC = 2
 
 
-class ROVConnectionDaemon(Thread):
+class ROVConnectionDaemonFull(Thread):
     """
     TODO:
     [x] Set gain
@@ -139,10 +140,38 @@ class ROVConnectionDaemon(Thread):
     def get_gain(self):
         return GAIN_LEVELS[self.__gain_index]
 
-    def move(self, channel: ControlChannels, direction: Directions):
+    def __get_scaled_pwm(self, value: float) -> int:
+        if value > 0:
+            direction = Directions.POSITIVE
+        elif value < 0:
+            direction = Directions.NEGATIVE
+        else:
+            direction = Directions.NEUTRAL
+
+        return self.__percent_to_pwm(
+            int(interp(abs(value), [0, 1.0], [0, GAIN_LEVELS[self.__gain_index]])),
+            direction,
+        )
+
+    def move(
+        self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
+    ):
         rc_channel_values = [NEUTRAL_PWM for _ in range(8)]
-        pwm = self.__percent_to_pwm(GAIN_LEVELS[self.__gain_index], direction)
-        rc_channel_values[channel.value - 1] = pwm
+
+        forward_pwm = self.__get_scaled_pwm(forward)
+        rc_channel_values[ControlChannels.FORWARD.value - 1] = forward_pwm
+
+        lateral_pwm = self.__get_scaled_pwm(lateral)
+        rc_channel_values[ControlChannels.LATERAL.value - 1] = lateral_pwm
+
+        throttle_pwm = self.__get_scaled_pwm(throttle)
+        rc_channel_values[ControlChannels.THROTTLE.value - 1] = throttle_pwm
+
+        yaw_pwm = self.__get_scaled_pwm(yaw)
+        rc_channel_values[ControlChannels.YAW.value - 1] = yaw_pwm
+
+        roll_pwm = self.__get_scaled_pwm(roll)
+        rc_channel_values[ControlChannels.ROLL.value - 1] = roll_pwm
 
         logging.logger.debug(f"ROV {rc_channel_values = }")
 
@@ -153,7 +182,7 @@ class ROVConnectionDaemon(Thread):
         )
 
         logging.logger.info(
-            f"{channel.name} is set to {pwm} in {direction.name} direction"
+            f"Moved ROV with values: forward={forward_pwm}, lateral={lateral_pwm}, throttle={throttle_pwm}, yaw={yaw_pwm}, roll={roll_pwm}"
         )
 
     def recieve_heartbeat(self) -> bool:
@@ -221,7 +250,13 @@ class ROVConnectionDaemon(Thread):
                     previous_movement != action
                     or time.monotonic() - self.__time_since_last_movement >= 0.9
                 ):
-                    self.move(action.channel, action.direction)
+                    self.move(
+                        action.forward,
+                        action.lateral,
+                        action.throttle,
+                        action.yaw,
+                        action.roll,
+                    )
                     previous_movement = action
                     self.__time_since_last_movement = time.monotonic()
 
