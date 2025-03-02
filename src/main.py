@@ -115,9 +115,10 @@ class GCS:
             #     self.clock.tick(60) / 1000.0
             # )  # .tick return the time sinze last frame in milliseconds so we must divide it by 1000.0
 
-            self.controller.update()
             # self.gui.update(time_delta)
+            self.controller.update()
             self.pi_telemetery.update()
+            self.manfaloty.update()
 
             if not self.companion_mode:
                 self.autopilot.update()
