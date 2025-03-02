@@ -505,7 +505,7 @@ class Controller:
         try:
             jsonschema.validate(config, CONFIG_SCHEMA)
         except jsonschema.exceptions.ValidationError as err:
-            logging.logger.error(f"Controller invalid configuration; err msg: {err}")
+            logging.logger.error(f"Controller invalid configuration {config}; err msg: {err}")
             return False
         else:
             return True

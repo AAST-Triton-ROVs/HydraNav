@@ -43,7 +43,7 @@
     },
     "L2": {
       "type": "trigger",
-      "axis": 2
+      "axis": [2]
     },
     "L3": {
       "type": "button",
@@ -63,7 +63,7 @@
     },
     "R2": {
       "type": "trigger",
-      "axis": 5
+      "axis": [5]
     },
     "R3": {
       "type": "button",
