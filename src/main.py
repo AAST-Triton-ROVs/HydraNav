@@ -51,7 +51,7 @@ class GCS:
         self.controller.update_connection_status()
 
         self.dispatcher.subscribe(
-            "controller_button",
+            "controller_button_down",
             self.on_controller_button,
         )
         if not self.companion_mode:
