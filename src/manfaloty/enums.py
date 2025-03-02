@@ -1,0 +1,17 @@
+from enum import Enum
+
+
+class ManfalotyCommands(Enum):
+    GRIPPER_JAW_CLOSE = 1
+    GRIPPER_JAW_OPEN = -1
+    GRIPPER_PITCH_UP = 2
+    GRIPPER_PITCH_DOWN = -2
+    GRIPPER_ROLL_RIGHT = 3
+    GRIPPER_ROLL_LEFT = -3
+    CAMERA_PITCH_UP = 4
+    CAMERA_PITCH_DOWN = -4
+    PUMP_ON = 5
+    PUMP_OFF = -5
+    PH_SENSOR_READ = 6
+    RESET_MOTORS = 100
+    RESTART_ARDUINO = 1000

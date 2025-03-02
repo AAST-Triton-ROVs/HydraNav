@@ -48,13 +48,3 @@ class SystemModes(Enum):
     SURFACE = 9
     POSHOLD = 16
     MANUAL = 19
-
-
-class GripperCommands(Enum):
-    RESET = 100
-    OPEN = 1
-    CLOSE = -1
-    PITCH_UP = 2
-    PITCH_DOWN = -2
-    ROLL_RIGHT = 3
-    ROLL_LEFT = -3

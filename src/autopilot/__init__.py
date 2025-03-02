@@ -3,7 +3,6 @@ from typing import Tuple
 from events import EventDispatcher
 from numpy import interp
 from autopilot.daemon_full import AutopilotConnectionDaemonFull
-from autopilot.gripper import Gripper
 from autopilot.movement import ROVMovement
 from autopilot.command import ROVCommands
 from autopilot.notification import (
@@ -24,7 +23,6 @@ class Autopilot:
         self,
         dispatcher: EventDispatcher,
         address: Tuple[str, int] = ("0.0.0.0", 2000),
-        gripper_address: Tuple[str, int] = ("192.168.1.100", 2005),
     ):
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)
@@ -39,12 +37,6 @@ class Autopilot:
             address,
         )
         self.__connection_daemon.start()
-
-        self.gripper = Gripper(
-            address[0],
-            gripper_address[0],
-            gripper_address[1],
-        )
 
     def __move(self,  forward: float, lateral: float, throttle: float, yaw: float, roll: float):
         self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll))

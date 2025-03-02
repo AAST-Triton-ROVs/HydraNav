@@ -4,6 +4,7 @@ import pygame
 from controller import Controller
 from events import EventDispatcher
 from gui import GUI
+from manfaloty import Manfaloty
 from notifier import Notifier
 from logger import logging
 from pi_telemetry import PiTelemetery
@@ -23,6 +24,7 @@ class GCS:
         self.pi_telemetery = PiTelemetery(self.dispatcher)
         
         self.autopilot = Autopilot(self.dispatcher)
+        self.manfaloty = Manfaloty(self.dispatcher)
 
         self.controller.update_connection_status()
 
@@ -60,17 +62,17 @@ class GCS:
             case "1":
                 self.autopilot.gain_down()
             case "R1":
-                self.autopilot.gripper.open()
+                self.manfaloty.gripper.open_jaws()
             case "L1":
-                self.autopilot.gripper.close()
+                self.manfaloty.gripper.close_jaws()
             case "R2":
-                self.autopilot.gripper.roll_right()
+                self.manfaloty.gripper.roll_right()
             case "L2":
-                self.autopilot.gripper.roll_left()
-            case "2" | "R4":
-                self.autopilot.gripper.pitch_up()
-            case "4" | "L4":
-                self.autopilot.gripper.pitch_down()
+                self.manfaloty.gripper.roll_left()
+            case "R4":
+                self.manfaloty.gripper.pitch_up()
+            case "L4":
+                self.manfaloty.gripper.pitch_down()
 
     def run(self):
         while True:
