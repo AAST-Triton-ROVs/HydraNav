@@ -18,6 +18,7 @@ class ManfalotyDaemon(Thread):
         self,
         command_queue: Queue[ManfalotyCommands],
         data_queue: Queue[ManfalotyData],
+        base_ip: str,
         pi_ip: str,
         port: int,
     ):
@@ -66,7 +67,7 @@ class ManfalotyDaemon(Thread):
                 continue
             else:
                 logging.logger.info(f"Recieved {ph_value} from {client[0]}:{client[1]}")
-                self.__data_queue.put(PHReading(ph_value))
+                self.__data_queue.put(PHReading(ph_value[0]))
 
 
             if self.__command_queue.empty():

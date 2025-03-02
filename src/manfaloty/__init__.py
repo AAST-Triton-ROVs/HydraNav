@@ -1,6 +1,4 @@
 from queue import Queue
-from typing import Tuple
-
 from events import EventDispatcher
 from manfaloty.daemon import ManfalotyDaemon
 from manfaloty.data import ManfalotyData, PHReading
@@ -56,6 +54,7 @@ class Manfaloty:
     def __init__(
         self,
         dispatcher: EventDispatcher,
+        base_ip: str = "0.0.0.0",
         pi_ip: str = "192.168.1.100",
         port: int = 2005,
     ):
@@ -63,7 +62,9 @@ class Manfaloty:
         self.__data_queue: Queue[ManfalotyData] = Queue(1)
         self.__dispatcher = dispatcher
 
-        self.__daemon = ManfalotyDaemon(self.__command_queue, self.__data_queue, pi_ip, port)
+        self.__daemon = ManfalotyDaemon(
+            self.__command_queue, self.__data_queue, base_ip, pi_ip, port
+        )
         self.__daemon.start()
 
         self.gripper = self.Gripper(self)
@@ -78,7 +79,7 @@ class Manfaloty:
 
     def reset_motors(self):
         self.__send_command(ManfalotyCommands.RESET_MOTORS)
-        
+
     def update(self):
         if not self.__data_queue.empty():
             data = self.__data_queue.get()

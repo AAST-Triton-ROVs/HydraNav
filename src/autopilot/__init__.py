@@ -22,7 +22,8 @@ class Autopilot:
     def __init__(
         self,
         dispatcher: EventDispatcher,
-        address: Tuple[str, int] = ("0.0.0.0", 2000),
+        base_ip: str = "0.0.0.0", 
+        port: int = 2000,
     ):
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)
@@ -34,7 +35,8 @@ class Autopilot:
             self.__movement_queue,
             self.__command_queue,
             self.__notification_queue,
-            address,
+            base_ip,
+            port,
         )
         self.__connection_daemon.start()
 

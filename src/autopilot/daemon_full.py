@@ -46,12 +46,14 @@ class AutopilotConnectionDaemonFull(Thread):
         movement_queue: Queue[ROVMovement],
         command_queue: Queue[ROVCommands],
         notification_queue: PriorityQueue[ROVNotification],
-        address: Tuple[str, int],
+        base_ip: str,
+        port: int
     ):
         super().__init__(daemon=True)
         self.__gain_index = 0
 
-        self.__address = address
+        self.__base_ip = base_ip
+        self.__port = port
 
         self.__movement_queue: Queue[ROVMovement] = movement_queue
         self.__command_queue: Queue[ROVCommands] = command_queue
@@ -61,7 +63,7 @@ class AutopilotConnectionDaemonFull(Thread):
         self.__time_since_last_movement = time.monotonic()
 
         self.__master = mavutil.mavlink_connection(
-            f"udpin:{self.__address[0]}:{self.__address[1]}"
+            f"udpin:{self.__base_ip}:{self.__port}"
         )
 
     def __component_arm_disarm(self, act: int):
