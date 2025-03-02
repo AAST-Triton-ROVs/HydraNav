@@ -40,8 +40,8 @@ class TelemetryDaemon(Thread):
         self.__bind_socket()
         while True:
             try:
-                data, server = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
-                logging.logger.info(f"Telemetry data packet recieved from {server}")
+                data, client = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
+                logging.logger.info(f"Telemetry data packet recieved from {client}")
             except socket.error as e:
                 logging.logger.error(f"Telemetry daemon socket error: {e}")
                 self.close_connection()
