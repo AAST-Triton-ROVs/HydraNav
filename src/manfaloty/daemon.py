@@ -27,18 +27,16 @@ class ManfalotyDaemon(Thread):
         self.__data_queue = data_queue
         
         self.__pi_address = pi_ip, port
-        self.__address = "0.0.0.0", port
+        self.__address = base_ip, port
 
-        self.server_socket = self.__bind_socket()
+        self.__server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def __bind_socket(self):
-        if not self.server_socket.close():
-            return
         while True:
             try:
-                self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                self.server_socket.bind(self.__address)
-                self.server_socket.settimeout(SERVER_SOCKET_TIMEOUT)
+                self.__server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.__server_socket.bind(self.__address)
+                self.__server_socket.settimeout(SERVER_SOCKET_TIMEOUT)
                 logging.logger.success(
                     f"Manfaloty daemon bound to {self.__address[0]}:{self.__address[1]}"
                 )
@@ -48,19 +46,16 @@ class ManfalotyDaemon(Thread):
                 time.sleep(RECONNECT_DELAY)
 
     def close_connection(self):
-        if self.server_socket:
-            self.server_socket.close()
+        if self.__server_socket:
+            self.__server_socket.close()
 
     def run(self):
         self.__bind_socket()
         while True:
             try:
-                data, client = self.server_socket.recvfrom(PH_VALUE_SIZE)
+                data, client = self.__server_socket.recvfrom(PH_VALUE_SIZE)
                 ph_value = struct.unpack("f", data)
-            except socket.error as e:
-                logging.logger.error(f"Manfaloty daemon recvfrom error: {e}")
-                self.close_connection()
-                self.__bind_socket()
+            except socket.timeout:
                 continue
             except struct.error as e:
                 logging.logger.error(f"Manfaloty daemon unpack error: {e}")
@@ -76,7 +71,7 @@ class ManfalotyDaemon(Thread):
             command = self.__command_queue.get()
             data = struct.pack("i", command.value)
             try:
-                self.server_socket.sendto(data, self.__pi_address)
+                self.__server_socket.sendto(data, self.__pi_address)
             except socket.error as e:
                 logging.logger.error(f"Manfaloty daemon socket error: {e}")
                 self.close_connection()

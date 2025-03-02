@@ -9,21 +9,43 @@ from notifier import Notifier
 from logger import logging
 from pi_telemetry import PiTelemetery
 from autopilot import Autopilot
+import argparse
+
+DESCRIPTION = "HydraNav, a revolutionary Ground Control System (GCS) for underwater ROVs, providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features."
+
+
+def init_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument(
+        "-c",
+        "--companion",
+        help="Toggle companion mode",
+        action="store_true",
+    )
+    return parser
 
 
 class GCS:
     def __init__(self):
         pygame.init()
 
+        parser = init_parser()
+        args = parser.parse_args()
+        self.companion_mode = args.companion
+
         self.clock = pygame.time.Clock()
         self.dispatcher = EventDispatcher()
 
         # self.gui = GUI(self.dispatcher, self.logging)
         self.controller = Controller(self.dispatcher)
-        self.notifier = Notifier(self.dispatcher)
+        if not self.companion_mode:
+            self.notifier = Notifier(self.dispatcher)
+
         self.pi_telemetery = PiTelemetery(self.dispatcher)
-        
-        self.autopilot = Autopilot(self.dispatcher)
+
+        if not self.companion_mode:
+            self.autopilot = Autopilot(self.dispatcher)
+
         self.manfaloty = Manfaloty(self.dispatcher)
 
         self.controller.update_connection_status()
@@ -32,10 +54,11 @@ class GCS:
             "controller_button",
             self.on_controller_button,
         )
-        # self.dispatcher.subscribe(
-        #     "controller_joysticks",
-        #     self.handle_controller_joysticks,
-        # )
+        if not self.companion_mode:
+            self.dispatcher.subscribe(
+                "controller_joysticks",
+                self.handle_controller_joysticks,
+            )
 
     def handle_controller_joysticks(self, move: Tuple[float, float, float, float]):
         x, y, z, w = move
@@ -43,7 +66,19 @@ class GCS:
         self.autopilot.move(x, y, z, w, 0)
 
     def on_controller_button(self, button: str):
-        print(button)
+        if self.companion_mode:
+            match button:
+                case "L":
+                    self.notifier.play("bolbol")
+                case "M":
+                    self.controller.calibrate()
+                case "A":
+                    self.autopilot.arm()
+                case "B":
+                    self.autopilot.disarm()
+
+            return
+
         match button:
             case "L":
                 self.notifier.play("bolbol")
@@ -83,7 +118,9 @@ class GCS:
             self.controller.update()
             # self.gui.update(time_delta)
             self.pi_telemetery.update()
-            self.autopilot.update()
+
+            if not self.companion_mode:
+                self.autopilot.update()
 
             self.clock.tick(60)
 

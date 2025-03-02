@@ -2,7 +2,7 @@ from dimits import Dimits # type: ignore
 import tqdm # type: ignore
 
 
-dt = Dimits("en_US-hfc_female-medium")
+dt = Dimits("en_US-hfc_male-medium")
 
 with open("assets/audio/audio_lines") as file:
     lines = file.readlines()

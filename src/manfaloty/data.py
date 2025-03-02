@@ -1,16 +1,9 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 class ManfalotyData(ABC):
-    @abstractmethod
-    @property
-    def value(self):
-        pass
+    pass
 
 class PHReading(ManfalotyData):
     def __init__(self, value: float):
-        self.__value = value
-
-    @property
-    def value(self):
-        return self.__value
+        self.value = value
