@@ -2,7 +2,7 @@ from queue import Queue
 import socket
 import struct
 from threading import Thread
-from rov.enums import GripperCommands
+from autopilot.enums import GripperCommands
 from logger import logging
 import time
 

@@ -2,8 +2,8 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any
 
-from rov.command import ROVCommands
-from rov.enums import SystemModes
+from autopilot.command import ROVCommands
+from autopilot.enums import SystemModes
 
 """
 Ordering format:

@@ -7,7 +7,7 @@ from gui import GUI
 from notifier import Notifier
 from logger import logging
 from pi_telemetry import PiTelemetery
-from rov import ROV
+from autopilot import Autopilot
 
 
 class GCS:
@@ -22,7 +22,7 @@ class GCS:
         self.notifier = Notifier(self.dispatcher)
         self.pi_telemetery = PiTelemetery(self.dispatcher)
         
-        self.rov = ROV(self.dispatcher)
+        self.autopilot = Autopilot(self.dispatcher)
 
         self.controller.update_connection_status()
 
@@ -38,31 +38,7 @@ class GCS:
     def handle_controller_joysticks(self, move: Tuple[float, float, float, float]):
         x, y, z, w = move
 
-        if x == y == z == w == 0:
-            self.rov.stop_movement()
-            return
-
-        if x > y:
-            if y > 0:
-                self.rov.move_lateral_right()
-            elif y < 0:
-                self.rov.move_forward() 
-        else:
-            if x > 0:  # joystick to the bottom
-                self.rov.move_backward()
-            elif x < 0:
-                self.rov.move_lateral_left()
-
-        if z > w:
-            if z > 0:  # joystick to the left
-                self.rov.move_yaw_right()
-            elif z < 0:
-                self.rov.move_up()
-        else:
-            if w > 0:  # joystick to the bottom
-                self.rov.move_down()
-            elif w < 0:
-                self.rov.move_yaw_left()
+        self.autopilot.move(x, y, z, w, 0)
 
     def on_controller_button(self, button: str):
         print(button)
@@ -72,29 +48,29 @@ class GCS:
             case "M":
                 self.controller.calibrate()
             case "A":
-                self.rov.arm()
+                self.autopilot.arm()
             case "B":
-                self.rov.disarm()
+                self.autopilot.disarm()
             case "C":
-                self.rov.flight_mode_stabilize()
+                self.autopilot.flight_mode_stabilize()
             case "D":
-                self.rov.flight_mode_manual()
+                self.autopilot.flight_mode_manual()
             case "3":
-                self.rov.gain_up()
+                self.autopilot.gain_up()
             case "1":
-                self.rov.gain_down()
+                self.autopilot.gain_down()
             case "R1":
-                self.rov.gripper.open()
+                self.autopilot.gripper.open()
             case "L1":
-                self.rov.gripper.close()
+                self.autopilot.gripper.close()
             case "R2":
-                self.rov.gripper.roll_right()
+                self.autopilot.gripper.roll_right()
             case "L2":
-                self.rov.gripper.roll_left()
+                self.autopilot.gripper.roll_left()
             case "2" | "R4":
-                self.rov.gripper.pitch_up()
+                self.autopilot.gripper.pitch_up()
             case "4" | "L4":
-                self.rov.gripper.pitch_down()
+                self.autopilot.gripper.pitch_down()
 
     def run(self):
         while True:
@@ -105,7 +81,7 @@ class GCS:
             self.controller.update()
             # self.gui.update(time_delta)
             self.pi_telemetery.update()
-            self.rov.update()
+            self.autopilot.update()
 
             self.clock.tick(60)
 

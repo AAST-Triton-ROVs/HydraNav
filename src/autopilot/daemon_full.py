@@ -6,10 +6,10 @@ from numpy import interp
 from pymavlink import mavutil  # type: ignore
 
 from logger import logging
-from rov.enums import ControlChannels, Directions, SystemModes
-from rov.movement import ROVMovement
-from rov.command import ROVCommands
-from rov.notification import (
+from autopilot.enums import ControlChannels, Directions, SystemModes
+from autopilot.movement import ROVMovement
+from autopilot.command import ROVCommands
+from autopilot.notification import (
     Armed,
     Disarmed,
     GainChange,
@@ -27,7 +27,7 @@ GAIN_LEVELS = (25, 40, 50, 75, 90)
 TIME_OUT_SEC = 2
 
 
-class ROVConnectionDaemonFull(Thread):
+class AutopilotConnectionDaemonFull(Thread):
     """
     TODO:
     [x] Set gain

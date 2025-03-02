@@ -2,11 +2,11 @@ from queue import PriorityQueue, Queue
 from typing import Tuple
 from events import EventDispatcher
 from numpy import interp
-from rov.daemon_full import ROVConnectionDaemonFull
-from rov.gripper import Gripper
-from rov.movement import ROVMovement
-from rov.command import ROVCommands
-from rov.notification import (
+from autopilot.daemon_full import AutopilotConnectionDaemonFull
+from autopilot.gripper import Gripper
+from autopilot.movement import ROVMovement
+from autopilot.command import ROVCommands
+from autopilot.notification import (
     Armed,
     Disarmed,
     GainChange,
@@ -19,7 +19,7 @@ from rov.notification import (
 __exports__ = ["ROV"]
 
 
-class ROV:
+class Autopilot:
     def __init__(
         self,
         dispatcher: EventDispatcher,
@@ -32,7 +32,7 @@ class ROV:
 
         self.__dispatcher = dispatcher
 
-        self.__connection_daemon = ROVConnectionDaemonFull(
+        self.__connection_daemon = AutopilotConnectionDaemonFull(
             self.__movement_queue,
             self.__command_queue,
             self.__notification_queue,

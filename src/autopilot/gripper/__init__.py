@@ -1,7 +1,7 @@
 from queue import Queue
 from logger import logging
-from rov.enums import GripperCommands
-from rov.gripper.daemon import GripperDaemon
+from autopilot.enums import GripperCommands
+from autopilot.gripper.daemon import GripperDaemon
 
 
 class Gripper:
