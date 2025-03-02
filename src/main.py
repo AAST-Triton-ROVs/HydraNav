@@ -68,14 +68,18 @@ class GCS:
     def on_controller_button(self, button: str):
         if self.companion_mode:
             match button:
-                case "L":
-                    self.notifier.play("bolbol")
-                case "M":
-                    self.controller.calibrate()
-                case "A":
-                    self.autopilot.arm()
-                case "B":
-                    self.autopilot.disarm()
+                case "R1":
+                    self.manfaloty.gripper.open_jaws()
+                case "L1":
+                    self.manfaloty.gripper.close_jaws()
+                case "R2":
+                    self.manfaloty.gripper.roll_right()
+                case "L2":
+                    self.manfaloty.gripper.roll_left()
+                case "R4":
+                    self.manfaloty.gripper.pitch_up()
+                case "L4":
+                    self.manfaloty.gripper.pitch_down()
 
             return
 
