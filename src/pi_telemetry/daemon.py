@@ -20,6 +20,17 @@ class TelemetryDaemon(Thread):
         self.queue = queue
 
     def __bind_socket(self):
+        """
+        Bind the server socket to the specified address.
+
+        This method attempts to create and bind a UDP socket to the address
+        specified in `self.address`. If the binding is successful, a success
+        message is logged. If an error occurs during the binding process, an
+        error message is logged and the method retries after a delay defined
+        by `RECONNECT_DELAY`.
+
+        :raises socket.error: If there is an error during socket creation or binding.
+        """
         while True:
             try:
                 self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -33,10 +44,26 @@ class TelemetryDaemon(Thread):
                 time.sleep(RECONNECT_DELAY)
 
     def close_connection(self):
+        """
+        Closes the server socket connection if it is open.
+
+        This method checks if the `server_socket` attribute is set and, if so, 
+        closes the socket to terminate the connection.
+        """
         if self.server_socket:
             self.server_socket.close()
 
     def run(self):
+        """
+        Run the telemetry daemon to receive and process telemetry data packets.
+
+        This method binds the server socket and enters an infinite loop to receive
+        telemetry data packets from clients. The received data is unpacked and put
+        into a queue for further processing. If a socket error occurs, the connection
+        is closed and re-established.
+
+        :raises socket.error: If there is an error with the socket connection.
+        """
         self.__bind_socket()
         while True:
             try:

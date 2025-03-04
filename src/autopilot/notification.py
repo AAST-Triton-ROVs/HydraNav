@@ -5,29 +5,29 @@ from typing import Any
 from autopilot.command import ROVCommands
 from autopilot.enums import SystemModes
 
-"""
-Ordering format:
-    System Critical: 0 <--- 9
-    State Change: 10 <--- 19
-    Sensor Readings: 20 <--- 29
-    
-Notifications:
-    System Critical:
-        VEHICLE_DISCONNECTED
-        VEHICLE_CONNECTED
-        ARMED
-        DISARMED
-    
-    State Change:
-        GAIN_CHANGE
-        SYSTEM_MODE_CHANGE
-    
-    Sensor Readings:
-
-"""
 
 
 class ROVNotification:
+    """
+    Ordering format:
+        System Critical: 0 <--- 9
+        State Change: 10 <--- 19
+        Sensor Readings: 20 <--- 29
+        
+    Notifications:
+        System Critical:
+            VEHICLE_DISCONNECTED
+            VEHICLE_CONNECTED
+            ARMED
+            DISARMED
+        
+        State Change:
+            GAIN_CHANGE
+            SYSTEM_MODE_CHANGE
+        
+        Sensor Readings:
+
+    """
     def __init__(self, priority: int):
         self.priority = priority
 

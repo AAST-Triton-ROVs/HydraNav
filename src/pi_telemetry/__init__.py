@@ -24,6 +24,15 @@ class PiTelemetery:
         self.__listener_thread.start()
 
     def update(self):
+        """
+        Update method to process telemetry data from the queue.
+
+        This method attempts to retrieve telemetry data from the queue without blocking.
+        If the queue is empty, the method returns immediately. Otherwise, it dispatches
+        the received telemetry data using the dispatcher.
+
+        :raises queue.Empty: If the queue is empty.
+        """
         try:
             recieved_data: TelemetryData = self.__queue.get(block=False)
         except queue.Empty:
@@ -32,4 +41,10 @@ class PiTelemetery:
             self.__dispatcher.dispatch("telemetery", recieved_data)
 
     def close(self):
+        """
+        Closes the listener thread's connection.
+
+        This method ensures that the listener thread's connection is properly closed,
+        releasing any resources that were allocated for the connection.
+        """
         self.__listener_thread.close_connection()

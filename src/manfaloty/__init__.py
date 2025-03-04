@@ -72,15 +72,46 @@ class Manfaloty:
         self.ph_task = self.PHTask(self)
 
     def __send_command(self, command: ManfalotyCommands):
+        """
+        Sends a command to the command queue.
+
+        :param command: The command to be sent.
+        :type command: ManfalotyCommands
+        """
         self.__command_queue.put(command)
 
     def restart_arduino(self):
+        """
+        Restart the Arduino by sending the appropriate command.
+
+        This method sends the RESTART_ARDUINO command to the Arduino
+        to initiate a restart sequence.
+
+        :return: None
+        """
         self.__send_command(ManfalotyCommands.RESTART_ARDUINO)
 
     def reset_motors(self):
+        """
+        Resets the motors by sending the RESET_MOTORS command.
+
+        This method sends a command to reset the motors to their default state.
+        It uses the `__send_command` method with the `ManfalotyCommands.RESET_MOTORS` command.
+
+        :return: None
+        """
         self.__send_command(ManfalotyCommands.RESET_MOTORS)
 
     def update(self):
+        """
+        Update method that processes data from the internal queue.
+
+        This method checks if the internal data queue is not empty. If there is data in the queue,
+        it retrieves the data and checks if it is an instance of `PHReading`. If so, it dispatches
+        the `manfaloty_ph_reading` event with the pH reading value.
+
+        :raises queue.Empty: If the queue is empty when attempting to retrieve data.
+        """
         if not self.__data_queue.empty():
             data = self.__data_queue.get()
             if isinstance(data, PHReading):

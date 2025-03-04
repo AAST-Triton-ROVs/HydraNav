@@ -58,23 +58,6 @@ CONFIG_DIRECTORY = "assets/controller/configurations"
 
 
 class Controller:
-    """
-    Controller class for handling joystick input and dispatching events.
-
-    Attributes:
-        HAT_UP (tuple): Tuple representing the upward direction of the hat switch.
-        HAT_DOWN (tuple): Tuple representing the downward direction of the hat switch.
-        HAT_LEFT (tuple): Tuple representing the left direction of the hat switch.
-        HAT_RIGHT (tuple): Tuple representing the right direction of the hat switch.
-
-    Events:
-        - `controller_waiting_connection`: When the controller is not connected.
-        - `controller_connected`: When the controller is connected.
-        - `controller_disconnected`: When the controller is disconnected.
-        - `controller_joysticks`: Dispatched with a tuple of (x, y, z, w) values.
-        - `controller_button`: Dispatched when button is pressed, with the button index.
-    """
-
     def __init__(
         self,
         dispatcher: EventDispatcher,
@@ -107,17 +90,17 @@ class Controller:
         """
         Calculate the maximum value adjusted by the deadzone factor.
 
-        Returns:
-            float: The maximum value after applying the deadzone factor.
+        :return: The maximum value adjusted by the deadzone factor.
+        :rtype: float
         """
         return 1 * self.__deadzone_factor
 
     def min_value(self) -> float:
         """
-        Calculate the minimum value considering the deadzone factor.
+        Calculate the minimum value adjusted by the deadzone factor.
 
-        Returns:
-            float: The minimum value, which is the negative of the deadzone factor.
+        :return: The minimum value as a float, which is the negative of the deadzone factor.
+        :rtype: float
         """
         return -1 * self.__deadzone_factor
 
@@ -125,8 +108,8 @@ class Controller:
         """
         Check if the joystick is connected.
 
-        Returns:
-            bool: True if the joystick is connected and initialized, False otherwise.
+        :return: True if the joystick is connected and initialized, False otherwise.
+        :rtype: bool
         """
         return self.__joystick is not None and self.__joystick.get_init()
 
@@ -134,18 +117,24 @@ class Controller:
         """
         Safely quits the joystick instance if it is initialized.
 
-        This method checks if the joystick instance is not None and calls its
-        quit method to release any resources or connections associated with it.
+        This method checks if the joystick instance (`self.__joystick`) is not `None`.
+        If it is initialized, it calls the `quit` method on the joystick instance to 
+        safely terminate its operation.
         """
         if self.__joystick is not None:
             self.__joystick.quit()
 
     def calibrate(self) -> bool:
         """
-        Calibrates the controller by calculating and setting new deadzones.
+        Calibrates the controller by calculating and setting the deadzones.
 
-        Returns:
-            bool: True if recalibration was successful and deadzones were set, False otherwise.
+        This method calls the private method `__calc_deadzones` to compute the deadzones.
+        If the computation is successful (i.e., the result is not None), it sets the 
+        `__deadzone` attribute to the computed value and returns True. Otherwise, it 
+        returns False.
+
+        :returns: True if calibration is successful, False otherwise.
+        :rtype: bool
         """
         res = self.__calc_deadzones()
         if res is not None:
@@ -158,20 +147,19 @@ class Controller:
         """
         Set the RGB LED to the specified color values.
 
-        This method sets the brightness of the red, green, and blue components of an RGB LED
-        by writing the specified values to the corresponding system files.
+        This method sets the brightness of the red, green, and blue components of an RGB LED.
+        The brightness values must be between 0 and 255 inclusive.
 
-        Args:
-            r (int): The brightness value for the red component (0-255).
-            g (int): The brightness value for the green component (0-255).
-            b (int): The brightness value for the blue component (0-255).
-
-        Returns:
-            bool: True if the operation was successful, False if the brightness file for any color was not found.
-
-        Raises:
-            ValueError: If any of the color values are not in the range 0-255.
-            IOError: If there is no write permission to the LED files.
+        :param r: Brightness value for the red component (0-255).
+        :type r: int
+        :param g: Brightness value for the green component (0-255).
+        :type g: int
+        :param b: Brightness value for the blue component (0-255).
+        :type b: int
+        :raises ValueError: If any of the color values are outside the range 0-255.
+        :raises IOError: If there is no write permission to the LED files.
+        :return: True if the LED was successfully set, False if the LED files were not found.
+        :rtype: bool
         """
         color = ["red", "green", "blue"]
 
@@ -195,23 +183,15 @@ class Controller:
 
     def update(self) -> bool:
         """
-        Updates the controller's status and processes input events.
+        Update the controller status and process inputs.
 
-        This method first updates the connection status of the controller. If the controller
+        This method updates the connection status of the controller. If the controller
         is not connected, it dispatches a "controller_waiting_connection" event and returns False.
-        If the controller is connected, it processes the axes, buttons, and hat inputs. If any
-        exception occurs during this processing, it returns False.
+        If the controller is connected, it processes the axes, buttons, triggers, and hat inputs.
+        If any exception occurs during the processing, it returns False.
 
-        Events Dispatched:
-            - "controller_waiting_connection": When the controller is not connected.
-            - "controller_connected": When the controller is connected.
-            - "controller_disconnected": When the controller is disconnected.
-            - "controller_joysticks": When the left joystick is moved.
-            - "controller_button": When a button is pressed.
-
-        Returns:
-            bool: True if the controller is connected and input events are processed successfully,
-              False otherwise.
+        :return: True if the controller is connected and inputs are processed successfully, False otherwise.
+        :rtype: bool
         """
         self.update_connection_status()
         if not self.is_connected():
@@ -230,21 +210,20 @@ class Controller:
 
     def update_connection_status(self) -> None:
         """
-        Updates the connection status of the joystick controller.
+        Monitors and updates the connection status of the joystick controller.
 
-        This method listens for joystick connection and disconnection events
-        using pygame. When a joystick is connected or disconnected, it initializes
-        or quits the joystick respectively and dispatches the corresponding events.
+        This method listens for joystick connection and disconnection events using
+        the pygame library. When a joystick is connected, it initializes the joystick,
+        dispatches a "controller_connected" event, logs the connection, autoloads the
+        configuration, and calibrates the joystick. When a joystick is disconnected,
+        it quits the joystick, dispatches a "controller_disconnected" event, and logs
+        the disconnection.
 
-        Events Dispatched:
-            - "controller_connected": Dispatched when a joystick is connected.
-            - "controller_disconnected": Dispatched when a joystick is disconnected.
+        If an exception occurs during the process, the method recursively calls itself
+        to retry the connection status update.
 
-        If an exception occurs during the process, the method will recursively call
-        itself to retry the update.
-
-        Returns:
-            None
+        :raises: Any exception encountered during the process will trigger a recursive
+                 call to this method.
         """
         try:
             for event in pygame.event.get(
@@ -269,16 +248,16 @@ class Controller:
 
     def __calc_deadzones(self) -> Optional[float]:
         """
-        Calculate the deadzone value for the joystick axes.
+        Calculate the deadzones for the joystick axes.
 
-        This method calculates the deadzone value based on the maximum absolute
-        value of the joystick axes specified by their indices. The deadzone is
-        determined by multiplying the maximum axis value by a predefined deadzone
-        factor.
+        This method calculates the deadzones for the joystick axes based on the
+        joystick input values and a predefined deadzone factor. If the joystick
+        is not connected or an error occurs during the calculation, it returns
+        None.
 
         Returns:
-            Optional[float]: The calculated deadzone value, or None if the joystick
-            is not initialized or an error occurs during calculation.
+            Optional[float]: The calculated deadzone value or None if the joystick
+            is not connected or an error occurs.
         """
         if self.__joystick is None:
             return None
@@ -308,12 +287,11 @@ class Controller:
 
     def __process_axes(self) -> None:
         """
-        Processes the joystick axes values, applies deadzone filtering, and dispatches events.
+        Process the joystick axes values, apply deadzone filtering, and dispatch the processed values.
 
-        This method retrieves the current axes values from the joystick, applies a deadzone filter
-        to each axis value, and then maps the filtered values to specific axes (x, y, z, w). It
-        dispatches two events:
-        - "controller_joysticks" with a tuple of (z, w) values.
+        This method retrieves the current axes values from the joystick, applies a deadzone filter to each value,
+        maps the filtered values to their corresponding joystick names as defined in the library joystick mappings,
+        and dispatches the processed joystick values using the dispatcher.
 
         Returns:
             None
@@ -336,6 +314,17 @@ class Controller:
         self.__dispatcher.dispatch("controller_joysticks", joystick_values)
 
     def __process_triggers(self) -> None:
+        """
+        Process joystick trigger inputs and dispatch events when triggers are pressed.
+
+        This method checks the current state of joystick triggers and compares it with
+        the previous state to detect trigger presses. If a trigger is pressed (i.e., its
+        value crosses the threshold of 0.5 from below), it dispatches a "controller_button_down"
+        event with the trigger name.
+
+        Returns:
+            None
+        """
         if self.__joystick is None:
             return
 
@@ -352,14 +341,19 @@ class Controller:
 
     def __process_buttons(self) -> None:
         """
-        Processes the button events from the joystick and dispatches corresponding events.
+        Process joystick button events and dispatch corresponding actions.
 
-        This method checks the state of each button on the joystick. If a button is pressed,
-        it dispatches an event with the format "controller_button_{i}", where {i} is the index
-        of the button.
+        This method checks for joystick button press and release events using the
+        `pygame` library. It maps the pressed and released buttons to their
+        corresponding actions using `__library_button_mappings` and dispatches
+        these actions via the `__dispatcher`.
 
-        Events Dispatched:
-            - "controller_button": Dispatched when button is pressed, with the button index.
+        If no buttons are pressed or released, the method returns immediately.
+        If a button press or release event is not mapped to any action, an error
+        is logged.
+
+        Returns:
+            None
         """
         if self.__joystick is None:
             return
@@ -392,12 +386,10 @@ class Controller:
 
     def __process_hat(self) -> None:
         """
-        Processes the hat (D-pad) input from the joystick and dispatches corresponding events.
+        Process the hat (D-pad) events from the joystick and dispatch corresponding controller button events.
 
-        This method checks the current state of the hat switches on the joystick. For each hat direction,
-
-        Events Dispatched:
-            - Event("controller_hat"): Dispatched for hat press, with the direction as tuple
+        This method reads the current state of the hat switches on the joystick, compares it with the previous state,
+        and dispatches an event if there is a change. It also logs the hat press events.
 
         Returns:
             None
@@ -427,20 +419,19 @@ class Controller:
 
     def __process_joystick_value(self, value: float, deadzone: float) -> float:
         """
-        Processes the joystick value by applying a deadzone and scaling.
+        Process the joystick value by applying a deadzone and scaling.
 
-        This method takes a joystick input value, applies a deadzone threshold to
-        ignore small movements, and scales the value based on predefined
-        round-off and multiplier settings.
+        This method processes the input joystick value by first checking if it exceeds
+        a specified deadzone. If the absolute value of the input exceeds the deadzone,
+        the value is rounded to a specified precision and then multiplied by a joystick
+        multiplier. If the value does not exceed the deadzone, it is simply rounded.
 
-        Args:
-            value (float): The raw joystick input value.
-            deadzone (float): The threshold below which the joystick input is
-                              considered as zero.
-
-        Returns:
-            float: The processed joystick value after applying the deadzone and
-                   scaling.
+        :param value: The input joystick value to be processed.
+        :type value: float
+        :param deadzone: The deadzone threshold below which the joystick value is considered negligible.
+        :type deadzone: float
+        :return: The processed joystick value.
+        :rtype: float
         """
         return (
             round(value, self.__joystick_roundoff) * self.__joystick_multiplier
@@ -450,13 +441,16 @@ class Controller:
 
     def __load_config_libary(self):
         """
-        Load the configuration library from valid configuration files.
+        Load the configuration library.
 
-        This method retrieves valid configuration files and their names, then
-        populates the configuration library with these configurations.
+        This method retrieves valid configurations and their corresponding names,
+        then stores them in the `__config_library` attribute as a dictionary where
+        the keys are the configuration names and the values are the configurations.
 
-        Returns:
-            None
+        The method also logs the success of loading the configuration library and
+        provides a debug log of the loaded configuration library.
+
+        :return: None
         """
         configs = self.__get_valid_config()
         names = self.__get_valid_config_names()
@@ -470,6 +464,22 @@ class Controller:
         logging.logger.debug(f"{self.__config_library = }")
 
     def __generate_library_mappings(self):
+        """
+        Generate library mappings for buttons, hats, joysticks, and triggers.
+
+        This method processes the current configuration's mappings and populates
+        the corresponding library mappings for different control types (button, hat,
+        axis, trigger). The mappings are stored in the following attributes:
+        
+        - `__library_button_mappings`: Maps button combinations to their names.
+        - `__library_hat_mappings`: Maps hat positions to their names.
+        - `__library_joystick_mappings`: Maps joystick names to their axis tuples.
+        - `__library_trigger_mappings`: Maps trigger axes to their names.
+
+        The method does nothing if `__current_config_name` is not set.
+
+        :raises KeyError: If the configuration does not contain expected keys.
+        """
         if not self.__current_config_name:
             return
 
@@ -494,13 +504,13 @@ class Controller:
 
     def __validate_configuration(self, config: dict) -> bool:
         """
-        Validate a configuration against the predefined schema.
+        Validate the given configuration dictionary against a predefined schema.
 
-        Args:
-            config (dict): The configuration dictionary to validate.
-
-        Returns:
-            bool: True if the configuration is valid, False otherwise.
+        :param config: The configuration dictionary to validate.
+        :type config: dict
+        :returns: True if the configuration is valid, False otherwise.
+        :rtype: bool
+        :raises jsonschema.exceptions.ValidationError: If the configuration does not match the schema.
         """
         try:
             jsonschema.validate(config, CONFIG_SCHEMA)
@@ -512,13 +522,19 @@ class Controller:
 
     def __get_valid_config_files(self) -> list[str]:
         """
-        Retrieve valid configuration file paths.
+        Retrieve a list of valid configuration file paths.
 
-        This method checks each file in the configuration directory, validates
-        its content, and returns a list of valid configuration file paths.
+        This method scans the CONFIG_DIRECTORY for configuration files, attempts to load
+        and validate each file, and returns a list of paths to the valid configuration files.
 
         Returns:
-            list[str]: A list of valid configuration file paths.
+            list[str]: A list of absolute paths to valid configuration files.
+
+        Raises:
+            json.JSONDecodeError: If a file cannot be decoded as JSON.
+        
+        Logs:
+            Logs an error message if a file cannot be decoded as JSON.
         """
         files_path = [
             os.path.abspath(f"{CONFIG_DIRECTORY}/{x}")
@@ -540,13 +556,14 @@ class Controller:
 
     def __get_valid_config(self) -> list[dict]:
         """
-        Retrieve valid configurations.
+        Retrieve and parse valid configuration files.
 
-        This method reads and validates the content of each valid configuration
-        file, and returns a list of valid configuration dictionaries.
+        This method iterates over a list of valid configuration file paths,
+        opens each file, parses the JSON content, and appends the resulting
+        dictionary to a list. The list of dictionaries is then returned.
 
-        Returns:
-            list[dict]: A list of valid configuration dictionaries.
+        :return: A list of dictionaries containing the parsed JSON data from valid configuration files.
+        :rtype: list[dict]
         """
         valid_configs = []
         for file in self.__get_valid_config_files():
@@ -557,44 +574,53 @@ class Controller:
 
     def __get_valid_config_names(self) -> list[str]:
         """
-        Retrieve the names of valid configuration files.
+        Retrieve a list of valid configuration names.
 
-        This method extracts the names of valid configuration files by removing
-        their file extensions.
+        This method fetches the valid configuration files and extracts their base names
+        (i.e., the file names without the directory path and file extension).
 
-        Returns:
-            list[str]: A list of valid configuration file names.
+        :return: A list of valid configuration names.
+        :rtype: list[str]
         """
         files = self.__get_valid_config_files()
 
         return [os.path.basename(file).split(".")[0] for file in files]
 
     def config_names(self) -> list[str]:
+        """
+        Retrieve the list of configuration names.
+
+        This method returns a list of all the keys present in the 
+        configuration library.
+
+        :return: A list of configuration names.
+        :rtype: list[str]
+        """
         return list(self.__config_library.keys())
 
     def reload_config_library(self):
         """
-        Reload the configuration library.
+        Reloads the configuration library.
 
-        This method reloads the configuration library by calling the
-        __load_config_libary method.
-
-        Returns:
-            None
+        This method calls the private method `__load_config_libary` to reload
+        the configuration settings from the library. It ensures that the 
+        latest configuration settings are loaded and applied.
         """
         self.__load_config_libary()
 
     def autoload_config(self):
         """
-        Automatically load the configuration for the connected joystick.
+        Autoloads the joystick configuration based on the connected joystick's properties.
 
-        This method checks the connected joystick's name, number of buttons, and
-        number of axes, and loads the corresponding configuration from the
-        configuration library. If no matching configuration is found, it loads
-        the default configuration.
+        This method checks if a joystick is connected and attempts to find a matching configuration
+        from the configuration library based on the joystick's name, number of buttons, hats, and axes.
+        If an exact match is found, it sets the current configuration to the matched configuration.
+        If no exact match is found, it attempts to find a similar configuration based on the number
+        of buttons, hats, and axes.
 
-        Returns:
-            None
+        If no similar configuration is found, it logs a warning message.
+
+        :raises AttributeError: If `self.__joystick` or `self.__config_library` is not defined.
         """
         if not self.__joystick:
             return
@@ -637,13 +663,10 @@ class Controller:
 
     def manual_config(self, config_name: str):
         """
-        Manually set the configuration for the controller.
+        Manually sets the current configuration by name and generates the corresponding library mappings.
 
-        Args:
-            config_name (str): The name of the configuration to set.
-
-        Returns:
-            None
+        :param config_name: The name of the configuration to set.
+        :type config_name: str
         """
         self.__current_config_name = config_name
         self.__generate_library_mappings()

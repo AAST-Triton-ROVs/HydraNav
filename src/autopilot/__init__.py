@@ -41,9 +41,44 @@ class Autopilot:
         self.__connection_daemon.start()
 
     def __move(self,  forward: float, lateral: float, throttle: float, yaw: float, roll: float):
+        """
+        Move the ROV by adding a movement command to the movement queue.
+
+        :param forward: The forward movement value.
+        :type forward: float
+        :param lateral: The lateral movement value.
+        :type lateral: float
+        :param throttle: The throttle value.
+        :type throttle: float
+        :param yaw: The yaw movement value.
+        :type yaw: float
+        :param roll: The roll movement value.
+        :type roll: float
+        """
         self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll))
         
     def move(self, forward: float, lateral: float, throttle: float, yaw: float, roll: float, min_joy_value: int =  -100, max_joy_value: int = 100):
+        def move(self, forward: float, lateral: float, throttle: float, yaw: float, roll: float, min_joy_value: int = -100, max_joy_value: int = 100):
+            """
+            Move the vehicle based on joystick inputs.
+
+            This method interprets the joystick inputs and maps them to the vehicle's movement commands.
+
+            :param forward: Joystick input for forward/backward movement.
+            :type forward: float
+            :param lateral: Joystick input for lateral (left/right) movement.
+            :type lateral: float
+            :param throttle: Joystick input for throttle (up/down) movement.
+            :type throttle: float
+            :param yaw: Joystick input for yaw (rotation around vertical axis).
+            :type yaw: float
+            :param roll: Joystick input for roll (rotation around longitudinal axis).
+            :type roll: float
+            :param min_joy_value: Minimum joystick value, defaults to -100.
+            :type min_joy_value: int, optional
+            :param max_joy_value: Maximum joystick value, defaults to 100.
+            :type max_joy_value: int, optional
+            """
         self.__move(
             interp(forward, [min_joy_value, max_joy_value], [-1.0, 1.0]),
             interp(lateral, [min_joy_value, max_joy_value], [-1.0, 1.0]),
@@ -74,6 +109,22 @@ class Autopilot:
         self.__command(ROVCommands.SYSTEM_MODE_STABILIZE)
 
     def update(self):
+        """
+        Process notifications from the notification queue and dispatch corresponding events.
+        This method continuously checks the notification queue for new notifications. 
+        Depending on the type of notification, it dispatches the appropriate event 
+        using the dispatcher.
+        Notifications and their corresponding dispatched events:
+        - VehicleDisconnected: Dispatches "rov_vehicle_disconnected"
+        - VehicleConnected: Dispatches "rov_vehicle_connected"
+        - Armed: Dispatches "rov_armed"
+        - Disarmed: Dispatches "rov_disarmed"
+        - GainChange: Dispatches "rov_gain_change" with the new gain value
+        - SystemModeChanged: Dispatches "rov_system_mode_changed" with the new mode
+        
+        :raises queue.Empty: If the notification queue is empty.
+        """
+        
         while not self.__notification_queue.empty():
             notification = self.__notification_queue.get()
 

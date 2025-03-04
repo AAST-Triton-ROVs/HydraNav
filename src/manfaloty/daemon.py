@@ -32,6 +32,18 @@ class ManfalotyDaemon(Thread):
         self.__server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def __bind_socket(self):
+        """
+        Bind the server socket to the specified address.
+
+        This method attempts to create and bind a UDP socket to the address
+        specified by `self.__address`. If the binding is successful, the socket
+        is set with a timeout defined by `SERVER_SOCKET_TIMEOUT`, and a success
+        message is logged. If an error occurs during the binding process, an
+        error message is logged, and the method retries after a delay defined
+        by `RECONNECT_DELAY`.
+
+        :raises socket.error: If there is an error creating or binding the socket.
+        """
         while True:
             try:
                 self.__server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -46,10 +58,40 @@ class ManfalotyDaemon(Thread):
                 time.sleep(RECONNECT_DELAY)
 
     def close_connection(self):
+        """
+        Closes the server socket connection if it is open.
+
+        This method checks if the server socket is currently open and, if so,
+        closes the connection to free up resources.
+        """
         if self.__server_socket:
             self.__server_socket.close()
 
     def run(self):
+        """
+        Run the daemon to receive and process pH value data.
+
+        This method binds the server socket and enters an infinite loop to 
+        continuously receive pH value data from a client. It unpacks the 
+        received data, logs the pH value and client information, and puts 
+        the pH value into a data queue. If there are any commands in the 
+        command queue, it sends the command to the specified Raspberry Pi 
+        address.
+
+        Exceptions:
+            - socket.timeout: If the socket times out while waiting for data.
+            - struct.error: If there is an error unpacking the received data.
+            - socket.error: If there is an error sending data through the socket.
+
+        Logging:
+            - Logs an error message if there is an error unpacking the data.
+            - Logs an error message if there is a socket error while sending data.
+            - Logs the received pH value and client information.
+
+        Note:
+            - The method will rebind the socket if a socket error occurs while 
+              sending data.
+        """
         self.__bind_socket()
         while True:
             try:
