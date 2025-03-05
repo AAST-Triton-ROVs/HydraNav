@@ -9,7 +9,6 @@ To access documentation run
 ./open-docs.sh
 ```
 
-
 | Port | Service |
 |------|---------|
 | 2000 | mavproxy-router |
