@@ -11,12 +11,12 @@ This documentation provides an API reference and additional project information.
    source/autopilot
    source/manfaloty
    source/pi_telemetry
-   source/controller
    source/events
    source/gui
    source/logger
    source/main
    source/notifier
+   source/user_input
 
 Indices and Tables
 ==================
