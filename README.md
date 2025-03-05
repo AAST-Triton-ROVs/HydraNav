@@ -1,4 +1,14 @@
+# HydraNav
+
 Revolutionary GCS from TritonROVs
+
+## Documentation
+
+To access documentation run 
+```bash
+./open-docs.sh
+```
+
 
 | Port | Service |
 |------|---------|
