@@ -2,7 +2,7 @@ from queue import PriorityQueue, Queue
 from typing import Tuple
 from events import EventDispatcher
 from numpy import interp
-from autopilot.daemon_full import AutopilotConnectionDaemonFull
+from autopilot.daemon import AutopilotConnectionDaemon
 from autopilot.movement import ROVMovement
 from autopilot.command import ROVCommands
 from autopilot.notification import (
@@ -19,19 +19,37 @@ __exports__ = ["ROV"]
 
 
 class Autopilot:
+    """
+    Manages and controls the Pixhawk autopilot.
+
+    Handles communication with the ROV, processes movement commands, sends control
+    commands, and dispatches notifications. All commands are placed into thread-safe
+    queues, read by :class:`AutopilotConnectionDaemon`.
+    """
+
     def __init__(
         self,
         dispatcher: EventDispatcher,
-        base_ip: str = "0.0.0.0", 
+        base_ip: str = "0.0.0.0",
         port: int = 2000,
     ):
+        """
+        Initializes Autopilot.
+
+        :param dispatcher: Event dispatcher for broadcasting messages.
+        :type dispatcher: EventDispatcher
+        :param base_ip: Listen IP, defaults to "0.0.0.0".
+        :type base_ip: str
+        :param port: Port to bind, defaults to 2000.
+        :type port: int
+        """
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)
         self.__notification_queue: PriorityQueue[ROVNotification] = PriorityQueue()
 
         self.__dispatcher = dispatcher
 
-        self.__connection_daemon = AutopilotConnectionDaemonFull(
+        self.__connection_daemon = AutopilotConnectionDaemon(
             self.__movement_queue,
             self.__command_queue,
             self.__notification_queue,
@@ -40,45 +58,53 @@ class Autopilot:
         )
         self.__connection_daemon.start()
 
-    def __move(self,  forward: float, lateral: float, throttle: float, yaw: float, roll: float):
+    def __move(
+        self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
+    ):
         """
-        Move the ROV by adding a movement command to the movement queue.
+        Queues a movement command.
 
-        :param forward: The forward movement value.
+        :param forward: Forward/backward value.
         :type forward: float
-        :param lateral: The lateral movement value.
+        :param lateral: Lateral movement value.
         :type lateral: float
-        :param throttle: The throttle value.
+        :param throttle: Vertical movement value.
         :type throttle: float
-        :param yaw: The yaw movement value.
+        :param yaw: Yaw value.
         :type yaw: float
-        :param roll: The roll movement value.
+        :param roll: Roll value.
         :type roll: float
         """
         self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll))
-        
-    def move(self, forward: float, lateral: float, throttle: float, yaw: float, roll: float, min_joy_value: int =  -100, max_joy_value: int = 100):
-        def move(self, forward: float, lateral: float, throttle: float, yaw: float, roll: float, min_joy_value: int = -100, max_joy_value: int = 100):
-            """
-            Move the vehicle based on joystick inputs.
 
-            This method interprets the joystick inputs and maps them to the vehicle's movement commands.
+    def move(
+        self,
+        forward: float,
+        lateral: float,
+        throttle: float,
+        yaw: float,
+        roll: float,
+        min_joy_value: int = -100,
+        max_joy_value: int = 100,
+    ):
+        """
+        Interprets joystick inputs and issues movement commands.
 
-            :param forward: Joystick input for forward/backward movement.
-            :type forward: float
-            :param lateral: Joystick input for lateral (left/right) movement.
-            :type lateral: float
-            :param throttle: Joystick input for throttle (up/down) movement.
-            :type throttle: float
-            :param yaw: Joystick input for yaw (rotation around vertical axis).
-            :type yaw: float
-            :param roll: Joystick input for roll (rotation around longitudinal axis).
-            :type roll: float
-            :param min_joy_value: Minimum joystick value, defaults to -100.
-            :type min_joy_value: int, optional
-            :param max_joy_value: Maximum joystick value, defaults to 100.
-            :type max_joy_value: int, optional
-            """
+        :param forward: Forward/backward joystick input.
+        :type forward: float
+        :param lateral: Lateral joystick input.
+        :type lateral: float
+        :param throttle: Throttle joystick input.
+        :type throttle: float
+        :param yaw: Yaw joystick input.
+        :type yaw: float
+        :param roll: Roll joystick input.
+        :type roll: float
+        :param min_joy_value: Minimum joystick value, defaults to -100.
+        :type min_joy_value: int
+        :param max_joy_value: Maximum joystick value, defaults to 100.
+        :type max_joy_value: int
+        """
         self.__move(
             interp(forward, [min_joy_value, max_joy_value], [-1.0, 1.0]),
             interp(lateral, [min_joy_value, max_joy_value], [-1.0, 1.0]),
@@ -88,43 +114,62 @@ class Autopilot:
         )
 
     def __command(self, command: ROVCommands):
+        """
+        Queues a command for the autopilot.
+
+        :param command: ROV command to be sent.
+        :type command: ROVCommands
+        """
         self.__command_queue.put(command)
 
     def gain_up(self):
+        """
+        Sends the gain-up command.
+        """
         self.__command(ROVCommands.GAIN_UP)
 
     def gain_down(self):
+        """
+        Sends the gain-down command.
+        """
         self.__command(ROVCommands.GAIN_DOWN)
 
     def arm(self):
+        """
+        Sends the arm command.
+        """
         self.__command(ROVCommands.ARM)
 
     def disarm(self):
+        """
+        Sends the disarm command.
+        """
         self.__command(ROVCommands.DISARM)
 
     def flight_mode_manual(self):
+        """
+        Puts the vehicle into manual flight mode.
+        """
         self.__command(ROVCommands.SYSTEM_MODE_MANUAL)
 
     def flight_mode_stabilize(self):
+        """
+        Puts the vehicle into stabilize flight mode.
+        """
         self.__command(ROVCommands.SYSTEM_MODE_STABILIZE)
 
     def update(self):
         """
-        Process notifications from the notification queue and dispatch corresponding events.
-        This method continuously checks the notification queue for new notifications. 
-        Depending on the type of notification, it dispatches the appropriate event 
-        using the dispatcher.
-        Notifications and their corresponding dispatched events:
-        - VehicleDisconnected: Dispatches "rov_vehicle_disconnected"
-        - VehicleConnected: Dispatches "rov_vehicle_connected"
-        - Armed: Dispatches "rov_armed"
-        - Disarmed: Dispatches "rov_disarmed"
-        - GainChange: Dispatches "rov_gain_change" with the new gain value
-        - SystemModeChanged: Dispatches "rov_system_mode_changed" with the new mode
-        
-        :raises queue.Empty: If the notification queue is empty.
+        Processes notifications and dispatches events.
+
+        Dispatches relevant ROV events based on queued notifications:
+        * :class:`VehicleDisconnected` -> ``rov_vehicle_disconnected``
+        * :class:`VehicleConnected` -> ``rov_vehicle_connected``
+        * :class:`Armed` -> ``rov_armed``
+        * :class:`Disarmed` -> ``rov_disarmed``
+        * :class:`GainChange` -> ``rov_gain_change``
+        * :class:`SystemModeChanged` -> ``rov_system_mode_changed``
         """
-        
         while not self.__notification_queue.empty():
             notification = self.__notification_queue.get()
 

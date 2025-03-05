@@ -6,7 +6,6 @@ src
 
    admin
    autopilot
-   controller
    events
    gui
    logger
@@ -14,3 +13,4 @@ src
    manfaloty
    notifier
    pi_telemetry
+   user_input

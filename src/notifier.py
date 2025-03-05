@@ -8,29 +8,20 @@ __exports__ = ["Notifier"]
 
 class Notifier:
     """
-    A class to handle audio notifications for various events.
-    
-    :param dispatcher: An instance of EventDispatcher to subscribe to events.
+    Handles audio notifications for various events.
+
+    :param dispatcher: An instance of EventDispatcher used to subscribe to events.
     :type dispatcher: EventDispatcher
-   
-    :param audio_assests_path: Path to the directory containing audio assets, defaults to "./assets/audio".
+    :param audio_assests_path: Path to the directory containing audio assets.
+                               Defaults to "./assets/audio".
     :type audio_assests_path: str
-    
-    Methods
-    -------
-    volume_up():
-        Increases the volume by 10 units.
-    volume_down():
-        Decreases the volume by 10 units.
-    play(file: str):
-        Plays the specified audio file.
-    
-    Private Methods
-    ---------------
-    __change_volume(inc: int):
-        Changes the volume by the specified increment.
+
+    .. note::
+
+       This class provides methods to increase or decrease the volume and to play audio files.
+       It automatically subscribes to several events and triggers corresponding audio notifications.
     """
-    
+
     def __init__(
         self,
         dispatcher: EventDispatcher,
@@ -71,12 +62,12 @@ class Notifier:
         """
         Adjust the volume by a specified increment.
 
-        This method changes the volume by the given increment, ensuring that the
-        volume remains within the range of 0 to 100. It then updates the volume
-        in the pygame mixer and dispatches a notification about the volume change.
+        The new volume is clamped between 0 and 100. After updating the volume,
+        it sets the new volume on the pygame mixer and dispatches a notification event
+        with the updated volume.
 
-        :param inc: The increment by which to adjust the volume. Positive values
-                    increase the volume, while negative values decrease it.
+        :param inc: The amount to change the volume by. Positive values increase the volume whilst
+                    negative values decrease it.
         :type inc: int
         """
         if self.volume + inc > 100:
@@ -91,37 +82,38 @@ class Notifier:
 
     def volume_up(self):
         """
-        Increase the notifier volume by a fixed amount.
-        This method increases the volume of the notifier by 10 units and logs the new volume level.
-        
+        Increase the notifier volume by 10 units.
+
+        This method calls a private function to adjust the volume and then logs the new volume level.
+
         :return: None
         """
-        
         self.__change_volume(10)
         logging.logger.info(f"Notifier volume up: {self.volume}")
 
     def volume_down(self):
         """
-        Decrease the notifier volume by a fixed amount.
-        This method decreases the volume by 10 units and logs the new volume level.
-        
+        Decrease the notifier volume by 10 units.
+
+        This method calls a private function to adjust the volume and then logs the new volume level.
+
         :return: None
         """
-        
         self.__change_volume(-10)
         logging.logger.info(f"Notifier volume down: {self.volume}")
 
     def play(self, file: str):
         """
         Play an audio file.
-        This method constructs the path to the audio file using the provided
-        filename and the internal audio assets path, then loads and plays
-        the audio file using the pygame mixer.
-        
-        :param file: The name of the audio file to play (without extension).
+
+        Constructs the full path to the audio file (assumed to be in WAV format)
+        using the provided file name and the internal audio assets path, then loads
+        and plays the audio file using the pygame mixer.
+
+        :param file: The name of the audio file to play, without the extension.
         :type file: str
+        :return: None
         """
-        
         path = Path(self.__audio_assets_path, f"{file}.wav")
         pygame.mixer.music.load(path)
         pygame.mixer.music.play()

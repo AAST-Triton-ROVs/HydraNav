@@ -9,7 +9,28 @@ import struct
 
 
 class PiAdminDaemon(Thread):
+    """
+    A daemon thread for listening to admin commands.
+
+    :param admin_queue: 
+        A queue holding admin commands.
+    :type admin_queue: Queue[AdminCommands]
+    :param address: 
+        A tuple containing the host address and port.
+    :type address: Tuple[str, int]
+    """
+
     def __init__(self, admin_queue: Queue[AdminCommands], address: Tuple[str, int]):
+        """
+        Initialize the daemon with an admin commands queue and a network address.
+
+        :param admin_queue: 
+            A queue holding admin commands.
+        :type admin_queue: Queue[AdminCommands]
+        :param address: 
+            A tuple with the host and port.
+        :type address: Tuple[str, int]
+        """
         super().__init__(daemon=True)
         self.__admin_queue = admin_queue
 
@@ -19,14 +40,10 @@ class PiAdminDaemon(Thread):
 
     def run(self):
         """
-        Run the admin daemon to listen for incoming connections and process commands.
+        Listen for incoming connections and send admin commands.
 
-        This method starts the server socket listening for incoming connections. When a connection
-        is accepted, it logs the connection address. If there are commands in the admin queue, it
-        retrieves the command, packs it into a binary format, and sends it to the connected client.
-        If an error occurs while sending data, it logs the error.
-
-        :raises socket.error: If there is an error sending data to the client.
+        On accepting a connection, retrieve a command from the queue if available,
+        pack the command value, and send it to the client.
         """
         self.server_socket.listen()
         while True:

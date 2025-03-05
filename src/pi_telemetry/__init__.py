@@ -9,12 +9,33 @@ __exports__ = ["Telemetery", "TelemeteryData"]
 
 
 class PiTelemetery:
+    """
+    A class for handling telemetry data via a queue and threading.
+
+    :param dispatcher: The event dispatcher used for broadcasting telemetry events.
+    :type dispatcher: EventDispatcher
+    :param host: The host address to bind the telemetry daemon.
+    :type host: str
+    :param port: The port to bind the telemetry daemon.
+    :type port: int
+    """
+
     def __init__(
         self,
         dispatcher: EventDispatcher,
         host: str = "0.0.0.0",
         port=2010,
     ):
+        """
+        Constructor method that sets up the telemetry daemon and queue.
+
+        :param dispatcher: The event dispatcher used for broadcasting telemetry events.
+        :type dispatcher: EventDispatcher
+        :param host: The host address to bind the telemetry daemon.
+        :type host: str
+        :param port: The port to bind the telemetry daemon.
+        :type port: int
+        """
         self.__dispatcher = dispatcher
         self.__host = host
         self.__port = port
@@ -25,11 +46,7 @@ class PiTelemetery:
 
     def update(self):
         """
-        Update method to process telemetry data from the queue.
-
-        This method attempts to retrieve telemetry data from the queue without blocking.
-        If the queue is empty, the method returns immediately. Otherwise, it dispatches
-        the received telemetry data using the dispatcher.
+        Retrieve telemetry data from the queue and dispatch it.
 
         :raises queue.Empty: If the queue is empty.
         """
@@ -42,9 +59,6 @@ class PiTelemetery:
 
     def close(self):
         """
-        Closes the listener thread's connection.
-
-        This method ensures that the listener thread's connection is properly closed,
-        releasing any resources that were allocated for the connection.
+        Close the listener thread's connection, releasing allocated resources.
         """
         self.__listener_thread.close_connection()

@@ -1,7 +1,7 @@
 import sys
 from typing import Tuple
 import pygame
-from controller import Controller
+from user_input import UserInput
 from events import EventDispatcher
 from gui import GUI
 from manfaloty import Manfaloty
@@ -37,7 +37,7 @@ class GCS:
         self.dispatcher = EventDispatcher()
 
         # self.gui = GUI(self.dispatcher, self.logging)
-        self.controller = Controller(self.dispatcher)
+        self.user_input = UserInput(self.dispatcher)
         if not self.companion_mode:
             self.notifier = Notifier(self.dispatcher)
 
@@ -48,7 +48,7 @@ class GCS:
 
         self.manfaloty = Manfaloty(self.dispatcher)
 
-        self.controller.update_connection_status()
+        self.user_input.controller.update_connection_status()
 
         self.dispatcher.subscribe(
             "controller_button_down",
@@ -87,7 +87,7 @@ class GCS:
             case "L":
                 self.notifier.play("bolbol")
             case "M":
-                self.controller.calibrate()
+                self.user_input.controller.calibrate()
             case "A":
                 self.autopilot.arm()
             case "B":
@@ -120,7 +120,7 @@ class GCS:
             # )  # .tick return the time sinze last frame in milliseconds so we must divide it by 1000.0
 
             # self.gui.update(time_delta)
-            self.controller.update()
+            self.user_input.controller.update()
             self.pi_telemetery.update()
             self.manfaloty.update()
 

@@ -12,22 +12,30 @@ RECONNECT_DELAY = 2
 
 
 class TelemetryDaemon(Thread):
+    """
+    A daemon thread for receiving telemetry data packets over UDP.
+
+    :param queue: A thread-safe queue to store incoming `TelemetryData`.
+    :type queue: queue.Queue
+    :param base_ip: IP address to bind to.
+    :type base_ip: str
+    :param port: UDP port to bind to.
+    :type port: int
+    """
+
     def __init__(self, queue: queue.Queue, base_ip: str, port: int):
         super().__init__(daemon=True)
         self.address = (base_ip, port)
         self.server_socket: Optional[socket.socket] = None
-
         self.queue = queue
 
     def __bind_socket(self):
         """
         Bind the server socket to the specified address.
 
-        This method attempts to create and bind a UDP socket to the address
-        specified in `self.address`. If the binding is successful, a success
-        message is logged. If an error occurs during the binding process, an
-        error message is logged and the method retries after a delay defined
-        by `RECONNECT_DELAY`.
+        Attempts to create and bind a UDP socket to ``self.address``.
+        If successful, logs a success message. If an error occurs,
+        logs an error and retries after ``RECONNECT_DELAY``.
 
         :raises socket.error: If there is an error during socket creation or binding.
         """
@@ -45,24 +53,23 @@ class TelemetryDaemon(Thread):
 
     def close_connection(self):
         """
-        Closes the server socket connection if it is open.
+        Close the server socket if it is open.
 
-        This method checks if the `server_socket` attribute is set and, if so, 
-        closes the socket to terminate the connection.
+        Checks if ``server_socket`` is set and closes it if so.
         """
+
         if self.server_socket:
             self.server_socket.close()
 
     def run(self):
         """
-        Run the telemetry daemon to receive and process telemetry data packets.
+        Continuously receive and process telemetry data packets.
 
-        This method binds the server socket and enters an infinite loop to receive
-        telemetry data packets from clients. The received data is unpacked and put
-        into a queue for further processing. If a socket error occurs, the connection
-        is closed and re-established.
+        Binds the server socket, receives data packets from clients,
+        unpacks them, and places them in the queue. If a socket error
+        occurs, the connection is closed and re-established.
 
-        :raises socket.error: If there is an error with the socket connection.
+        :raises socket.error: If a socket error occurs.
         """
         self.__bind_socket()
         while True:

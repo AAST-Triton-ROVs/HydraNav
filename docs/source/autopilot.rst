@@ -13,7 +13,7 @@ Submodules
    :maxdepth: 4
 
    autopilot.command
-   autopilot.daemon_full
+   autopilot.daemon
    autopilot.enums
    autopilot.movement
    autopilot.notification

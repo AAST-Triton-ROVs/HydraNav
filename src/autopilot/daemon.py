@@ -27,18 +27,13 @@ GAIN_LEVELS = (25, 40, 50, 75, 90)
 TIME_OUT_SEC = 2
 
 
-class AutopilotConnectionDaemonFull(Thread):
+class AutopilotConnectionDaemon(Thread):
     """
-    TODO:
-    [x] Set gain
-    [x] Move (by setting rc channels)
-    [x] Send heartbeats
-    [x] Stablize/destablize
-    [x] Recieve ACK messages
-    [X] Gripper Control
-    [ ] Configure Ardusub parameters (FS_GCS_ENABLE, FS_LEAK_ENABLE, FS_PILOT_INPUT, FS_PILOT_TIMEOUT) [Read/write parameters]
-    [ ] Pixhwak sensor readings (pressure, velocity, aceleration, leakage)
+    AutopilotConnectionDaemon for controlling the ROV.
 
+    :TODO:
+        - Configure Ardusub parameters
+        - PixhawK sensor readings
     """
 
     def __init__(
@@ -49,6 +44,20 @@ class AutopilotConnectionDaemonFull(Thread):
         base_ip: str,
         port: int
     ):
+        """
+        Initialize the daemon.
+
+        :param movement_queue: Queue for ROVMovement objects.
+        :type movement_queue: Queue
+        :param command_queue: Queue for ROVCommands.
+        :type command_queue: Queue
+        :param notification_queue: PriorityQueue for notifications.
+        :type notification_queue: PriorityQueue
+        :param base_ip: IP address of the MAVLink master.
+        :type base_ip: str
+        :param port: Port number for the MAVLink connection.
+        :type port: int
+        """
         super().__init__(daemon=True)
         self.__gain_index = 0
 
@@ -70,11 +79,7 @@ class AutopilotConnectionDaemonFull(Thread):
         """
         Send a command to arm or disarm the component.
 
-        This method sends a MAVLink command to either arm or disarm the component
-        of the vehicle. The command is sent using the `command_long_send` method
-        of the MAVLink master object.
-
-        :param act: Action to perform. Use 1 to arm the component and 0 to disarm it.
+        :param act: Action (1 to arm, 0 to disarm).
         :type act: int
         """
         self.__master.mav.command_long_send(
@@ -95,40 +100,29 @@ class AutopilotConnectionDaemonFull(Thread):
         """
         Convert a percentage value to a PWM signal.
 
-        This method takes a percentage value and a direction, and converts the 
-        percentage to a PWM (Pulse Width Modulation) signal. The PWM signal is 
-        calculated based on a neutral value and scaled by a factor of 400.
-
-        :param percent: The percentage value to convert (0 to 100).
+        :param percent: 0 to 100 percentage value.
         :type percent: int
-        :param direction: The direction of the PWM signal, which affects the 
-                          sign of the resulting value.
+        :param direction: Direction of PWM (positive, negative, or neutral).
         :type direction: Directions
-        :return: The calculated PWM signal.
+        :return: PWM signal as int.
         :rtype: int
         """
         return NEUTRAL_PWM + int(percent / 100 * 400) * direction.value
 
     def __notify(self, notification: ROVNotification):
         """
-        Sends a notification to the notification queue.
+        Add a notification to the queue.
 
-        :param notification: The notification to be sent.
+        :param notification: ROVNotification to send.
         :type notification: ROVNotification
         """
         self.__notification_queue.put(notification)
 
     def arm(self) -> bool:
         """
-        Arms the autopilot component.
+        Arm the autopilot component.
 
-        This method sends a command to arm the autopilot component and waits for an acknowledgment
-        message indicating the success of the operation. If the acknowledgment message is received
-        and confirms the arming command, the method logs a success message and returns True.
-        If the acknowledgment message is not received within the specified timeout, the method
-        returns False.
-
-        :return: True if the autopilot component is successfully armed, False otherwise.
+        :return: True if the autopilot is armed, False otherwise.
         :rtype: bool
         """
         self.__component_arm_disarm(1)
@@ -139,28 +133,20 @@ class AutopilotConnectionDaemonFull(Thread):
             )
             if not ack_msg:
                 return False
-            ack_msg = ack_msg.to_dict()
 
+            ack_msg = ack_msg.to_dict()
             if ack_msg["command"] != mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
                 continue
-
             break
 
         logging.logger.success("armed")
-
         return True
 
     def disarm(self) -> bool:
         """
-        Disarms the vehicle by sending a disarm command to the autopilot.
+        Disarm the autopilot.
 
-        This method sends a disarm command to the autopilot and waits for an acknowledgment
-        message indicating that the command has been received and processed. If the acknowledgment
-        message is received and indicates that the disarm command was successful, the method
-        logs a success message and returns True. If the acknowledgment message is not received
-        within the specified timeout period, the method returns False.
-
-        :return: True if the vehicle was successfully disarmed, False otherwise.
+        :return: True if the vehicle is disarmed, False otherwise.
         :rtype: bool
         """
         self.__component_arm_disarm(0)
@@ -171,24 +157,18 @@ class AutopilotConnectionDaemonFull(Thread):
             )
             if not ack_msg:
                 return False
-            ack_msg = ack_msg.to_dict()
 
+            ack_msg = ack_msg.to_dict()
             if ack_msg["command"] != mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
                 continue
-
             break
 
         logging.logger.success("disarmed")
-
         return True
 
     def gain_up(self):
         """
-        Increase the gain index by one level if it is not already at the maximum level.
-
-        This method increments the internal gain index by one, provided that the 
-        current gain index is less than the length of the GAIN_LEVELS list minus one.
-        It also logs an informational message indicating that the gain has been increased.
+        Increase the gain level by one step (if not at max).
         """
         if self.__gain_index + 1 < len(GAIN_LEVELS):
             self.__gain_index += 1
@@ -197,12 +177,7 @@ class AutopilotConnectionDaemonFull(Thread):
 
     def gain_down(self):
         """
-        Decreases the gain index by one if it is greater than zero.
-
-        This method checks if the current gain index is greater than zero and, if so, 
-        decrements the gain index by one. It also logs the action of decreasing the gain.
-
-        :raises AttributeError: If the gain index attribute is not found.
+        Decrease the gain level by one step (if not at min).
         """
         if self.__gain_index - 1 >= 0:
             self.__gain_index -= 1
@@ -211,23 +186,20 @@ class AutopilotConnectionDaemonFull(Thread):
 
     def get_gain(self):
         """
-        Retrieve the current gain level.
+        Get current gain level.
 
-        :return: The current gain level from the GAIN_LEVELS list.
-        :rtype: int or float
+        :return: Gain level as int from GAIN_LEVELS.
+        :rtype: int
         """
         return GAIN_LEVELS[self.__gain_index]
 
     def __get_scaled_pwm(self, value: float) -> int:
         """
-        Convert a given float value to a scaled PWM (Pulse Width Modulation) signal.
+        Convert a float value to a scaled PWM signal.
 
-        The method determines the direction based on the sign of the input value and
-        scales the absolute value to a PWM signal using predefined gain levels.
-
-        :param value: The input value to be converted, ranging from -1.0 to 1.0.
+        :param value: Float from -1.0 to 1.0.
         :type value: float
-        :return: The scaled PWM signal as an integer.
+        :return: Scaled PWM value.
         :rtype: int
         """
         if value > 0:
@@ -246,24 +218,19 @@ class AutopilotConnectionDaemonFull(Thread):
         self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
     ):
         """
-        Move the ROV (Remotely Operated Vehicle) by setting the PWM values for various control channels.
+        Move the ROV by sending PWM values to control channels.
 
-        :param forward: The forward movement value, scaled to PWM.
+        :param forward: Forward movement (-1.0 to 1.0).
         :type forward: float
-        :param lateral: The lateral movement value, scaled to PWM.
+        :param lateral: Lateral movement (-1.0 to 1.0).
         :type lateral: float
-        :param throttle: The throttle value, scaled to PWM.
+        :param throttle: Vertical movement (-1.0 to 1.0).
         :type throttle: float
-        :param yaw: The yaw movement value, scaled to PWM.
+        :param yaw: Yaw movement (-1.0 to 1.0).
         :type yaw: float
-        :param roll: The roll movement value, scaled to PWM.
+        :param roll: Roll movement (-1.0 to 1.0).
         :type roll: float
-
         :return: None
-        :rtype: None
-
-        This method calculates the PWM values for the given movement parameters and sends them to the ROV's control channels.
-        It also logs the PWM values for debugging and informational purposes.
         """
         rc_channel_values = [NEUTRAL_PWM for _ in range(8)]
 
@@ -296,48 +263,33 @@ class AutopilotConnectionDaemonFull(Thread):
 
     def recieve_heartbeat(self) -> bool:
         """
-        Waits for a heartbeat signal from the master and logs the event.
+        Wait for a heartbeat from the master.
 
-        This method waits for a heartbeat signal from the master with a specified timeout.
-        If a heartbeat is received within the timeout period, it logs the event and returns True.
-        If no heartbeat is received, it returns False.
-
-        :return: True if a heartbeat is received, False otherwise.
+        :return: True if received, False otherwise.
         :rtype: bool
         """
         response = self.__master.wait_heartbeat(timeout=TIME_OUT_SEC)
         if response is None:
             return False
         logging.logger.info("Recieved heartbeat")
-
         return True
 
     def send_heartbeat(self):
         """
-        Sends a heartbeat message to the MAVLink master.
-
-        This method sends a heartbeat message with predefined parameters to 
-        the MAVLink master to indicate that the autopilot is alive and functioning.
-        It also logs the action for debugging purposes.
-
-        :return: None
+        Send a heartbeat to the MAVLink master.
         """
         self.__master.mav.heartbeat_send(6, 8, 0, 0, 0)
         logging.logger.info("Sent Heartbeat")
 
     def set_system_mode(self, mode: SystemModes) -> bool:
         """
-        Set the system mode of the autopilot.
-        This function sends a command to the autopilot to change its flight mode
-        to the specified mode. It waits for an acknowledgment from the autopilot
-        to confirm that the mode has been set successfully.
-        
-        :param mode: The desired system mode to set.
+        Set the autopilot's flight mode.
+
+        :param mode: Desired SystemMode.
         :type mode: SystemModes
-        :return: True if the mode was set successfully, False otherwise.
+        :return: True if mode is set successfully, False otherwise.
         :rtype: bool
         """
-        
         self.__master.mav.set_mode_send(
             self.__master.target_system,
             mavutil.mavlink.MAV_CMD_DO_SET_MODE,
@@ -351,8 +303,8 @@ class AutopilotConnectionDaemonFull(Thread):
             if not ack_msg:
                 logging.logger.error(f"Setting flight mode `{mode.name}` failed")
                 return False
-            ack_msg = ack_msg.to_dict()
 
+            ack_msg = ack_msg.to_dict()
             if (
                 ack_msg["command"] != 11
                 and ack_msg["command"] != mavutil.mavlink.MAV_CMD_DO_SET_MODE
@@ -364,27 +316,11 @@ class AutopilotConnectionDaemonFull(Thread):
 
     def run(self):
         """
-        Main loop that handles the autopilot's operations.
+        Main loop for autopilot operations.
 
-        This method continuously performs the following tasks:
-        1. Sends and receives heartbeats to monitor the connection status with the vehicle.
-        2. Processes movement actions from the movement queue and commands from the command queue.
-
-        Heartbeat:
-        - Sends a heartbeat signal if the time since the last heartbeat exceeds 0.9 seconds.
-        - Receives a heartbeat response and updates the connection status.
-        - Notifies the system if the vehicle is connected or disconnected.
-
-        Movement:
-        - Retrieves and executes movement actions from the movement queue.
-        - Ensures actions are executed if they differ from the previous action or if the time since the last movement exceeds 0.9 seconds.
-
-        Commands:
-        - Retrieves and executes commands from the command queue using pattern matching.
-        - Supported commands include arming/disarming the vehicle, changing system modes, and adjusting gain levels.
-
-        Notifications:
-        - Notifies the system of various events such as vehicle connection status, system mode changes, and gain changes.
+        1. Send/receive heartbeats to monitor connection.
+        2. Handle movement from movement_queue.
+        3. Handle commands from command_queue.
         """
         previous_movement = None
         is_connected = False
@@ -408,7 +344,6 @@ class AutopilotConnectionDaemonFull(Thread):
 
             if not self.__movement_queue.empty():
                 action = self.__movement_queue.get()
-
                 if (
                     previous_movement != action
                     or time.monotonic() - self.__time_since_last_movement >= 0.9
