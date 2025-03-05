@@ -8,6 +8,7 @@ To access documentation run
 ```bash
 ./open-docs.sh
 ```
+Then open `localhost:8000`
 
 | Port | Service |
 |------|---------|
