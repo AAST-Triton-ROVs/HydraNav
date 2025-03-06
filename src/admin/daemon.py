@@ -1,6 +1,6 @@
 from typing import Tuple
 from admin.enums import AdminCommands
-from logger import logging
+from logger import system_logger
 from threading import Thread
 from queue import Queue
 import socket
@@ -48,11 +48,11 @@ class PiAdminDaemon(Thread):
         self.server_socket.listen()
         while True:
             connection, address = self.server_socket.accept()
-            logging.logger.info(f"Admin daemon accepted connection from {address}")
+            system_logger.info(f"Admin daemon accepted connection from {address}")
             if not self.__admin_queue.empty():
                 command = self.__admin_queue.get()
                 data = struct.pack("i", command.value)
                 try:
                     connection.send(data)
                 except socket.error as e:
-                    logging.logger.error(f"Admin daemon failed with error: {e}")
+                    system_logger.error(f"Admin daemon failed with error: {e}")

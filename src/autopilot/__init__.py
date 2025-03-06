@@ -15,7 +15,7 @@ from autopilot.notification import (
     VehicleDisconnected,
 )
 
-__exports__ = ["ROV"]
+__all__ = ["ROV"]
 
 
 class Autopilot:

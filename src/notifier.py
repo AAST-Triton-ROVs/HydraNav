@@ -1,9 +1,9 @@
 import pygame
 from events import EventDispatcher
 from pathlib import Path
-from logger import logging
+from logger import system_logger
 
-__exports__ = ["Notifier"]
+__all__ = ["Notifier"]
 
 
 class Notifier:
@@ -89,7 +89,7 @@ class Notifier:
         :return: None
         """
         self.__change_volume(10)
-        logging.logger.info(f"Notifier volume up: {self.volume}")
+        system_logger.info(f"Notifier volume up: {self.volume}")
 
     def volume_down(self):
         """
@@ -100,7 +100,7 @@ class Notifier:
         :return: None
         """
         self.__change_volume(-10)
-        logging.logger.info(f"Notifier volume down: {self.volume}")
+        system_logger.info(f"Notifier volume down: {self.volume}")
 
     def play(self, file: str):
         """

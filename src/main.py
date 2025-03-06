@@ -1,6 +1,6 @@
 import sys
 import pygame
-from logger import logging, LogLevels
+from logger import system_logger, LogLevels
 from user_input import UserInput
 from events import EventDispatcher
 from gui import GUI
@@ -23,10 +23,11 @@ def init_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-l",
-        "--log-level",
-        choices=[level.value.lower() for level in LogLevels],
-        default=LogLevels.INFO,
-        help="Set the log level"
+        "--loglevel",
+        help="Set the logging level",
+        choices=[level.name.lower() for level in LogLevels],
+        type=str,
+        default="info",
     )
     return parser
 
@@ -37,14 +38,12 @@ class GCS:
 
         parser = init_parser()
         args = parser.parse_args()
+        
+        system_logger.info(f"Log level set to {args.loglevel.upper()}")
+        system_logger.set_level_str(args.loglevel)
 
-        self.log_level: str = args.log_level
-        logging.logger.info(f"Log mode set to {self.log_level.upper()}")
-        logging.set_level_str(self.log_level)
-        
         self.companion_mode = args.companion
-        logging.logger.info(f"Operating mode: {'Companion' if self.companion_mode else 'Normal'}")
-        
+        system_logger.info(f"Operating mode: {'Companion' if self.companion_mode else 'Normal'}")
 
         self.clock = pygame.time.Clock()
         self.dispatcher = EventDispatcher()
@@ -62,7 +61,7 @@ class GCS:
         self.manfaloty = Manfaloty(self.dispatcher)
 
         self.user_input.controller.update_connection_status()
-        
+
     def run(self):
         while True:
             # time_delta = (
@@ -70,7 +69,7 @@ class GCS:
             # )  # .tick return the time sinze last frame in milliseconds so we must divide it by 1000.0
 
             # self.gui.update(time_delta)
-            self.user_input.controller.update()
+            self.user_input.update()
             self.pi_telemetery.update()
             self.manfaloty.update()
 

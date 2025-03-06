@@ -5,7 +5,7 @@ from typing import Tuple
 from numpy import interp
 from pymavlink import mavutil  # type: ignore
 
-from logger import logging
+from logger import system_logger
 from autopilot.enums import ControlChannels, Directions, SystemModes
 from autopilot.movement import ROVMovement
 from autopilot.command import ROVCommands
@@ -139,7 +139,7 @@ class AutopilotConnectionDaemon(Thread):
                 continue
             break
 
-        logging.logger.success("armed")
+        system_logger.success("armed")
         return True
 
     def disarm(self) -> bool:
@@ -163,7 +163,7 @@ class AutopilotConnectionDaemon(Thread):
                 continue
             break
 
-        logging.logger.success("disarmed")
+        system_logger.success("disarmed")
         return True
 
     def gain_up(self):
@@ -173,7 +173,7 @@ class AutopilotConnectionDaemon(Thread):
         if self.__gain_index + 1 < len(GAIN_LEVELS):
             self.__gain_index += 1
 
-        logging.logger.info("Gain up")
+        system_logger.info("Gain up")
 
     def gain_down(self):
         """
@@ -182,7 +182,7 @@ class AutopilotConnectionDaemon(Thread):
         if self.__gain_index - 1 >= 0:
             self.__gain_index -= 1
 
-        logging.logger.info("Gain down")
+        system_logger.info("Gain down")
 
     def get_gain(self):
         """
@@ -249,7 +249,7 @@ class AutopilotConnectionDaemon(Thread):
         roll_pwm = self.__get_scaled_pwm(roll)
         rc_channel_values[ControlChannels.ROLL.value - 1] = roll_pwm
 
-        logging.logger.debug(f"ROV {rc_channel_values = }")
+        system_logger.debug(f"ROV {rc_channel_values = }")
 
         self.__master.mav.rc_channels_override_send(
             self.__master.target_system,
@@ -257,7 +257,7 @@ class AutopilotConnectionDaemon(Thread):
             *rc_channel_values,
         )
 
-        logging.logger.info(
+        system_logger.info(
             f"Moved ROV with values: forward={forward_pwm}, lateral={lateral_pwm}, throttle={throttle_pwm}, yaw={yaw_pwm}, roll={roll_pwm}"
         )
 
@@ -271,7 +271,7 @@ class AutopilotConnectionDaemon(Thread):
         response = self.__master.wait_heartbeat(timeout=TIME_OUT_SEC)
         if response is None:
             return False
-        logging.logger.info("Recieved heartbeat")
+        system_logger.info("Recieved heartbeat")
         return True
 
     def send_heartbeat(self):
@@ -279,7 +279,7 @@ class AutopilotConnectionDaemon(Thread):
         Send a heartbeat to the MAVLink master.
         """
         self.__master.mav.heartbeat_send(6, 8, 0, 0, 0)
-        logging.logger.info("Sent Heartbeat")
+        system_logger.info("Sent Heartbeat")
 
     def set_system_mode(self, mode: SystemModes) -> bool:
         """
@@ -301,7 +301,7 @@ class AutopilotConnectionDaemon(Thread):
                 type="COMMAND_ACK", blocking=True, timeout=TIME_OUT_SEC
             )
             if not ack_msg:
-                logging.logger.error(f"Setting flight mode `{mode.name}` failed")
+                system_logger.error(f"Setting flight mode `{mode.name}` failed")
                 return False
 
             ack_msg = ack_msg.to_dict()
@@ -311,7 +311,7 @@ class AutopilotConnectionDaemon(Thread):
             ):
                 continue
 
-            logging.logger.success(f"Set flight mode to {mode.name}")
+            system_logger.success(f"Set flight mode to {mode.name}")
             return True
 
     def run(self):
@@ -336,7 +336,7 @@ class AutopilotConnectionDaemon(Thread):
                 if not response:
                     is_connected = False
                     self.__notify(VehicleDisconnected())
-                    logging.logger.critical(
+                    system_logger.critical(
                         "No heartbeat from vehicle; Vehicle disconnected or unresponsive"
                     )
 

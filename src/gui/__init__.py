@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 import pygame
 from events import EventDispatcher
-from logger import Logging
+from logger import SystemLogger
 from pygame_gui import UIManager, PackageResource
 
 # armed or disarmed
@@ -17,7 +17,7 @@ from pygame_gui import UIManager, PackageResource
 
 
 class GUI:
-    def __init__(self, dispatcher: EventDispatcher, logging: Logging):
+    def __init__(self, dispatcher: EventDispatcher, logging: SystemLogger):
         pygame.display.set_caption("Triton GCS")
         self.window_surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         self.ui_manager = UIManager(

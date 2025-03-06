@@ -1,11 +1,11 @@
 import queue
 from queue import Queue
 from events import EventDispatcher
-from logger import Logging
+from logger import SystemLogger
 from pi_telemetry.data import TelemetryData
 from pi_telemetry.daemon import TelemetryDaemon
 
-__exports__ = ["Telemetery", "TelemeteryData"]
+__all__ = ["Telemetery", "TelemeteryData"]
 
 
 class PiTelemetery:

@@ -2,15 +2,16 @@ import glob
 import json
 import os
 from typing import Optional, Tuple
+from pprint import pformat
 
 import jsonschema
 import jsonschema.exceptions
 import pygame
 
 from events import EventDispatcher
-from logger import logging
+from logger import system_logger
 
-__exports__ = ["Controller"]
+__all__ = ["Controller"]
 
 CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -136,7 +137,7 @@ class Controller:
         max_axis_value = max(abs(value) for value in axes_values)
         deadzone = max_axis_value * self.__deadzone_factor
 
-        logging.logger.success(f"Controller deadzones calculated: {deadzone}")
+        system_logger.success(f"Controller deadzones calculated: {deadzone}")
 
         return deadzone
 
@@ -184,7 +185,7 @@ class Controller:
             value = self.__joystick.get_axis(axis_index)
             if value > 0.5 and self.__previous_trigger_value <= 0.5:
                 self.__dispatcher.dispatch("controller_button_down", trigger_name)
-                logging.logger.info(f"Controller trigger {trigger_name} pressed")
+                system_logger.info(f"Controller trigger {trigger_name} pressed")
 
             self.__previous_trigger_value = value
 
@@ -212,17 +213,17 @@ class Controller:
 
         button_down_mapping = self.__library_button_mappings.get(buttons_pressed_down)
         if button_down_mapping is None:
-            logging.logger.error(f"{buttons_pressed_down} is not mapped to anything")
+            system_logger.error(f"{buttons_pressed_down} is not mapped to anything")
             return
 
         button_up_mapping = self.__library_button_mappings.get(buttons_pressed_up)
         if button_up_mapping is None:
-            logging.logger.error(f"{buttons_pressed_up} is not mapped to anything")
+            system_logger.error(f"{buttons_pressed_up} is not mapped to anything")
             return
 
         self.__dispatcher.dispatch("controller_button_down", button_down_mapping)
         self.__dispatcher.dispatch("controller_button_up", button_up_mapping)
-        logging.logger.info(
+        system_logger.info(
             f"Controller buttons pressed: down -> {button_down_mapping}, up -> {button_up_mapping}"
         )
 
@@ -254,7 +255,7 @@ class Controller:
             print(self.__library_hat_mappings)
 
             self.__dispatcher.dispatch("controller_button", controller_button)
-            logging.logger.info(f"Controller hat pressed: {controller_button}")
+            system_logger.info(f"Controller hat pressed: {controller_button}")
 
             self.__previous_hat_value = (int(direction[0]), int(direction[1]))
 
@@ -294,8 +295,8 @@ class Controller:
         for name, config in zip(names, configs):
             self.__config_library[name] = config
 
-        logging.logger.success("Loaded config library")
-        logging.logger.debug(f"{self.__config_library = }")
+        system_logger.success("Loaded config library")
+        system_logger.debug(f"Config Library: {pformat(self.__config_library)}")
 
     def __generate_library_mappings(self):
         """
@@ -342,7 +343,7 @@ class Controller:
         try:
             jsonschema.validate(config, CONFIG_SCHEMA)
         except jsonschema.exceptions.ValidationError as err:
-            logging.logger.error(
+            system_logger.error(
                 f"Controller invalid configuration {config}; err msg: {err}"
             )
             return False
@@ -360,10 +361,13 @@ class Controller:
         :rtype: list[str]
         :raises json.JSONDecodeError: If a file cannot be parsed as JSON.
         """
+        
         files_path = [
             os.path.abspath(f"{CONFIG_DIRECTORY}/{x}")
             for x in os.listdir(CONFIG_DIRECTORY)
         ]
+        
+        system_logger.trace(f"{files_path = }")
 
         valid_config_paths = []
         for file in files_path:
@@ -371,11 +375,13 @@ class Controller:
                 try:
                     data = json.load(f)
                 except json.JSONDecodeError as err:
-                    logging.logger.error(f"Config decoding error; err msg: {err}")
+                    system_logger.error(f"Config decoding error; err msg: {err}")
                     continue
                 else:
                     if self.__validate_configuration(data):
                         valid_config_paths.append(file)
+        
+        system_logger.debug(f"Valid config paths: {valid_config_paths}")
         return valid_config_paths
 
     def __get_valid_config(self) -> list[dict]:
@@ -393,6 +399,8 @@ class Controller:
             with open(file) as f:
                 data = json.load(f)
                 valid_configs.append(data)
+    
+        system_logger.trace(f"{valid_configs = }")
         return valid_configs
 
     def __get_valid_config_names(self) -> list[str]:
@@ -531,7 +539,7 @@ class Controller:
                     pygame.joystick.init()
                     self.__joystick = pygame.joystick.Joystick(event.device_index)
                     self.__dispatcher.dispatch("controller_connected")
-                    logging.logger.info("Controller connected")
+                    system_logger.info("Controller connected")
                     self.autoload_config()
                     self.calibrate()
                     return
@@ -539,7 +547,7 @@ class Controller:
                     if self.__joystick is not None:
                         self.__joystick.quit()
                     self.__dispatcher.dispatch("controller_disconnected")
-                    logging.logger.info("Controller disconnected")
+                    system_logger.info("Controller disconnected")
                     return
         except Exception:
             return self.update_connection_status()
@@ -578,6 +586,8 @@ class Controller:
         num_buttons = self.__joystick.get_numbuttons()
         num_hats = self.__joystick.get_numhats()
         num_axes = self.__joystick.get_numaxes()
+        
+        system_logger.debug(f"Detected {pygame_name}: {num_buttons} buttons, {num_hats} hats and {num_axes} axes")
 
         config_found = False
         for name, config in self.__config_library.items():
@@ -588,12 +598,12 @@ class Controller:
                 and config["axes"] == num_axes
             ):
                 self.__current_config_name = name
-                logging.logger.info(f"Autoloaded {name} as the current configuration")
+                system_logger.info(f"Autoloaded {name} as the current configuration")
                 config_found = True
                 break
 
         if not config_found:
-            logging.logger.warning(
+            system_logger.warning(
                 f"{pygame_name} with {num_buttons} buttons, {num_hats} hats and {num_axes} axes is not a known controller type, using similar config"
             )
             for name, config in self.__config_library.items():
@@ -603,7 +613,7 @@ class Controller:
                     and config["axes"] == num_axes
                 ):
                     self.__current_config_name = name
-                    logging.logger.info(
+                    system_logger.info(
                         f"Autoloaded similar config {name} as the current configuration"
                     )
                     break

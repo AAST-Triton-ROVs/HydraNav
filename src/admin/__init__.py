@@ -1,6 +1,6 @@
 from typing import Tuple
 from admin.enums import AdminCommands
-from logger import logging
+from logger import system_logger
 from queue import Queue
 from admin.daemon import PiAdminDaemon
 
@@ -20,7 +20,7 @@ class PiAdmin:
         self.__admin_queue: Queue[AdminCommands] = Queue(1)
         self.__admin_daemon = PiAdminDaemon(self.__admin_queue, address)
         self.__admin_daemon.start()
-        logging.logger.success("Admin daemon started")
+        system_logger.success("Admin daemon started")
 
     def poweroff(self):
         """

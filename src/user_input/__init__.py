@@ -2,7 +2,7 @@ from events import EventDispatcher
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
-__exports__ = ["UserInput", "KeyboardKeys"]
+__all__ = ["UserInput", "KeyboardKeys"]
 
 class UserInput:
     """
@@ -45,3 +45,7 @@ class UserInput:
             joystick_multiplier,
         )
         self.keyboard = Keyboard(self.__dispatcher)
+        
+    def update(self):
+        self.controller.update()
+        self.keyboard.update()

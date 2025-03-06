@@ -4,7 +4,7 @@ import socket
 from threading import Thread
 import time
 from typing import Optional
-from logger import logging
+from logger import system_logger
 from pi_telemetry.data import TelemetryData
 
 BUFFER_SIZE = struct.calcsize("i" * 8)
@@ -43,12 +43,12 @@ class TelemetryDaemon(Thread):
             try:
                 self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 self.server_socket.bind(self.address)
-                logging.logger.success(
+                system_logger.success(
                     f"Telemetry daemon bound to {self.address[0]}:{self.address[1]}"
                 )
                 return
             except socket.error as e:
-                logging.logger.error(f"Telemetry daemon bounding error: {e}, retrying")
+                system_logger.error(f"Telemetry daemon bounding error: {e}, retrying")
                 time.sleep(RECONNECT_DELAY)
 
     def close_connection(self):
@@ -75,9 +75,9 @@ class TelemetryDaemon(Thread):
         while True:
             try:
                 data, client = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
-                logging.logger.info(f"Telemetry data packet recieved from {client}")
+                system_logger.info(f"Telemetry data packet recieved from {client}")
             except socket.error as e:
-                logging.logger.error(f"Telemetry daemon socket error: {e}")
+                system_logger.error(f"Telemetry daemon socket error: {e}")
                 self.close_connection()
                 self.__bind_socket()
                 continue
