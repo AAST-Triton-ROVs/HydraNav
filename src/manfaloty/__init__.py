@@ -33,17 +33,17 @@ class Manfaloty:
             """
             self.client = client
 
-        def open_jaws(self):
+        def toggle_open_jaws(self):
             """
             Opens the jaws of the gripper.
             """
-            self.client.__send_command(ManfalotyCommands.GRIPPER_JAW_OPEN)
+            self.client.__send_command(ManfalotyCommands.GRIPPER_TOGGLE_JAW_OPEN)
 
-        def close_jaws(self):
+        def toggle_close_jaws(self):
             """
             Closes the jaws of the gripper.
             """
-            self.client.__send_command(ManfalotyCommands.GRIPPER_JAW_CLOSE)
+            self.client.__send_command(ManfalotyCommands.GRIPPER_TOGGLE_JAW_CLOSE)
 
         def pitch_up(self):
             """
@@ -158,6 +158,32 @@ class Manfaloty:
         self.gripper = self.Gripper(self)
         self.camera = self.Camera(self)
         self.ph_task = self.PHTask(self)
+        
+        self.__dispatcher.subscribe("controller_button_down", self.__on_controller_button_down)
+        self.__dispatcher.subscribe("controller_button_up", self.__on_controller_button_up)
+        
+    def __on_controller_button_down(self, button: str):
+        match button:
+            case "R1":
+                self.gripper.toggle_open_jaws()
+            case "L1":
+                self.gripper.toggle_close_jaws()
+            case "R2":
+                self.gripper.roll_right()
+            case "L2":
+                self.gripper.roll_left()
+            case "R4":
+                self.gripper.pitch_up()
+            case "L4":
+                self.gripper.pitch_down()
+                
+    def __on_controller_button_up(self, button: str):
+        match button:
+            case "R1":
+                self.gripper.toggle_open_jaws()
+            case "L1":
+                self.gripper.toggle_close_jaws()
+
 
     def __send_command(self, command: ManfalotyCommands):
         """

@@ -58,6 +58,18 @@ class Autopilot:
         )
         self.__connection_daemon.start()
 
+        self.__dispatcher.subscribe(
+            "controller_button_down", self.__on_controller_button_down
+        )
+        self.__dispatcher.subscribe(
+            "controller_joysticks", self.__handle_controller_joysticks
+        )
+
+    def __handle_controller_joysticks(self, move: Tuple[float, float, float, float]):
+        x, y, z, w = move
+
+        self.move(x, y, z, w, 0)
+
     def __move(
         self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
     ):
@@ -76,6 +88,34 @@ class Autopilot:
         :type roll: float
         """
         self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll))
+
+    def __on_controller_button_down(self, button: str):
+        match button:
+            case "A":
+                self.arm()
+            case "B":
+                self.disarm()
+            case "C":
+                self.flight_mode_stabilize()
+            case "D":
+                self.flight_mode_manual()
+            case "3":
+                self.gain_up()
+            case "1":
+                self.gain_down()
+            case "2":
+                self.move(0, 0, 0, 0, 1.0)
+            case "4":
+                self.move(0, 0, 0, 0, -1.0)
+
+    def __command(self, command: ROVCommands):
+        """
+        Queues a command for the autopilot.
+
+        :param command: ROV command to be sent.
+        :type command: ROVCommands
+        """
+        self.__command_queue.put(command)
 
     def move(
         self,
@@ -112,15 +152,6 @@ class Autopilot:
             interp(yaw, [min_joy_value, max_joy_value], [-1.0, 1.0]),
             interp(roll, [min_joy_value, max_joy_value], [-1.0, 1.0]),
         )
-
-    def __command(self, command: ROVCommands):
-        """
-        Queues a command for the autopilot.
-
-        :param command: ROV command to be sent.
-        :type command: ROVCommands
-        """
-        self.__command_queue.put(command)
 
     def gain_up(self):
         """
@@ -163,7 +194,7 @@ class Autopilot:
         Processes notifications and dispatches events.
 
         Dispatches relevant ROV events based on queued notifications:
-        
+
         * :class:`VehicleDisconnected` -> ``rov_vehicle_disconnected``
         * :class:`VehicleConnected` -> ``rov_vehicle_connected``
         * :class:`Armed` -> ``rov_armed``

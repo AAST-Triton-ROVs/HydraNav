@@ -1,5 +1,4 @@
 import sys
-from typing import Tuple
 import pygame
 from user_input import UserInput
 from events import EventDispatcher
@@ -32,6 +31,7 @@ class GCS:
         parser = init_parser()
         args = parser.parse_args()
         self.companion_mode = args.companion
+        logging.logger.info(f"Operating mode: {'Companion' if self.companion_mode else 'Normal'}")
 
         self.clock = pygame.time.Clock()
         self.dispatcher = EventDispatcher()
@@ -49,70 +49,7 @@ class GCS:
         self.manfaloty = Manfaloty(self.dispatcher)
 
         self.user_input.controller.update_connection_status()
-
-        self.dispatcher.subscribe(
-            "controller_button_down",
-            self.on_controller_button,
-        )
-        if not self.companion_mode:
-            self.dispatcher.subscribe(
-                "controller_joysticks",
-                self.handle_controller_joysticks,
-            )
-
-    def handle_controller_joysticks(self, move: Tuple[float, float, float, float]):
-        x, y, z, w = move
-
-        self.autopilot.move(x, y, z, w, 0)
-
-    def on_controller_button(self, button: str):
-        if self.companion_mode:
-            match button:
-                case "R1":
-                    self.manfaloty.gripper.open_jaws()
-                case "L1":
-                    self.manfaloty.gripper.close_jaws()
-                case "R2":
-                    self.manfaloty.gripper.roll_right()
-                case "L2":
-                    self.manfaloty.gripper.roll_left()
-                case "R4":
-                    self.manfaloty.gripper.pitch_up()
-                case "L4":
-                    self.manfaloty.gripper.pitch_down()
-
-            return
-
-        match button:
-            case "L":
-                self.notifier.play("bolbol")
-            case "M":
-                self.user_input.controller.calibrate()
-            case "A":
-                self.autopilot.arm()
-            case "B":
-                self.autopilot.disarm()
-            case "C":
-                self.autopilot.flight_mode_stabilize()
-            case "D":
-                self.autopilot.flight_mode_manual()
-            case "3":
-                self.autopilot.gain_up()
-            case "1":
-                self.autopilot.gain_down()
-            case "R1":
-                self.manfaloty.gripper.open_jaws()
-            case "L1":
-                self.manfaloty.gripper.close_jaws()
-            case "R2":
-                self.manfaloty.gripper.roll_right()
-            case "L2":
-                self.manfaloty.gripper.roll_left()
-            case "R4":
-                self.manfaloty.gripper.pitch_up()
-            case "L4":
-                self.manfaloty.gripper.pitch_down()
-
+        
     def run(self):
         while True:
             # time_delta = (

@@ -97,143 +97,13 @@ class Controller:
         self.__library_trigger_mappings: dict[int, str] = {}
 
         self.__load_config_libary()
-
-    def max_value(self) -> float:
-        """
-        Calculate the maximum value adjusted by the deadzone factor.
-
-        :return: The maximum adjusted value.
-        :rtype: float
-        """
-        return 1 * self.__deadzone_factor
-
-    def min_value(self) -> float:
-        """
-        Calculate the minimum value adjusted by the deadzone factor.
-
-        :return: The minimum adjusted value.
-        :rtype: float
-        """
-        return -1 * self.__deadzone_factor
-
-    def is_connected(self) -> bool:
-        """
-        Check if the joystick controller is connected.
-
-        :return: True if connected and initialized, False otherwise.
-        :rtype: bool
-        """
-        return self.__joystick is not None and self.__joystick.get_init()
-
-    def quit(self) -> None:
-        """
-        Quit the joystick instance safely if it is initialized.
-
-        If the joystick is initialized, its quit method is called.
-        """
-        if self.__joystick is not None:
-            self.__joystick.quit()
-
-    def calibrate(self) -> bool:
-        """
-        Calibrate the controller by computing and setting the deadzone.
-
-        :return: True if calibration succeeds, False otherwise.
-        :rtype: bool
-        """
-        res = self.__calc_deadzones()
-        if res is not None:
-            self.__deadzone = res
-            return True
-        else:
-            return False
-
-    def set_rgb_led(self, r: int, g: int, b: int) -> bool:
-        """
-        Set the RGB LED color by adjusting brightness values.
-
-        :param r: Red brightness (0-255).
-        :type r: int
-        :param g: Green brightness (0-255).
-        :type g: int
-        :param b: Blue brightness (0-255).
-        :type b: int
-        :raises ValueError: If any color value is not in the range 0-255.
-        :raises IOError: If write permission to the LED files is not available.
-        :return: True if the LED was successfully set; False if files not found.
-        :rtype: bool
-        """
-        color = ["red", "green", "blue"]
-
-        for c, value in zip(color, [r, g, b]):
-            if not 0 <= value <= 255:
-                raise ValueError(
-                    f"Invalid value for {c} color. Must be between 0 and 255."
-                )
-
-            brightness_file = glob.glob(f"/sys/class/leds/input*:{c}/brightness")
-
-            if not brightness_file:
-                return False
-
-            if not os.access(brightness_file[0], os.W_OK):
-                raise IOError("No write permission to the led files")
-
-            with open(brightness_file[0], "w") as f:
-                f.write(str(value))
-        return True
-
-    def update(self) -> bool:
-        """
-        Update the controller status and process input events.
-
-        If the controller is not connected, dispatches the waiting event.
-
-        :return: True if processing was successful; False otherwise.
-        :rtype: bool
-        """
-        self.update_connection_status()
-        if not self.is_connected():
-            self.__dispatcher.dispatch("controller_waiting_connection")
-            return False
-
-        try:
-            self.__process_axes()
-            self.__process_buttons()
-            self.__process_triggers()
-            self.__process_hat()
-        except Exception:
-            return False
-
-        return True
-
-    def update_connection_status(self) -> None:
-        """
-        Update the connection status of the joystick by processing connection events.
-
-        When a connection or disconnection event is detected, appropriate events are dispatched and the joystick
-        instance is either initialized or closed. In case an exception occurs, the method retries recursively.
-        """
-        try:
-            for event in pygame.event.get(
-                [pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED]
-            ):
-                if event.type == pygame.JOYDEVICEADDED:
-                    pygame.joystick.init()
-                    self.__joystick = pygame.joystick.Joystick(event.device_index)
-                    self.__dispatcher.dispatch("controller_connected")
-                    logging.logger.info("Controller connected")
-                    self.autoload_config()
-                    self.calibrate()
-                    return
-                else:
-                    if self.__joystick is not None:
-                        self.__joystick.quit()
-                    self.__dispatcher.dispatch("controller_disconnected")
-                    logging.logger.info("Controller disconnected")
-                    return
-        except Exception:
-            return self.update_connection_status()
+        
+        self.__dispatcher.subscribe("controller_button_down", self.__on_controller_button_down)
+        
+    def __on_controller_button_down(self, button: str):
+        match button:
+            case "M":
+                self.calibrate()
 
     def __calc_deadzones(self) -> Optional[float]:
         """
@@ -446,7 +316,9 @@ class Controller:
 
         for name, mapping in mappings.items():
             if mapping["type"] == "button":
-                self.__library_button_mappings[frozenset(set(mapping["mapping"]))] = name
+                self.__library_button_mappings[frozenset(set(mapping["mapping"]))] = (
+                    name
+                )
 
             if mapping["type"] == "hat":
                 self.__library_hat_mappings[tuple(mapping["mapping"])] = name
@@ -535,6 +407,143 @@ class Controller:
         files = self.__get_valid_config_files()
         return [os.path.basename(file).split(".")[0] for file in files]
 
+    def max_value(self) -> float:
+        """
+        Calculate the maximum value adjusted by the deadzone factor.
+
+        :return: The maximum adjusted value.
+        :rtype: float
+        """
+        return 1 * self.__deadzone_factor
+
+    def min_value(self) -> float:
+        """
+        Calculate the minimum value adjusted by the deadzone factor.
+
+        :return: The minimum adjusted value.
+        :rtype: float
+        """
+        return -1 * self.__deadzone_factor
+
+    def is_connected(self) -> bool:
+        """
+        Check if the joystick controller is connected.
+
+        :return: True if connected and initialized, False otherwise.
+        :rtype: bool
+        """
+        return self.__joystick is not None and self.__joystick.get_init()
+
+    def quit(self) -> None:
+        """
+        Quit the joystick instance safely if it is initialized.
+
+        If the joystick is initialized, its quit method is called.
+        """
+        if self.__joystick is not None:
+            self.__joystick.quit()
+
+    def calibrate(self) -> bool:
+        """
+        Calibrate the controller by computing and setting the deadzone.
+
+        :return: True if calibration succeeds, False otherwise.
+        :rtype: bool
+        """
+        res = self.__calc_deadzones()
+        if res is not None:
+            self.__deadzone = res
+            return True
+        else:
+            return False
+
+    def set_rgb_led(self, r: int, g: int, b: int) -> bool:
+        """
+        Set the RGB LED color by adjusting brightness values.
+
+        :param r: Red brightness (0-255).
+        :type r: int
+        :param g: Green brightness (0-255).
+        :type g: int
+        :param b: Blue brightness (0-255).
+        :type b: int
+        :raises ValueError: If any color value is not in the range 0-255.
+        :raises IOError: If write permission to the LED files is not available.
+        :return: True if the LED was successfully set; False if files not found.
+        :rtype: bool
+        """
+        color = ["red", "green", "blue"]
+
+        for c, value in zip(color, [r, g, b]):
+            if not 0 <= value <= 255:
+                raise ValueError(
+                    f"Invalid value for {c} color. Must be between 0 and 255."
+                )
+
+            brightness_file = glob.glob(f"/sys/class/leds/input*:{c}/brightness")
+
+            if not brightness_file:
+                return False
+
+            if not os.access(brightness_file[0], os.W_OK):
+                raise IOError("No write permission to the led files")
+
+            with open(brightness_file[0], "w") as f:
+                f.write(str(value))
+        return True
+
+    def update(self) -> bool:
+        """
+        Update the controller status and process input events.
+
+        If the controller is not connected, dispatches the waiting event.
+
+        :return: True if processing was successful; False otherwise.
+        :rtype: bool
+        """
+        self.update_connection_status()
+        if not self.is_connected():
+            self.__dispatcher.dispatch("controller_waiting_connection")
+            return False
+
+        try:
+            self.__process_axes()
+            self.__process_buttons()
+            self.__process_triggers()
+            self.__process_hat()
+        except Exception:
+            return False
+
+        return True
+
+    def update_connection_status(self) -> None:
+        """
+        Update the connection status of the joystick by processing connection events.
+
+        When a connection or disconnection event is detected, appropriate events are dispatched and the joystick
+        instance is either initialized or closed. In case an exception occurs, the method retries recursively.
+        """
+        try:
+            for event in pygame.event.get(
+                [pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED]
+            ):
+                if event.type == pygame.JOYDEVICEADDED:
+                    pygame.joystick.init()
+                    self.__joystick = pygame.joystick.Joystick(event.device_index)
+                    self.__dispatcher.dispatch("controller_connected")
+                    logging.logger.info("Controller connected")
+                    self.autoload_config()
+                    self.calibrate()
+                    return
+                else:
+                    if self.__joystick is not None:
+                        self.__joystick.quit()
+                    self.__dispatcher.dispatch("controller_disconnected")
+                    logging.logger.info("Controller disconnected")
+                    return
+        except Exception:
+            return self.update_connection_status()
+
     def config_names(self) -> list[str]:
         """
         Get a list of available configuration names from the library.
@@ -556,8 +565,8 @@ class Controller:
         """
         Autoload the configuration using the connected joystick's properties.
 
-        Searches the configuration library for an exact or similar match based on 
-        pygame name, number of buttons, hats, and axes. Sets the current configuration 
+        Searches the configuration library for an exact or similar match based on
+        pygame name, number of buttons, hats, and axes. Sets the current configuration
         and regenerates library mappings accordingly.
 
         :raises AttributeError: If required attributes are not defined.

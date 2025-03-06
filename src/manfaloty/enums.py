@@ -8,10 +8,10 @@ class ManfalotyCommands(Enum):
        Each value is an integer that corresponds to a specific action.
     """
 
-    GRIPPER_JAW_CLOSE = 1
+    GRIPPER_TOGGLE_JAW_CLOSE = 1
     """Closes the gripper jaws."""
 
-    GRIPPER_JAW_OPEN = -1
+    GRIPPER_TOGGLE_JAW_OPEN = -1
     """Opens the gripper jaws."""
 
     GRIPPER_PITCH_UP = 2
