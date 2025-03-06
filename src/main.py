@@ -1,11 +1,11 @@
 import sys
 import pygame
+from logger import logging, LogLevels
 from user_input import UserInput
 from events import EventDispatcher
 from gui import GUI
 from manfaloty import Manfaloty
 from notifier import Notifier
-from logger import logging
 from pi_telemetry import PiTelemetery
 from autopilot import Autopilot
 import argparse
@@ -21,6 +21,13 @@ def init_parser() -> argparse.ArgumentParser:
         help="Toggle companion mode",
         action="store_true",
     )
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        choices=[level.value.lower() for level in LogLevels],
+        default=LogLevels.INFO,
+        help="Set the log level"
+    )
     return parser
 
 
@@ -30,8 +37,14 @@ class GCS:
 
         parser = init_parser()
         args = parser.parse_args()
+
+        self.log_level: str = args.log_level
+        logging.logger.info(f"Log mode set to {self.log_level.upper()}")
+        logging.set_level_str(self.log_level)
+        
         self.companion_mode = args.companion
         logging.logger.info(f"Operating mode: {'Companion' if self.companion_mode else 'Normal'}")
+        
 
         self.clock = pygame.time.Clock()
         self.dispatcher = EventDispatcher()
