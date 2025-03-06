@@ -1,5 +1,5 @@
-gui module
-==========
+gui package
+===========
 
 .. automodule:: gui
    :members:
