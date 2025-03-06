@@ -163,6 +163,7 @@ class Autopilot:
         Processes notifications and dispatches events.
 
         Dispatches relevant ROV events based on queued notifications:
+        
         * :class:`VehicleDisconnected` -> ``rov_vehicle_disconnected``
         * :class:`VehicleConnected` -> ``rov_vehicle_connected``
         * :class:`Armed` -> ``rov_armed``
