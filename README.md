@@ -21,9 +21,7 @@ Then open `localhost:8000`
 - [ ] Add new ROV motor control backend
 
     - Use MANUAL_CONTROL and send joystick values
-    - add command to change control backend on the fly
 
-- [ ] Add toggle function for system state and flight mode
 - [ ] Support controller double pressing buttons
 - [ ] Set autopilot parameters:
 
@@ -34,4 +32,5 @@ Then open `localhost:8000`
     - LEAK1_PIN
     - LEAK1_LOGIC
     - LOG_BACKEND_TYPE
+- [ ] request senor readings
 - [ ] Create testing infrastructure

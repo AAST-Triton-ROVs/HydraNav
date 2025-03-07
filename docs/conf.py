@@ -10,7 +10,7 @@ import sys
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'HydraNav'
-copyright = '2025, YoussefKhaled AdhamWaheeb'
+copyright = '2025, Youssef Khaled Adham Waheeb'
 author = 'YoussefKhaled AdhamWaheeb'
 
 # -- General configuration ---------------------------------------------------
