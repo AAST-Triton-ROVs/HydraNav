@@ -98,9 +98,11 @@ class Controller:
         self.__library_trigger_mappings: dict[int, str] = {}
 
         self.__load_config_libary()
-        
-        self.__dispatcher.subscribe("controller_button_down", self.__on_controller_button_down)
-        
+
+        self.__dispatcher.subscribe(
+            "controller_button_down", self.__on_controller_button_down
+        )
+
     def __on_controller_button_down(self, button: str):
         match button:
             case "M":
@@ -121,10 +123,7 @@ class Controller:
         try:
             joysticks: list[int] = []
             for joystick in self.__library_joystick_mappings.values():
-                print(joystick)
                 joysticks.extend(list(joystick))
-
-            print(f"{joysticks = }")
 
             axes_values = [
                 self.__joystick.get_axis(i)
@@ -160,11 +159,15 @@ class Controller:
             for i in range(self.__joystick.get_numaxes())
         ]
 
+        system_logger.trace(f"{filtered_axes = }")
+
         joystick_values = {}
         for name, axes in self.__library_joystick_mappings.items():
+            system_logger.trace(f"__process_axes = {name = } {axes = }")
             joystick_values[name] = tuple(filtered_axes[axis] for axis in axes)
 
         self.__dispatcher.dispatch("controller_joysticks", joystick_values)
+        system_logger.debug(f"Controller joysticks: {pformat(joystick_values)}")
 
     def __process_triggers(self) -> None:
         """
@@ -183,11 +186,10 @@ class Controller:
 
         for axis_index, trigger_name in self.__library_trigger_mappings.items():
             value = self.__joystick.get_axis(axis_index)
-            if value > 0.5 and self.__previous_trigger_value <= 0.5:
-                self.__dispatcher.dispatch("controller_button_down", trigger_name)
+            system_logger.trace(f"trigger {trigger_name} value = {value}")
+            if value > 0.5:
                 system_logger.info(f"Controller trigger {trigger_name} pressed")
-
-            self.__previous_trigger_value = value
+                self.__dispatcher.dispatch("controller_button_down", trigger_name)
 
     def __process_buttons(self) -> None:
         """
@@ -208,16 +210,19 @@ class Controller:
             {e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONUP])}
         )
 
+        system_logger.trace(f"{len(buttons_pressed_down) = }")
+        system_logger.trace(f"{len(buttons_pressed_up) = }")
+
         if len(buttons_pressed_down) == 0 and len(buttons_pressed_up) == 0:
             return
 
         button_down_mapping = self.__library_button_mappings.get(buttons_pressed_down)
-        if button_down_mapping is None:
+        if button_down_mapping is None and len(buttons_pressed_down) > 0:
             system_logger.error(f"{buttons_pressed_down} is not mapped to anything")
             return
 
         button_up_mapping = self.__library_button_mappings.get(buttons_pressed_up)
-        if button_up_mapping is None:
+        if button_up_mapping is None and len(buttons_pressed_up) > 0:
             system_logger.error(f"{buttons_pressed_up} is not mapped to anything")
             return
 
@@ -252,7 +257,6 @@ class Controller:
                 continue
 
             controller_button = self.__library_hat_mappings[direction]
-            print(self.__library_hat_mappings)
 
             self.__dispatcher.dispatch("controller_button", controller_button)
             system_logger.info(f"Controller hat pressed: {controller_button}")
@@ -316,6 +320,7 @@ class Controller:
         ]
 
         for name, mapping in mappings.items():
+            system_logger.trace(f"mappings {name = } {mapping = }")
             if mapping["type"] == "button":
                 self.__library_button_mappings[frozenset(set(mapping["mapping"]))] = (
                     name
@@ -328,7 +333,12 @@ class Controller:
                 self.__library_joystick_mappings[name] = tuple(mapping["axis"])
 
             if mapping["type"] == "trigger":
-                self.__library_trigger_mappings[mapping["axis"]] = name
+                self.__library_trigger_mappings[mapping["axis"][0]] = name
+
+        system_logger.trace(f"{self.__library_button_mappings = }")
+        system_logger.trace(f"{self.__library_hat_mappings = }")
+        system_logger.trace(f"{self.__library_joystick_mappings = }")
+        system_logger.trace(f"{self.__library_trigger_mappings = }")
 
     def __validate_configuration(self, config: dict) -> bool:
         """
@@ -361,12 +371,12 @@ class Controller:
         :rtype: list[str]
         :raises json.JSONDecodeError: If a file cannot be parsed as JSON.
         """
-        
+
         files_path = [
             os.path.abspath(f"{CONFIG_DIRECTORY}/{x}")
             for x in os.listdir(CONFIG_DIRECTORY)
         ]
-        
+
         system_logger.trace(f"{files_path = }")
 
         valid_config_paths = []
@@ -380,7 +390,7 @@ class Controller:
                 else:
                     if self.__validate_configuration(data):
                         valid_config_paths.append(file)
-        
+
         system_logger.debug(f"Valid config paths: {valid_config_paths}")
         return valid_config_paths
 
@@ -399,7 +409,7 @@ class Controller:
             with open(file) as f:
                 data = json.load(f)
                 valid_configs.append(data)
-    
+
         system_logger.trace(f"{valid_configs = }")
         return valid_configs
 
@@ -586,8 +596,10 @@ class Controller:
         num_buttons = self.__joystick.get_numbuttons()
         num_hats = self.__joystick.get_numhats()
         num_axes = self.__joystick.get_numaxes()
-        
-        system_logger.debug(f"Detected {pygame_name}: {num_buttons} buttons, {num_hats} hats and {num_axes} axes")
+
+        system_logger.debug(
+            f"Detected {pygame_name}: {num_buttons} buttons, {num_hats} hats and {num_axes} axes"
+        )
 
         config_found = False
         for name, config in self.__config_library.items():
