@@ -1,4 +1,5 @@
 from queue import PriorityQueue, Queue
+import queue
 from typing import Tuple
 from events import EventDispatcher
 from numpy import interp
@@ -71,6 +72,8 @@ class Autopilot:
 
         self.move(-x, y, -z, w, 0)
 
+        system_logger.trace(f"{movement = }")
+
     def __move(
         self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
     ):
@@ -88,9 +91,17 @@ class Autopilot:
         :param roll: Roll value, ranging from -100 to 100.
         :type roll: float
         """
-        
-        system_logger.debug(f"Sending movement command to daemon: forward {forward}, lateral {lateral}, throttle {throttle}, yaw {yaw}, roll {roll}")
-        self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll), block=False)
+
+        system_logger.debug(
+            f"Sending movement command to daemon: forward {forward}, lateral {lateral}, throttle {throttle}, yaw {yaw}, roll {roll}"
+        )
+        try:
+            self.__movement_queue.put(
+                ROVMovement(forward, lateral, throttle, yaw, roll), block=False
+            )
+        except queue.Full:
+            self.__movement_queue.get()
+            self.__move(forward, lateral, throttle, yaw, roll)
 
     def __on_controller_button_down(self, button: str):
         match button:
@@ -118,7 +129,11 @@ class Autopilot:
         :param command: ROV command to be sent.
         :type command: ROVCommands
         """
-        self.__command_queue.put(command, block=False)
+        try:
+            self.__command_queue.put(command, block=False)
+        except queue.Full:
+            self.__command_queue.get()
+            self.__command(command)
 
     def move(
         self,
@@ -127,8 +142,8 @@ class Autopilot:
         throttle: float,
         yaw: float,
         roll: float,
-        min_joy_value: int = -100,
-        max_joy_value: int = 100,
+        min_joy_value: float = -100.0,
+        max_joy_value: float = 100.0,
     ):
         """
         Interprets joystick inputs and issues movement commands.

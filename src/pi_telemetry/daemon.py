@@ -92,5 +92,5 @@ class TelemetryDaemon(Thread):
                     unpacked_data[4],
                     unpacked_data[5],
                     (unpacked_data[6], unpacked_data[7]),
-                )
+                ),
             )

@@ -1,4 +1,5 @@
 from queue import Queue
+import queue
 from events import EventDispatcher
 from manfaloty.daemon import ManfalotyDaemon
 from manfaloty.data import ManfalotyData, PHReading
@@ -25,9 +26,13 @@ class Manfaloty:
             self.__command_queue, self.__data_queue, base_ip, pi_ip, port
         )
         self.__daemon.start()
-        
-        self.__dispatcher.subscribe("controller_button_down", self.__on_controller_button_down)
-        self.__dispatcher.subscribe("controller_button_up", self.__on_controller_button_up)
+
+        self.__dispatcher.subscribe(
+            "controller_button_down", self.__on_controller_button_down
+        )
+        self.__dispatcher.subscribe(
+            "controller_button_up", self.__on_controller_button_up
+        )
 
     def __on_controller_button_down(self, button: str):
         match button:
@@ -52,14 +57,18 @@ class Manfaloty:
                 self.gripper_toggle_close_jaws()
 
     def __send_command(self, command: ManfalotyCommands):
-        self.__command_queue.put(command, block=False)
+        try:
+            self.__command_queue.put(command, block=False)
+        except queue.Full:
+            self.__command_queue.get()
+            self.__send_command(command)
 
     def restart_arduino(self):
         self.__send_command(ManfalotyCommands.RESTART_ARDUINO)
 
     def reset_motors(self):
         self.__send_command(ManfalotyCommands.RESET_MOTORS)
-        
+
     def gripper_toggle_open_jaws(self):
         self.__send_command(ManfalotyCommands.GRIPPER_TOGGLE_JAW_OPEN)
 

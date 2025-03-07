@@ -1,3 +1,4 @@
+import queue
 from typing import Tuple
 from admin.enums import AdminCommands
 from logger import system_logger
@@ -17,13 +18,18 @@ class PiAdmin:
         :param address: The (IP address, port) tuple for the admin daemon.
         :type address: Tuple[str, int]
         """
-        self.__admin_queue: Queue[AdminCommands] = Queue(1)
-        self.__admin_daemon = PiAdminDaemon(self.__admin_queue, address)
+        self.__command_queue: Queue[AdminCommands] = Queue(1)
+        self.__admin_daemon = PiAdminDaemon(self.__command_queue, address)
         self.__admin_daemon.start()
         system_logger.success("Admin daemon started")
         
     def __send_command(self, command: AdminCommands):
-        self.__admin_queue.put(command, block=False)
+        try:
+            self.__command_queue.put(command, block=False)
+        except queue.Full:
+            self.__command_queue.get()
+            self.__send_command(command)
+            
 
     def poweroff(self):
         """
