@@ -21,39 +21,42 @@ class PiAdmin:
         self.__admin_daemon = PiAdminDaemon(self.__admin_queue, address)
         self.__admin_daemon.start()
         system_logger.success("Admin daemon started")
+        
+    def __send_command(self, command: AdminCommands):
+        self.__admin_queue.put(command, block=False)
 
     def poweroff(self):
         """
         Send poweroff command.
         """
-        self.__admin_queue.put(AdminCommands.POWEROFF)
+        self.__send_command(AdminCommands.POWEROFF)
 
     def reboot(self):
         """
         Send reboot command.
         """
-        self.__admin_queue.put(AdminCommands.REBOOT)
+        self.__send_command(AdminCommands.REBOOT)
 
     def restart_mavproxy(self):
         """
         Send mavproxy restart command.
         """
-        self.__admin_queue.put(AdminCommands.RESTART_MAVPROXY)
+        self.__send_command(AdminCommands.RESTART_MAVPROXY)
 
     def restart_gripper(self):
         """
         Send gripper restart command.
         """
-        self.__admin_queue.put(AdminCommands.RESTART_GRIPPER)
+        self.__send_command(AdminCommands.RESTART_GRIPPER)
 
     def restart_telemetry(self):
         """
         Send telemetry restart command.
         """
-        self.__admin_queue.put(AdminCommands.RESTART_TELEMETRY)
+        self.__send_command(AdminCommands.RESTART_TELEMETRY)
 
     def restart_admin(self):
         """
         Send admin restart command.
         """
-        self.__admin_queue.put(AdminCommands.RESTART_ADMIN)
+        self.__send_command(AdminCommands.RESTART_ADMIN)

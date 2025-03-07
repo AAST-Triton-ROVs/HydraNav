@@ -90,7 +90,7 @@ class Autopilot:
         """
         
         system_logger.debug(f"Sending movement command to daemon: forward {forward}, lateral {lateral}, throttle {throttle}, yaw {yaw}, roll {roll}")
-        self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll))
+        self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll), block=False)
 
     def __on_controller_button_down(self, button: str):
         match button:
@@ -118,7 +118,7 @@ class Autopilot:
         :param command: ROV command to be sent.
         :type command: ROVCommands
         """
-        self.__command_queue.put(command)
+        self.__command_queue.put(command, block=False)
 
     def move(
         self,
