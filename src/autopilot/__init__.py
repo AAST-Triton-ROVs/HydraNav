@@ -2,6 +2,7 @@ from queue import PriorityQueue, Queue
 from typing import Tuple
 from events import EventDispatcher
 from numpy import interp
+from logger import system_logger
 from autopilot.daemon import AutopilotConnectionDaemon
 from autopilot.movement import ROVMovement
 from autopilot.command import ROVCommands
@@ -65,10 +66,10 @@ class Autopilot:
             "controller_joysticks", self.__handle_controller_joysticks
         )
 
-    def __handle_controller_joysticks(self, move: Tuple[float, float, float, float]):
-        x, y, z, w = move
+    def __handle_controller_joysticks(self, movement: dict[str, Tuple[float, float]]):
+        y, x, w, z = *movement["LJ"], *movement["RJ"]
 
-        self.move(x, y, z, w, 0)
+        self.move(-x, y, -z, w, 0)
 
     def __move(
         self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
@@ -76,17 +77,19 @@ class Autopilot:
         """
         Queues a movement command.
 
-        :param forward: Forward/backward value.
+        :param forward: Forward/backward value, ranging from -100 to 100.
         :type forward: float
-        :param lateral: Lateral movement value.
+        :param lateral: Lateral movement value, ranging from -100 to 100.
         :type lateral: float
-        :param throttle: Vertical movement value.
+        :param throttle: Vertical movement value, ranging from -100 to 100.
         :type throttle: float
-        :param yaw: Yaw value.
+        :param yaw: Yaw value, ranging from -100 to 100.
         :type yaw: float
-        :param roll: Roll value.
+        :param roll: Roll value, ranging from -100 to 100.
         :type roll: float
         """
+        
+        system_logger.debug(f"Sending movement command to daemon: forward {forward}, lateral {lateral}, throttle {throttle}, yaw {yaw}, roll {roll}")
         self.__movement_queue.put(ROVMovement(forward, lateral, throttle, yaw, roll))
 
     def __on_controller_button_down(self, button: str):
@@ -104,9 +107,9 @@ class Autopilot:
             case "1":
                 self.gain_down()
             case "2":
-                self.move(0, 0, 0, 0, 1.0)
+                self.move(0, 0, 0, 0, 100.0)
             case "4":
-                self.move(0, 0, 0, 0, -1.0)
+                self.move(0, 0, 0, 0, -100.0)
 
     def __command(self, command: ROVCommands):
         """
