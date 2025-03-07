@@ -87,10 +87,11 @@ class ManfalotyDaemon(Thread):
                 data, client = self.__server_socket.recvfrom(PH_VALUE_SIZE)
                 ph_value = struct.unpack("f", data)
             except socket.timeout:
-                continue
+                system_logger.debug("ManfalotyDaemon reading from socket timeout")
+                pass
             except struct.error as e:
                 system_logger.error(f"Manfaloty daemon unpack error: {e}")
-                continue
+                pass
             else:
                 system_logger.info(f"Recieved {ph_value} from {client[0]}:{client[1]}")
                 self.__data_queue.put(PHReading(ph_value[0]))
