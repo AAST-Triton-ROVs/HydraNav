@@ -49,10 +49,6 @@
       "type": "button",
       "mapping": [9]
     },
-    "L4": {
-      "type": "button",
-      "mapping": []
-    },
     "RJ": {
       "type": "axis",
       "axis": [3, 4]
@@ -68,10 +64,6 @@
     "R3": {
       "type": "button",
       "mapping": [10]
-    },
-    "R4": {
-      "type": "button",
-      "mapping": []
     },
     "1": {
       "type": "hat",
