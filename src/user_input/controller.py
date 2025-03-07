@@ -258,7 +258,7 @@ class Controller:
 
             controller_button = self.__library_hat_mappings[direction]
 
-            self.__dispatcher.dispatch("controller_button", controller_button)
+            self.__dispatcher.dispatch("controller_button_down", controller_button)
             system_logger.info(f"Controller hat pressed: {controller_button}")
 
             self.__previous_hat_value = (int(direction[0]), int(direction[1]))
