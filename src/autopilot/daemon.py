@@ -1,7 +1,6 @@
 from queue import PriorityQueue, Queue
 from threading import Thread
 import time
-from typing import Tuple
 from numpy import interp
 from pymavlink import mavutil  # type: ignore
 
@@ -42,7 +41,7 @@ class AutopilotConnectionDaemon(Thread):
         command_queue: Queue[ROVCommands],
         notification_queue: PriorityQueue[ROVNotification],
         base_ip: str,
-        port: int
+        port: int,
     ):
         """
         Initialize the daemon.
@@ -108,6 +107,27 @@ class AutopilotConnectionDaemon(Thread):
         :rtype: int
         """
         return NEUTRAL_PWM + int(percent / 100 * 400) * direction.value
+
+    def __get_scaled_pwm(self, value: float) -> int:
+        """
+        Convert a float value to a scaled PWM signal.
+
+        :param value: Float from -1.0 to 1.0.
+        :type value: float
+        :return: Scaled PWM value.
+        :rtype: int
+        """
+        if value > 0:
+            direction = Directions.POSITIVE
+        elif value < 0:
+            direction = Directions.NEGATIVE
+        else:
+            direction = Directions.NEUTRAL
+
+        return self.__percent_to_pwm(
+            int(interp(abs(value), [0, 1.0], [0, GAIN_LEVELS[self.__gain_index]])),
+            direction,
+        )
 
     def __notify(self, notification: ROVNotification):
         """
@@ -192,27 +212,6 @@ class AutopilotConnectionDaemon(Thread):
         :rtype: int
         """
         return GAIN_LEVELS[self.__gain_index]
-
-    def __get_scaled_pwm(self, value: float) -> int:
-        """
-        Convert a float value to a scaled PWM signal.
-
-        :param value: Float from -1.0 to 1.0.
-        :type value: float
-        :return: Scaled PWM value.
-        :rtype: int
-        """
-        if value > 0:
-            direction = Directions.POSITIVE
-        elif value < 0:
-            direction = Directions.NEGATIVE
-        else:
-            direction = Directions.NEUTRAL
-
-        return self.__percent_to_pwm(
-            int(interp(abs(value), [0, 1.0], [0, GAIN_LEVELS[self.__gain_index]])),
-            direction,
-        )
 
     def move(
         self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
