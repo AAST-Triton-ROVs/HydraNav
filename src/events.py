@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict
-
+from logger import system_logger
 
 class Event:
     """
@@ -65,4 +65,7 @@ class EventDispatcher:
 
         if event.event_type in self.listeners:
             for listener in self.listeners[event.event_type]:
-                listener(event.data)
+                try:
+                    listener(event.data)
+                except Exception as e:
+                    system_logger.critical(f"'{listener}' produced an error: {e}")
