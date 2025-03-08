@@ -1,10 +1,10 @@
 from queue import Queue
 import queue
-from event_dispatcher import EventDispatcher
+from core.event_dispatcher import EventDispatcher
 from manfaloty.daemon import ManfalotyDaemon
 from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
-from request_manager import RequestManager
+from core.request_manager import RequestManager
 
 
 class Manfaloty:

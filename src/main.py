@@ -1,9 +1,9 @@
 import sys
 import pygame
-from logger import system_logger, LogLevels
-from request_manager import RequestManager
+from core.logger import system_logger, LogLevels
+from core.request_manager import RequestManager
 from user_input import UserInput
-from event_dispatcher import EventDispatcher
+from core.event_dispatcher import EventDispatcher
 from gui import GUI
 from manfaloty import Manfaloty
 from notifier import Notifier
@@ -53,14 +53,14 @@ class GCS:
         # self.gui = GUI(self.dispatcher, self.logging)
         self.user_input = UserInput(self.dispatcher)
         if not self.companion_mode:
-            self.notifier = Notifier(self.dispatcher)
+            self.notifier = Notifier(self.dispatcher, self.request_manager)
 
         self.pi_telemetery = PiTelemetery(self.dispatcher)
 
         if not self.companion_mode:
             self.autopilot = Autopilot(self.dispatcher)
 
-        self.manfaloty = Manfaloty(self.dispatcher)
+        self.manfaloty = Manfaloty(self.dispatcher, self.request_manager)
 
         self.user_input.controller.update_connection_status()
 

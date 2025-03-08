@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 import pygame
-from event_dispatcher import EventDispatcher
-from logger import SystemLogger
+from core.event_dispatcher import EventDispatcher
+from core.logger import SystemLogger
 from pygame_gui import UIManager, PackageResource
 
 # armed or disarmed

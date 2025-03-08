@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict
-from logger import system_logger
+from core.logger import system_logger
 
 class Event:
     """

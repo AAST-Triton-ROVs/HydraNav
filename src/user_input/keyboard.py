@@ -1,7 +1,7 @@
 import pygame
-from event_dispatcher import EventDispatcher
+from core.event_dispatcher import EventDispatcher
 from user_input.keyboard_keys import KeyboardKeys
-from logger import system_logger
+from core.logger import system_logger
 
 __all__ = ["Keyboard", "KeyboardKeys"]
 

@@ -1,4 +1,4 @@
-from event_dispatcher import EventDispatcher
+from core.event_dispatcher import EventDispatcher
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 

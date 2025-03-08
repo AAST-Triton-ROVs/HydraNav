@@ -1,9 +1,9 @@
 from queue import PriorityQueue, Queue
 import queue
 from typing import Tuple
-from event_dispatcher import EventDispatcher
+from core.event_dispatcher import EventDispatcher
 from numpy import interp
-from logger import system_logger
+from core.logger import system_logger
 from autopilot.daemon import AutopilotConnectionDaemon
 from autopilot.movement import ROVMovement
 from autopilot.command import ROVCommands
