@@ -8,7 +8,7 @@ import jsonschema
 import jsonschema.exceptions
 import pygame
 
-from events import EventDispatcher
+from event_dispatcher import EventDispatcher
 from logger import system_logger
 
 __all__ = ["Controller"]

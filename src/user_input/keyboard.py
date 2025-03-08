@@ -1,5 +1,5 @@
 import pygame
-from events import EventDispatcher
+from event_dispatcher import EventDispatcher
 from user_input.keyboard_keys import KeyboardKeys
 from logger import system_logger
 

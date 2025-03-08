@@ -1,6 +1,6 @@
 import queue
 from queue import Queue
-from events import EventDispatcher
+from event_dispatcher import EventDispatcher
 from pi_telemetry.data import TelemetryData
 from pi_telemetry.daemon import TelemetryDaemon
 

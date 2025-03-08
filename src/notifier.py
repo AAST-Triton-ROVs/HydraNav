@@ -1,8 +1,8 @@
 import pygame
-from events import EventDispatcher
+from event_dispatcher import EventDispatcher
 from pathlib import Path
 from logger import system_logger
-from requests import RequestManager
+from request_manager import RequestManager
 
 __all__ = ["Notifier"]
 

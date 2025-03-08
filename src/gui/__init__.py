@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 import pygame
-from events import EventDispatcher
+from event_dispatcher import EventDispatcher
 from logger import SystemLogger
 from pygame_gui import UIManager, PackageResource
 

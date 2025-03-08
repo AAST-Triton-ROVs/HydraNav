@@ -1,7 +1,7 @@
 from queue import PriorityQueue, Queue
 import queue
 from typing import Tuple
-from events import EventDispatcher
+from event_dispatcher import EventDispatcher
 from numpy import interp
 from logger import system_logger
 from autopilot.daemon import AutopilotConnectionDaemon

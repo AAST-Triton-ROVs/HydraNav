@@ -1,9 +1,9 @@
 import sys
 import pygame
 from logger import system_logger, LogLevels
-from requests import RequestManager
+from request_manager import RequestManager
 from user_input import UserInput
-from events import EventDispatcher
+from event_dispatcher import EventDispatcher
 from gui import GUI
 from manfaloty import Manfaloty
 from notifier import Notifier
