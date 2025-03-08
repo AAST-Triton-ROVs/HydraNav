@@ -4,7 +4,7 @@ import socket
 from threading import Thread
 import time
 from typing import Optional
-from logger import system_logger
+from core.logger import system_logger
 from pi_telemetry.data import TelemetryData
 
 BUFFER_SIZE = struct.calcsize("i" * 8)

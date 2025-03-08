@@ -1,6 +1,6 @@
 from typing import Tuple
 from admin.enums import AdminCommands
-from logger import system_logger
+from core.logger import system_logger
 from threading import Thread
 from queue import Queue
 import socket

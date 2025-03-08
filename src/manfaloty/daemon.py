@@ -2,7 +2,7 @@ from queue import Queue
 import socket
 import struct
 from threading import Thread
-from logger import system_logger
+from core.logger import system_logger
 import time
 
 from manfaloty.data import ManfalotyData, PHReading
