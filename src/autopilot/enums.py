@@ -69,11 +69,11 @@ class SystemModes(Enum):
     MANUAL = 19
 
 class ArdusubParameters(Enum):
-    FRAME_CONFIG = mavutil.mavlink.FRAME_CONFIG
-    FS_LEAK_ENABLE = mavutil.mavlink.FS_LEAK_ENABLE
-    FS_PILOT_INPUT = mavutil.mavlink.FS_PILOT_INPUT
-    FS_PILOT_TIMEOUT = mavutil.mavlink.FS_PILOT_TIMEOUT
-    LEAK1_PIN = mavutil.mavlink.LEAK1_PIN
-    LEAK1_LOGIC = mavutil.mavlink.LEAK1_LOGIC
-    LOG_BACKEND_TYPE = mavutil.mavlink.LOG_BACKEND_TYPE
+    FRAME_CONFIG = b"FRAME_CONFIG"
+    FS_LEAK_ENABLE = b"FS_LEAK_ENABLE"
+    FS_PILOT_INPUT = b"FS_PILOT_INPUT"
+    FS_PILOT_TIMEOUT = b"FS_PILOT_TIMEOUT"
+    LEAK1_PIN = b"LEAK1_PIN"
+    LEAK1_LOGIC = b"LEAK1_LOGIC"
+    LOG_BACKEND_TYPE = b"LOG_BACKEND_TYPE"
     
