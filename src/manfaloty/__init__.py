@@ -4,6 +4,7 @@ from events import EventDispatcher
 from manfaloty.daemon import ManfalotyDaemon
 from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
+from requests import RequestManager
 
 
 class Manfaloty:
@@ -14,6 +15,7 @@ class Manfaloty:
     def __init__(
         self,
         dispatcher: EventDispatcher,
+        request_manager: RequestManager,
         base_ip: str = "0.0.0.0",
         pi_ip: str = "192.168.1.100",
         port: int = 2005,
@@ -21,6 +23,7 @@ class Manfaloty:
         self.__command_queue: Queue[ManfalotyCommands] = Queue(1)
         self.__data_queue: Queue[ManfalotyData] = Queue(1)
         self.__dispatcher = dispatcher
+        self.__request_manager = request_manager
 
         self.__daemon = ManfalotyDaemon(
             self.__command_queue, self.__data_queue, base_ip, pi_ip, port
@@ -33,6 +36,7 @@ class Manfaloty:
         self.__dispatcher.subscribe(
             "controller_button_up", self.__on_controller_button_up
         )
+        self.__request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor())
 
     def __on_controller_button_down(self, button: str):
         match button:

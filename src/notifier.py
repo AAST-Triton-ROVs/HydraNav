@@ -2,6 +2,7 @@ import pygame
 from events import EventDispatcher
 from pathlib import Path
 from logger import system_logger
+from requests import RequestManager
 
 __all__ = ["Notifier"]
 
@@ -25,6 +26,7 @@ class Notifier:
     def __init__(
         self,
         dispatcher: EventDispatcher,
+        request_manager: RequestManager,
         audio_assests_path: str = "./assets/audio",
     ):
         pygame.mixer.init()
@@ -33,6 +35,7 @@ class Notifier:
 
         self.__audio_assets_path = Path(audio_assests_path)
         self.__dispatcher = dispatcher
+        self.__request_manager = request_manager
 
         self.__dispatcher.subscribe(
             "controller_connected", lambda _: self.play("controller_connected")
@@ -55,8 +58,12 @@ class Notifier:
         self.__dispatcher.subscribe(
             "rov_system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
+        self.__request_manager.register_handler("notifier_get_volume", self.__dispatch_volume)
 
         self.__change_volume(self.volume)
+        
+    def __dispatch_volume(self):
+        self.__dispatcher.dispatch("notifier_volume_state", self.volume)
 
     def __change_volume(self, inc: int):
         """

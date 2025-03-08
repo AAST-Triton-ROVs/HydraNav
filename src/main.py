@@ -1,6 +1,7 @@
 import sys
 import pygame
 from logger import system_logger, LogLevels
+from requests import RequestManager
 from user_input import UserInput
 from events import EventDispatcher
 from gui import GUI
@@ -47,6 +48,7 @@ class GCS:
 
         self.clock = pygame.time.Clock()
         self.dispatcher = EventDispatcher()
+        self.request_manager = RequestManager()
 
         # self.gui = GUI(self.dispatcher, self.logging)
         self.user_input = UserInput(self.dispatcher)

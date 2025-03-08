@@ -41,4 +41,6 @@ Then open `localhost:8000`
   - SCALED_IMU
   - SCALED_PRESSURE
 
+- [ ] Implement RequestManager
+
 - [ ] Create testing infrastructure
