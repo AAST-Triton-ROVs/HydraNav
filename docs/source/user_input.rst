@@ -14,3 +14,4 @@ Submodules
 
    user_input.controller
    user_input.keyboard
+   user_input.keyboard_keys

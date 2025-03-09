@@ -1,5 +1,5 @@
-notifier module
-===============
+notifier package
+================
 
 .. automodule:: notifier
    :members:

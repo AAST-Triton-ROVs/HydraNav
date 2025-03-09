@@ -40,14 +40,12 @@ HydraNav is structured to promote scalability and maintainability:
 
    source/admin
    source/autopilot
-   source/events
    source/gui
-   source/logger
-   source/main
    source/manfaloty
    source/notifier
    source/pi_telemetry
    source/user_input
+   source/core
 
 Indices and Tables
 ==================
