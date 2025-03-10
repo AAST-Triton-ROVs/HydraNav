@@ -1,7 +1,7 @@
 from queue import Queue
 import queue
 from core.event_dispatcher import EventDispatcher
-from manfaloty.daemon import ManfalotyDaemon
+from manfaloty.daemons import ManfalotyDaemonManager
 from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
 from core.request_manager import RequestManager
@@ -25,18 +25,18 @@ class Manfaloty:
         self.__dispatcher = dispatcher
         self.__request_manager = request_manager
 
-        self.__daemon = ManfalotyDaemon(
+        self.__daemon_manager = ManfalotyDaemonManager(
             self.__command_queue, self.__data_queue, base_ip, pi_ip, port
         )
-        self.__daemon.start()
+        self.__daemon_manager.start_daemons()
 
         self.__dispatcher.subscribe(
             "controller_button_down", self.__on_controller_button_down
         )
-        self.__dispatcher.subscribe(
-            "controller_button_up", self.__on_controller_button_up
-        )
-        self.__request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor())
+        # self.__dispatcher.subscribe(
+        #     "controller_button_up", self.__on_controller_button_up
+        # )
+        self.__request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor)
 
     def __on_controller_button_down(self, button: str):
         match button:
