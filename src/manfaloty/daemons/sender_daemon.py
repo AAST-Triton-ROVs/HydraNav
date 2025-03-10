@@ -7,7 +7,6 @@ import threading
 from core.logger import system_logger
 import time
 
-from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
 
 RETRY_DELAY = 2
@@ -52,7 +51,7 @@ class ManfalotySenderDaemon(Thread):
                 system_logger.trace(f"Sending {command.value} to {self.__pi_address}")
             except queue.Empty:
                 continue
-            
+
             data = struct.pack("!I", command.value)
             try:
                 self.__server_socket.sendto(data, self.__pi_address)
