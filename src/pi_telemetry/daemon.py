@@ -7,7 +7,7 @@ from typing import Optional
 from core.logger import system_logger
 from pi_telemetry.data import TelemetryData
 
-BUFFER_SIZE = struct.calcsize("i" * 8)
+BUFFER_SIZE = struct.calcsize("!" + "I" * 8)
 RECONNECT_DELAY = 2
 
 

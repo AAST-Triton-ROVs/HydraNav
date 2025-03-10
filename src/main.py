@@ -39,12 +39,14 @@ class GCS:
 
         parser = init_parser()
         args = parser.parse_args()
-        
+
         system_logger.info(f"Log level set to {args.loglevel.upper()}")
         system_logger.set_level_str(args.loglevel)
 
         self.companion_mode = args.companion
-        system_logger.info(f"Operating mode: {'Companion' if self.companion_mode else 'Normal'}")
+        system_logger.info(
+            f"Operating mode: {'Companion' if self.companion_mode else 'Normal'}"
+        )
 
         self.clock = pygame.time.Clock()
         self.dispatcher = EventDispatcher()

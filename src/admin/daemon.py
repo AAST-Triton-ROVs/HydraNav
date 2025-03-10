@@ -51,7 +51,7 @@ class PiAdminDaemon(Thread):
             system_logger.info(f"Admin daemon accepted connection from {address}")
             if not self.__admin_queue.empty():
                 command = self.__admin_queue.get()
-                data = struct.pack("i", command.value)
+                data = struct.pack("!I", command.value)
                 try:
                     connection.send(data)
                 except socket.error as e:
