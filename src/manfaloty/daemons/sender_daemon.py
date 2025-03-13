@@ -52,7 +52,7 @@ class ManfalotySenderDaemon(Thread):
             except queue.Empty:
                 continue
 
-            data = struct.pack("!I", command.value)
+            data = struct.pack("!i", command.value)
             try:
                 self.__server_socket.sendto(data, self.__pi_address)
             except socket.error as e:
