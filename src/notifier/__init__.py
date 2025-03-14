@@ -43,6 +43,9 @@ class Notifier:
         self.__dispatcher.subscribe(
             "controller_disconnected", lambda _: self.play("controller_disconnected")
         )
+        self.__dispatcher.subscribe(
+            "controller_button_down", self.__on_controller_down
+        )
 
         self.__dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
         self.__dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
@@ -61,6 +64,11 @@ class Notifier:
         self.__request_manager.register_handler("notifier_get_volume", self.__dispatch_volume)
 
         self.__change_volume(self.volume)
+        
+    def __on_controller_down(self, button: str):
+        match button:
+            case "L":
+                self.play("dua")
         
     def __dispatch_volume(self):
         self.__dispatcher.dispatch("notifier_volume_state", self.volume)
