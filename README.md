@@ -41,6 +41,9 @@ Then open `localhost:8000`
   - SCALED_IMU
   - SCALED_PRESSURE
 
-- [ ] Implement RequestManager
+- [x] Implement RequestManager
 
 - [ ] Create testing infrastructure
+
+- [ ] Implement CentralControl module for dynamically loading/unloading modules and gracefully shutting down
+- [ ] Migrate to use Multiprocessing instead of Multithreading to sidestep te GIL
