@@ -1,4 +1,4 @@
-# HydraNav
+![Banner](./.github/banner.png)
 
 Revolutionary GCS from TritonROVs
 
