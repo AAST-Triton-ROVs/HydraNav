@@ -1,8 +1,11 @@
 from typing import Optional, Tuple
 import pygame
 from core.event_dispatcher import EventDispatcher
-from core.logger import SystemLogger
-from pygame_gui import UIManager, PackageResource
+from core.gcs_module import GCSModule
+from core.logger import system_logger
+from pygame_gui import UIManager
+
+from core.request_manager import RequestManager
 
 # armed or disarmed
 # max gain
@@ -16,14 +19,23 @@ from pygame_gui import UIManager, PackageResource
 # joystick
 
 
-class GUI:
-    def __init__(self, dispatcher: EventDispatcher, logging: SystemLogger):
+class GUI(GCSModule):
+    def __init__(
+        self,
+        dispatcher: EventDispatcher,
+        request_manager: RequestManager,
+    ):
+        super().__init__(dispatcher, request_manager)
+
         pygame.display.set_caption("Triton GCS")
         self.window_surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         self.ui_manager = UIManager(
             self.__get_resolution(),
             # PackageResource(package="assets", resource="theme_2.json"),
         )
+
+    def quit(self):
+        return
 
     def update(self, time_delta: float | int):
         self.ui_manager.update(time_delta)

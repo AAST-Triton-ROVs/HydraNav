@@ -1,13 +1,16 @@
 import queue
 from queue import Queue
+import threading
 from core.event_dispatcher import EventDispatcher
+from core.gcs_module import GCSModule
+from core.request_manager import RequestManager
 from pi_telemetry.data import TelemetryData
 from pi_telemetry.daemon import TelemetryDaemon
 
 __all__ = ["Telemetery", "TelemeteryData"]
 
 
-class PiTelemetery:
+class PiTelemetery(GCSModule):
     """
     A class for handling telemetry data via a queue and threading.
 
@@ -22,6 +25,7 @@ class PiTelemetery:
     def __init__(
         self,
         dispatcher: EventDispatcher,
+        request_manager: RequestManager,
         host: str = "0.0.0.0",
         port=2010,
     ):
@@ -35,13 +39,24 @@ class PiTelemetery:
         :param port: The port to bind the telemetry daemon.
         :type port: int
         """
-        self.__dispatcher = dispatcher
+        super().__init__(dispatcher, request_manager)
+
         self.__host = host
         self.__port = port
         self.__queue: Queue = Queue(1)
 
-        self.__listener_thread = TelemetryDaemon(self.__queue, self.__host, self.__port)
+        self.__quit_event = threading.Event()
+        self.__listener_thread = TelemetryDaemon(
+            self.__queue,
+            self.__host,
+            self.__port,
+            self.__quit_event,
+        )
         self.__listener_thread.start()
+        
+    def quit(self):
+        self.__quit_event.set()
+        self.__listener_thread.join()
 
     def update(self):
         """

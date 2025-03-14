@@ -1,3 +1,4 @@
+import threading
 from typing import Tuple
 from admin.enums import AdminCommands
 from core.logger import system_logger
@@ -12,27 +13,33 @@ class PiAdminDaemon(Thread):
     """
     A daemon thread for listening to admin commands.
 
-    :param admin_queue: 
+    :param admin_queue:
         A queue holding admin commands.
     :type admin_queue: Queue[AdminCommands]
-    :param address: 
+    :param address:
         A tuple containing the host address and port.
     :type address: Tuple[str, int]
     """
 
-    def __init__(self, admin_queue: Queue[AdminCommands], address: Tuple[str, int]):
+    def __init__(
+        self,
+        admin_queue: Queue[AdminCommands],
+        address: Tuple[str, int],
+        quit_event: threading.Event,
+    ):
         """
         Initialize the daemon with an admin commands queue and a network address.
 
-        :param admin_queue: 
+        :param admin_queue:
             A queue holding admin commands.
         :type admin_queue: Queue[AdminCommands]
-        :param address: 
+        :param address:
             A tuple with the host and port.
         :type address: Tuple[str, int]
         """
         super().__init__(daemon=True)
         self.__admin_queue = admin_queue
+        self.__quit_event = quit_event
 
         self.__address = address
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -46,7 +53,7 @@ class PiAdminDaemon(Thread):
         pack the command value, and send it to the client.
         """
         self.server_socket.listen()
-        while True:
+        while not self.__quit_event.is_set():
             connection, address = self.server_socket.accept()
             system_logger.info(f"Admin daemon accepted connection from {address}")
             if not self.__admin_queue.empty():

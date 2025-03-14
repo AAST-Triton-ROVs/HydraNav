@@ -2,6 +2,7 @@ import queue
 import struct
 import socket
 from threading import Thread
+import threading
 import time
 from typing import Optional
 from core.logger import system_logger
@@ -23,11 +24,18 @@ class TelemetryDaemon(Thread):
     :type port: int
     """
 
-    def __init__(self, queue: queue.Queue, base_ip: str, port: int):
+    def __init__(
+        self,
+        queue: queue.Queue,
+        base_ip: str,
+        port: int,
+        quit_event: threading.Event,
+    ):
         super().__init__(daemon=True)
         self.address = (base_ip, port)
         self.server_socket: Optional[socket.socket] = None
         self.queue = queue
+        self.__quit_event = quit_event
 
     def __bind_socket(self):
         """
@@ -72,7 +80,7 @@ class TelemetryDaemon(Thread):
         :raises socket.error: If a socket error occurs.
         """
         self.__bind_socket()
-        while True:
+        while not self.__quit_event.is_set():
             try:
                 data, client = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
                 system_logger.info(f"Telemetry data packet recieved from {client}")

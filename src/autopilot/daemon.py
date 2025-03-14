@@ -1,5 +1,6 @@
 from queue import PriorityQueue, Queue
 from threading import Thread
+import threading
 import time
 from numpy import interp
 from pymavlink import mavutil  # type: ignore
@@ -42,6 +43,7 @@ class AutopilotConnectionDaemon(Thread):
         notification_queue: PriorityQueue[ROVNotification],
         base_ip: str,
         port: int,
+        quit_event: threading.Event,
     ):
         """
         Initialize the daemon.
@@ -69,6 +71,8 @@ class AutopilotConnectionDaemon(Thread):
 
         self.__time_since_last_heartbeat = time.monotonic()
         self.__time_since_last_movement = time.monotonic()
+        
+        self.__quit_event = quit_event
 
         self.__master = mavutil.mavlink_connection(
             f"udpin:{self.__base_ip}:{self.__port}"
@@ -323,7 +327,7 @@ class AutopilotConnectionDaemon(Thread):
         """
         previous_movement = None
         is_connected = False
-        while True:
+        while not self.__quit_event.is_set():
             if time.monotonic() - self.__time_since_last_heartbeat >= 0.9:
                 self.send_heartbeat()
 

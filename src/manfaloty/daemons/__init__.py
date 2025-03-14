@@ -49,8 +49,12 @@ class ManfalotyDaemonManager:
 
     def quit(self):
         self.__quit_event.set()
-
         self.__server_socket.close()
+        self.join()
+        
+    def join(self):
+        self.__reciever_daemon.join()
+        self.__sender_daemon.join()
 
     def __create_socket(self) -> socket.socket:
         """

@@ -1,13 +1,14 @@
 import pygame
 from core.event_dispatcher import EventDispatcher
 from pathlib import Path
+from core.gcs_module import GCSModule
 from core.logger import system_logger
 from core.request_manager import RequestManager
 
 __all__ = ["Notifier"]
 
 
-class Notifier:
+class Notifier(GCSModule):
     """
     Handles audio notifications for various events.
 
@@ -29,13 +30,13 @@ class Notifier:
         request_manager: RequestManager,
         audio_assests_path: str = "./assets/audio",
     ):
+        super().__init__(dispatcher, request_manager)
+
         pygame.mixer.init()
 
         self.volume = 100
 
         self.__audio_assets_path = Path(audio_assests_path)
-        self.__dispatcher = dispatcher
-        self.__request_manager = request_manager
 
         self.__dispatcher.subscribe(
             "controller_connected", lambda _: self.play("controller_connected")
@@ -43,9 +44,7 @@ class Notifier:
         self.__dispatcher.subscribe(
             "controller_disconnected", lambda _: self.play("controller_disconnected")
         )
-        self.__dispatcher.subscribe(
-            "controller_button_down", self.__on_controller_down
-        )
+        self.__dispatcher.subscribe("controller_button_down", self.__on_controller_down)
 
         self.__dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
         self.__dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
@@ -61,15 +60,17 @@ class Notifier:
         self.__dispatcher.subscribe(
             "rov_system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
-        self.__request_manager.register_handler("notifier_get_volume", self.__dispatch_volume)
+        self.__request_manager.register_handler(
+            "notifier_get_volume", self.__dispatch_volume
+        )
 
         self.__change_volume(self.volume)
-        
+
     def __on_controller_down(self, button: str):
         match button:
             case "L":
                 self.play("dua")
-        
+
     def __dispatch_volume(self):
         self.__dispatcher.dispatch("notifier_volume_state", self.volume)
 
@@ -94,6 +95,9 @@ class Notifier:
 
         pygame.mixer.music.set_volume(self.volume)
         self.__dispatcher.dispatch("notifier_volume_change", self.volume)
+
+    def quit(self):
+        return
 
     def volume_up(self):
         """

@@ -1,13 +1,14 @@
 from queue import Queue
 import queue
 from core.event_dispatcher import EventDispatcher
+from core.gcs_module import GCSModule
 from manfaloty.daemons import ManfalotyDaemonManager
 from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
 from core.request_manager import RequestManager
 
 
-class Manfaloty:
+class Manfaloty(GCSModule):
     """
     Manages communication with the Manfaloty system.
     """
@@ -20,13 +21,17 @@ class Manfaloty:
         pi_ip: str = "192.168.1.100",
         port: int = 2005,
     ):
+        super().__init__(dispatcher, request_manager)
+
         self.__command_queue: Queue[ManfalotyCommands] = Queue(1)
         self.__data_queue: Queue[ManfalotyData] = Queue(1)
-        self.__dispatcher = dispatcher
-        self.__request_manager = request_manager
 
         self.__daemon_manager = ManfalotyDaemonManager(
-            self.__command_queue, self.__data_queue, base_ip, pi_ip, port
+            self.__command_queue,
+            self.__data_queue,
+            base_ip,
+            pi_ip,
+            port,
         )
         self.__daemon_manager.start_daemons()
 
@@ -66,6 +71,9 @@ class Manfaloty:
         except queue.Full:
             self.__command_queue.get()
             self.__send_command(command)
+
+    def quit(self):
+        self.__daemon_manager.quit()
 
     def restart_arduino(self):
         self.__send_command(ManfalotyCommands.RESTART_ARDUINO)

@@ -1,8 +1,10 @@
 from queue import PriorityQueue, Queue
 import queue
+import threading
 from typing import Tuple
 from core.event_dispatcher import EventDispatcher
 from numpy import interp
+from core.gcs_module import GCSModule
 from core.logger import system_logger
 from autopilot.daemon import AutopilotConnectionDaemon
 from autopilot.movement import ROVMovement
@@ -16,11 +18,12 @@ from autopilot.notification import (
     VehicleConnected,
     VehicleDisconnected,
 )
+from core.request_manager import RequestManager
 
 __all__ = ["ROV"]
 
 
-class Autopilot:
+class Autopilot(GCSModule):
     """
     Manages and controls the Pixhawk autopilot.
 
@@ -32,6 +35,7 @@ class Autopilot:
     def __init__(
         self,
         dispatcher: EventDispatcher,
+        request_manager: RequestManager,
         base_ip: str = "0.0.0.0",
         port: int = 2000,
     ):
@@ -45,18 +49,20 @@ class Autopilot:
         :param port: Port to bind, defaults to 2000.
         :type port: int
         """
+        super().__init__(dispatcher, request_manager)
+
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)
         self.__notification_queue: PriorityQueue[ROVNotification] = PriorityQueue()
 
-        self.__dispatcher = dispatcher
-
+        self.__quit_event = threading.Event()
         self.__connection_daemon = AutopilotConnectionDaemon(
             self.__movement_queue,
             self.__command_queue,
             self.__notification_queue,
             base_ip,
             port,
+            self.__quit_event,
         )
         self.__connection_daemon.start()
 
@@ -134,6 +140,10 @@ class Autopilot:
         except queue.Full:
             self.__command_queue.get()
             self.__command(command)
+
+    def quit(self):
+        self.__quit_event.set()
+        self.__connection_daemon.join()
 
     def move(
         self,
