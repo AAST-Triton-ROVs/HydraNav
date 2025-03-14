@@ -57,10 +57,10 @@ class GCS:
         if not self.companion_mode:
             self.notifier = Notifier(self.dispatcher, self.request_manager)
 
-        self.pi_telemetery = PiTelemetery(self.dispatcher)
+        self.pi_telemetery = PiTelemetery(self.dispatcher, self.request_manager)
 
         if not self.companion_mode:
-            self.autopilot = Autopilot(self.dispatcher)
+            self.autopilot = Autopilot(self.dispatcher, self.request_manager)
 
         self.manfaloty = Manfaloty(self.dispatcher, self.request_manager)
 
