@@ -38,17 +38,18 @@ class UserInput(GCSModule):
         :param joystick_multiplier: The multiplier for the joystick, defaults to 100.
         :type joystick_multiplier: int, optional
         """
-        self.__dispatcher = dispatcher
+        self._dispatcher = dispatcher
         self.controller = Controller(
-            self.__dispatcher,
+            self._dispatcher,
             joystick_deadzone_factor,
             joystick_roundoff,
             joystick_multiplier,
         )
-        self.keyboard = Keyboard(self.__dispatcher)
+        self.keyboard = Keyboard(self._dispatcher)
         
     def quit(self):
         self.controller.quit()
+        self._quit_successful()
         
     def update(self):
         self.controller.update()

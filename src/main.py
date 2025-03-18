@@ -1,6 +1,6 @@
 import sys
 import pygame
-from core.module_control import ModuleManager
+from core.module_manager import ModuleManager
 from core.logger import system_logger, LogLevels
 from core.request_manager import RequestManager
 from user_input import UserInput
