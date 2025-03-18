@@ -74,7 +74,7 @@ class GCS:
         self.manfaloty = Manfaloty(self.dispatcher, self.request_manager)
         self.module_manager.register_module(self.manfaloty)
 
-        system_logger.info(f"Loaded modules: {', '.join(self.module_manager.loaded_modules)}")
+        system_logger.info(f"Loaded modules: {' '.join(self.module_manager.loaded_modules)}")
         self.user_input.controller.update_connection_status()
 
     def run(self):
