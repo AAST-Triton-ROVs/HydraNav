@@ -1,10 +1,11 @@
 from core.event_dispatcher import EventDispatcher
+from core.gcs_module import GCSModule
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
 __all__ = ["UserInput", "KeyboardKeys"]
 
-class UserInput:
+class UserInput(GCSModule):
     """
     UserInput class to handle user input through a controller.
 
@@ -45,6 +46,9 @@ class UserInput:
             joystick_multiplier,
         )
         self.keyboard = Keyboard(self.__dispatcher)
+        
+    def quit(self):
+        self.controller.quit()
         
     def update(self):
         self.controller.update()

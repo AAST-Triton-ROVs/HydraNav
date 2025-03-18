@@ -1,6 +1,6 @@
 import sys
 import pygame
-from core.module_control import ModuleControl
+from core.module_control import ModuleManager
 from core.logger import system_logger, LogLevels
 from core.request_manager import RequestManager
 from user_input import UserInput
@@ -53,29 +53,30 @@ class GCS:
         self.clock = pygame.time.Clock()
         self.dispatcher = EventDispatcher()
         self.request_manager = RequestManager()
-        self.centeral_control = ModuleControl(self.dispatcher)
+        self.module_manager = ModuleManager(self.dispatcher)
 
         # self.gui = GUI(self.dispatcher, self.logging)
         self.user_input = UserInput(self.dispatcher)
+        self.module_manager.register_module(self.user_input)
         
         if not self.companion_mode:
             self.notifier = Notifier(self.dispatcher, self.request_manager)
-            self.centeral_control.register_module(self.notifier)
+            self.module_manager.register_module(self.notifier)
 
         self.pi_telemetery = PiTelemetery(self.dispatcher, self.request_manager)
-        self.centeral_control.register_module(self.pi_telemetery)
+        self.module_manager.register_module(self.pi_telemetery)
 
         if not self.companion_mode:
             self.autopilot = Autopilot(self.dispatcher, self.request_manager)
-            self.centeral_control.register_module(self.autopilot)
+            self.module_manager.register_module(self.autopilot)
 
         self.admin = PiAdmin(self.dispatcher, self.request_manager)
-        self.centeral_control.register_module(self.admin)
+        self.module_manager.register_module(self.admin)
         
         self.manfaloty = Manfaloty(self.dispatcher, self.request_manager)
-        self.centeral_control.register_module(self.manfaloty)
+        self.module_manager.register_module(self.manfaloty)
 
-        system_logger.info(f"Loaded modules: {', '.join(self.centeral_control.loaded_modules)}")
+        system_logger.info(f"Loaded modules: {', '.join(self.module_manager.loaded_modules)}")
         self.user_input.controller.update_connection_status()
 
     def run(self):
