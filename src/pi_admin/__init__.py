@@ -17,7 +17,6 @@ class PiAdmin(GCSModule):
 
     def __init__(
         self,
-        dispatcher: EventDispatcher,
         request_manager: RequestManager,
         address: Tuple[str, int] = ("0.0.0.0", 2015),
     ):
@@ -27,8 +26,8 @@ class PiAdmin(GCSModule):
         :param address: The (IP address, port) tuple for the admin daemon.
         :type address: Tuple[str, int]
         """
-        super().__init__(dispatcher, request_manager)
-
+        super().__init__()
+        
         self.__quit_event = threading.Event()
         self.__command_queue: Queue[AdminCommands] = Queue(1)
         self.__admin_daemon = PiAdminDaemon(
@@ -51,8 +50,6 @@ class PiAdmin(GCSModule):
         self.__quit_event.set()
         self.__admin_daemon.join()
         
-        self._quit_successful()
-
     def poweroff(self):
         """
         Send poweroff command.

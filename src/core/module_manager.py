@@ -22,15 +22,10 @@ class ModuleManager:
 
         signal.signal(signal.SIGINT, lambda a, b: self.shutdown())
         signal.signal(signal.SIGALRM, self.__timeout_handler)
-        self.__dispatcher.subscribe("module_quit", self.__module_quit_successful)
 
     @staticmethod
     def __timeout_handler(signum, frame):
         raise TimeoutError()
-
-    def __module_quit_successful(self, module: str):
-        system_logger.success(f"{module} has been quit.")
-        self.deregister_module(module)
 
     def register_module(self, module: GCSModule):
         self.__modules[type(module).__name__] = module
@@ -46,6 +41,7 @@ class ModuleManager:
     def quit_module(self, module: str):
         if self.__modules.get(module):
             self.__modules[module].quit()
+            system_logger.success(f"{module} has been quit")
 
     def quit_all(self):
         module_names = list(self.__modules.keys())

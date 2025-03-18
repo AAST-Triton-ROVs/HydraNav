@@ -21,7 +21,7 @@ class Manfaloty(GCSModule):
         pi_ip: str = "192.168.1.100",
         port: int = 2005,
     ):
-        super().__init__(dispatcher, request_manager)
+        super().__init__()
 
         self.__command_queue: Queue[ManfalotyCommands] = Queue(1)
         self.__data_queue: Queue[ManfalotyData] = Queue(1)
@@ -35,13 +35,15 @@ class Manfaloty(GCSModule):
         )
         self.__daemon_manager.start_daemons()
 
-        self._dispatcher.subscribe(
+        self.__dispatcher = dispatcher
+        self.__request_manager = request_manager
+        self.__dispatcher.subscribe(
             "controller_button_down", self.__on_controller_button_down
         )
         # self.__dispatcher.subscribe(
         #     "controller_button_up", self.__on_controller_button_up
         # )
-        self._request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor)
+        self.__request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor)
 
     def __on_controller_button_down(self, button: str):
         match button:
@@ -74,7 +76,6 @@ class Manfaloty(GCSModule):
 
     def quit(self):
         self.__daemon_manager.quit()
-        self._quit_successful()
         
     def status_ok(self) -> bool:
         return self.__daemon_manager.status_ok()
@@ -122,4 +123,4 @@ class Manfaloty(GCSModule):
         if not self.__data_queue.empty():
             data = self.__data_queue.get()
             if isinstance(data, PHReading):
-                self._dispatcher.dispatch("manfaloty_ph_reading", data.value)
+                self.__dispatcher.dispatch("manfaloty_ph_reading", data.value)

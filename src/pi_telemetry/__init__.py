@@ -39,7 +39,9 @@ class PiTelemetery(GCSModule):
         :param port: The port to bind the telemetry daemon.
         :type port: int
         """
-        super().__init__(dispatcher, request_manager)
+        super().__init__()
+
+        self.__dispatcher = dispatcher
 
         self.__host = host
         self.__port = port
@@ -57,9 +59,7 @@ class PiTelemetery(GCSModule):
     def quit(self):
         self.__quit_event.set()
         self.__listener_thread.join()
-        
-        self._quit_successful()
-        
+                
     def status_ok(self) -> bool:
         return self.__listener_thread.is_alive()
 
@@ -74,7 +74,7 @@ class PiTelemetery(GCSModule):
         except queue.Empty:
             return
         else:
-            self._dispatcher.dispatch("telemetery", recieved_data)
+            self.__dispatcher.dispatch("telemetery", recieved_data)
 
     def close(self):
         """

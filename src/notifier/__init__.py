@@ -30,37 +30,39 @@ class Notifier(GCSModule):
         request_manager: RequestManager,
         audio_assests_path: str = "./assets/audio",
     ):
-        super().__init__(dispatcher, request_manager)
+        super().__init__()
 
         pygame.mixer.init()
 
         self.volume = 100
 
         self.__audio_assets_path = Path(audio_assests_path)
+        self.__dispatcher = dispatcher
+        self.__request_manager = request_manager
 
-        self._dispatcher.subscribe(
+        self.__dispatcher.subscribe(
             "controller_connected", lambda _: self.play("controller_connected")
         )
-        self._dispatcher.subscribe(
+        self.__dispatcher.subscribe(
             "controller_disconnected", lambda _: self.play("controller_disconnected")
         )
-        self._dispatcher.subscribe("controller_button_down", self.__on_controller_down)
+        self.__dispatcher.subscribe("controller_button_down", self.__on_controller_down)
 
-        self._dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
-        self._dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
-        self._dispatcher.subscribe(
+        self.__dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
+        self.__dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
+        self.__dispatcher.subscribe(
             "rov_gain_change", lambda g: self.play(f"{g}_percent_gain")
         )
-        self._dispatcher.subscribe(
+        self.__dispatcher.subscribe(
             "rov_vehicle_connected", lambda _: self.play("vehicle_connected")
         )
-        self._dispatcher.subscribe(
+        self.__dispatcher.subscribe(
             "rov_vehicle_disconnected", lambda _: self.play("vehicle_disconnected")
         )
-        self._dispatcher.subscribe(
+        self.__dispatcher.subscribe(
             "rov_system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
-        self._request_manager.register_handler(
+        self.__request_manager.register_handler(
             "notifier_get_volume", self.__dispatch_volume
         )
 
@@ -72,7 +74,7 @@ class Notifier(GCSModule):
                 self.play("dua")
 
     def __dispatch_volume(self):
-        self._dispatcher.dispatch("notifier_volume_state", self.volume)
+        self.__dispatcher.dispatch("notifier_volume_state", self.volume)
 
     def __change_volume(self, inc: int):
         """
@@ -94,10 +96,9 @@ class Notifier(GCSModule):
             self.volume += inc
 
         pygame.mixer.music.set_volume(self.volume)
-        self._dispatcher.dispatch("notifier_volume_change", self.volume)
+        self.__dispatcher.dispatch("notifier_volume_change", self.volume)
 
     def quit(self):
-        self._quit_successful()
         return
     
     def status_ok(self) -> bool:

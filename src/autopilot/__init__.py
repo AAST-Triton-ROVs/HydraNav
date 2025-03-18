@@ -35,7 +35,6 @@ class Autopilot(GCSModule):
     def __init__(
         self,
         dispatcher: EventDispatcher,
-        request_manager: RequestManager,
         base_ip: str = "0.0.0.0",
         port: int = 2000,
     ):
@@ -49,12 +48,14 @@ class Autopilot(GCSModule):
         :param port: Port to bind, defaults to 2000.
         :type port: int
         """
-        super().__init__(dispatcher, request_manager)
+        super().__init__()
 
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)
         self.__notification_queue: PriorityQueue[ROVNotification] = PriorityQueue()
-
+        
+        self.__dispatcher = dispatcher
+        
         self.__quit_event = threading.Event()
         self.__connection_daemon = AutopilotConnectionDaemon(
             self.__movement_queue,
@@ -66,10 +67,10 @@ class Autopilot(GCSModule):
         )
         self.__connection_daemon.start()
 
-        self._dispatcher.subscribe(
+        self.__dispatcher.subscribe(
             "controller_button_down", self.__on_controller_button_down
         )
-        self._dispatcher.subscribe(
+        self.__dispatcher.subscribe(
             "controller_joysticks", self.__handle_controller_joysticks
         )
 
@@ -144,9 +145,7 @@ class Autopilot(GCSModule):
     def quit(self):
         self.__quit_event.set()
         self.__connection_daemon.join()
-        
-        self._quit_successful()
-        
+                
     def status_ok(self) -> bool:
         return self.__connection_daemon.is_alive()
 
@@ -239,14 +238,14 @@ class Autopilot(GCSModule):
             notification = self.__notification_queue.get()
 
             if isinstance(notification, VehicleDisconnected):
-                self._dispatcher.dispatch("rov_vehicle_disconnected")
+                self.__dispatcher.dispatch("rov_vehicle_disconnected")
             elif isinstance(notification, VehicleConnected):
-                self._dispatcher.dispatch("rov_vehicle_connected")
+                self.__dispatcher.dispatch("rov_vehicle_connected")
             elif isinstance(notification, Armed):
-                self._dispatcher.dispatch("rov_armed")
+                self.__dispatcher.dispatch("rov_armed")
             elif isinstance(notification, Disarmed):
-                self._dispatcher.dispatch("rov_disarmed")
+                self.__dispatcher.dispatch("rov_disarmed")
             elif isinstance(notification, GainChange):
-                self._dispatcher.dispatch("rov_gain_change", notification.new_gain)
+                self.__dispatcher.dispatch("rov_gain_change", notification.new_gain)
             elif isinstance(notification, SystemModeChanged):
-                self._dispatcher.dispatch("rov_system_mode_changed", notification.mode)
+                self.__dispatcher.dispatch("rov_system_mode_changed", notification.mode)

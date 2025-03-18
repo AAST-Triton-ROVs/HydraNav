@@ -56,21 +56,19 @@ class GCS:
         self.module_manager = ModuleManager(self.dispatcher)
 
         # self.gui = GUI(self.dispatcher, self.logging)
-        self.user_input = UserInput(self.dispatcher)
+        self.user_input = UserInput(self.dispatcher, self.request_manager)
         self.module_manager.register_module(self.user_input)
-        
-        if not self.companion_mode:
-            self.notifier = Notifier(self.dispatcher, self.request_manager)
-            self.module_manager.register_module(self.notifier)
 
         self.pi_telemetery = PiTelemetery(self.dispatcher, self.request_manager)
         self.module_manager.register_module(self.pi_telemetery)
 
         if not self.companion_mode:
-            self.autopilot = Autopilot(self.dispatcher, self.request_manager)
+            self.notifier = Notifier(self.dispatcher, self.request_manager)
+            self.module_manager.register_module(self.notifier)
+            self.autopilot = Autopilot(self.dispatcher)
             self.module_manager.register_module(self.autopilot)
 
-        self.admin = PiAdmin(self.dispatcher, self.request_manager)
+        self.admin = PiAdmin(self.request_manager)
         self.module_manager.register_module(self.admin)
         
         self.manfaloty = Manfaloty(self.dispatcher, self.request_manager)

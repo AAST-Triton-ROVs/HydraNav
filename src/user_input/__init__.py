@@ -1,5 +1,6 @@
 from core.event_dispatcher import EventDispatcher
 from core.gcs_module import GCSModule
+from core.request_manager import RequestManager
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
@@ -23,6 +24,7 @@ class UserInput(GCSModule):
     def __init__(
         self,
         dispatcher: EventDispatcher,
+        request_manager: RequestManager,
         joystick_deadzone_factor: float = 2,
         joystick_roundoff: int = 1,
         joystick_multiplier: int = 100,
@@ -39,18 +41,19 @@ class UserInput(GCSModule):
         :param joystick_multiplier: The multiplier for the joystick, defaults to 100.
         :type joystick_multiplier: int, optional
         """
-        self._dispatcher = dispatcher
+        super().__init__()
+        
+        self.__dispatcher = dispatcher
         self.controller = Controller(
-            self._dispatcher,
+            self.__dispatcher,
             joystick_deadzone_factor,
             joystick_roundoff,
             joystick_multiplier,
         )
-        self.keyboard = Keyboard(self._dispatcher)
+        self.keyboard = Keyboard(self.__dispatcher)
 
     def quit(self):
         self.controller.quit()
-        self._quit_successful()
         
     def status_ok(self) -> bool:
         return self.controller.status_ok()
