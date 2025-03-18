@@ -99,6 +99,9 @@ class Notifier(GCSModule):
     def quit(self):
         self._quit_successful()
         return
+    
+    def status_ok(self) -> bool:
+        return True
 
     def volume_up(self):
         """

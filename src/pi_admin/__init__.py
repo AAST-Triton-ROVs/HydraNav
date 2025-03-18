@@ -43,6 +43,9 @@ class PiAdmin(GCSModule):
         except queue.Full:
             self.__command_queue.get()
             self.__send_command(command)
+            
+    def status_ok(self) -> bool:
+        return self.__admin_daemon.is_alive()
 
     def quit(self):
         self.__quit_event.set()

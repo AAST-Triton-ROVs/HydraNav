@@ -460,6 +460,9 @@ class Controller:
         """
         if self.__joystick is not None:
             self.__joystick.quit()
+            
+    def status_ok(self) -> bool:
+        return self.__joystick is not None and self.__joystick.get_init()
 
     def calibrate(self) -> bool:
         """

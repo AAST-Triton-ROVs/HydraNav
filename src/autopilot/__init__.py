@@ -146,6 +146,9 @@ class Autopilot(GCSModule):
         self.__connection_daemon.join()
         
         self._quit_successful()
+        
+    def status_ok(self) -> bool:
+        return self.__connection_daemon.is_alive()
 
     def move(
         self,

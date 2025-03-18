@@ -5,6 +5,7 @@ from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
 __all__ = ["UserInput", "KeyboardKeys"]
 
+
 class UserInput(GCSModule):
     """
     UserInput class to handle user input through a controller.
@@ -46,11 +47,14 @@ class UserInput(GCSModule):
             joystick_multiplier,
         )
         self.keyboard = Keyboard(self._dispatcher)
-        
+
     def quit(self):
         self.controller.quit()
         self._quit_successful()
         
+    def status_ok(self) -> bool:
+        return self.controller.status_ok()
+
     def update(self):
         self.controller.update()
         self.keyboard.update()

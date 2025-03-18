@@ -12,6 +12,9 @@ class GCSModule(ABC):
 
     @abstractmethod
     def quit(self): ...
+    
+    @abstractmethod
+    def status_ok(self): ...
 
     def _quit_successful(self):
         self._dispatcher.dispatch("module_quit", type(self).__name__)

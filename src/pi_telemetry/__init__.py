@@ -59,6 +59,9 @@ class PiTelemetery(GCSModule):
         self.__listener_thread.join()
         
         self._quit_successful()
+        
+    def status_ok(self) -> bool:
+        return self.__listener_thread.is_alive()
 
     def update(self):
         """

@@ -46,6 +46,9 @@ class ManfalotyDaemonManager:
     def start_daemons(self):
         self.__reciever_daemon.start()
         self.__sender_daemon.start()
+        
+    def status_ok(self):
+        return self.__reciever_daemon.is_alive() and self.__sender_daemon.is_alive()
 
     def quit(self):
         self.__quit_event.set()

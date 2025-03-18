@@ -75,6 +75,9 @@ class Manfaloty(GCSModule):
     def quit(self):
         self.__daemon_manager.quit()
         self._quit_successful()
+        
+    def status_ok(self) -> bool:
+        return self.__daemon_manager.status_ok()
 
     def restart_arduino(self):
         self.__send_command(ManfalotyCommands.RESTART_ARDUINO)

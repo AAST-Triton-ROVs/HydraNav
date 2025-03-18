@@ -1,3 +1,4 @@
+from typing import Optional
 import pygame
 from core.event_dispatcher import EventDispatcher
 from core.logger import system_logger
@@ -20,7 +21,7 @@ class ModuleManager:
         self.__dispatcher = dispatcher
 
         signal.signal(signal.SIGINT, lambda a, b: self.shutdown())
-        signal.signal(signal.SIGALRM, ModuleManager.__timeout_handler)
+        signal.signal(signal.SIGALRM, self.__timeout_handler)
         self.__dispatcher.subscribe("module_quit", self.__module_quit_successful)
 
     @staticmethod
@@ -61,6 +62,23 @@ class ModuleManager:
         pygame.quit()
         system_logger.info("Done!")
         sys.exit(0)
+        
+    def get_module_status(self, module: str) -> Optional[bool]:
+        if self.__modules.get(module) is None:
+            return None
+        
+        return self.__modules[module].status_ok()
+    
+    def get_all_module_statuses(self) -> dict[str, bool]:
+        data: dict[str, bool] = {}
+        for name in self.__modules.keys():
+            status = self.get_module_status(name)
+            if status is None:
+                continue
+            
+            data[name] = status
+        
+        return data
 
     @property
     def exit_complete(self) -> bool:
