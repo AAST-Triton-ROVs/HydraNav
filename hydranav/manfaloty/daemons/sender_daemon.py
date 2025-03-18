@@ -1,13 +1,11 @@
-from http import client
 from queue import Queue
-import queue
 import socket
 import struct
 from threading import Thread
 import threading
-from core.logger import system_logger
 import time
 
+from core.logger import system_logger
 from manfaloty.enums import ManfalotyCommands
 
 RETRY_DELAY = 2

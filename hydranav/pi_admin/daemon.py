@@ -1,12 +1,12 @@
 import threading
 from typing import Tuple
-from pi_admin.enums import AdminCommands
-from core.logger import system_logger
 from threading import Thread
 from queue import Queue
 import socket
 import time
 import struct
+from pi_admin.enums import AdminCommands
+from core.logger import system_logger
 
 SOCKET_TIMEOUT = 1.0
 

@@ -1,11 +1,11 @@
 import queue
 from queue import Queue
 import threading
+from pi_telemetry.data import TelemetryData
+from pi_telemetry.daemon import TelemetryDaemon
 from core.event_dispatcher import EventDispatcher
 from core.gcs_module import GCSModule
 from core.request_manager import RequestManager
-from pi_telemetry.data import TelemetryData
-from pi_telemetry.daemon import TelemetryDaemon
 
 __all__ = ["Telemetery", "TelemeteryData"]
 
@@ -25,7 +25,6 @@ class PiTelemetery(GCSModule):
     def __init__(
         self,
         dispatcher: EventDispatcher,
-        request_manager: RequestManager,
         host: str = "0.0.0.0",
         port=2010,
     ):

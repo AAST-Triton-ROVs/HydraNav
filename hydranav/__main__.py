@@ -1,5 +1,6 @@
 import sys
 import pygame
+import argparse
 from core.module_manager import ModuleManager
 from core.logger import system_logger, LogLevels
 from core.request_manager import RequestManager
@@ -11,7 +12,6 @@ from notifier import Notifier
 from pi_telemetry import PiTelemetery
 from pi_admin import PiAdmin
 from autopilot import Autopilot
-import argparse
 
 DESCRIPTION = "HydraNav, a revolutionary Ground Control System (GCS) for underwater ROVs, providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features."
 
@@ -59,7 +59,7 @@ class GCS:
         self.user_input = UserInput(self.dispatcher, self.request_manager)
         self.module_manager.register_module(self.user_input)
 
-        self.pi_telemetery = PiTelemetery(self.dispatcher, self.request_manager)
+        self.pi_telemetery = PiTelemetery(self.dispatcher)
         self.module_manager.register_module(self.pi_telemetery)
 
         if not self.companion_mode:

@@ -1,5 +1,4 @@
 from enum import Enum
-from pymavlink import mavutil # type: ignore
 
 class ControlChannels(Enum):
     """

@@ -3,9 +3,9 @@ import socket
 import struct
 from threading import Thread
 import threading
-from core.logger import system_logger
 import time
 
+from core.logger import system_logger
 from manfaloty.data import ManfalotyData, PHReading
 
 PH_VALUE_SIZE = struct.calcsize("!f")

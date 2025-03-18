@@ -2,8 +2,8 @@ from queue import PriorityQueue, Queue
 import queue
 import threading
 from typing import Tuple
-from core.event_dispatcher import EventDispatcher
 from numpy import interp
+from core.event_dispatcher import EventDispatcher
 from core.gcs_module import GCSModule
 from core.logger import system_logger
 from autopilot.daemon import AutopilotConnectionDaemon

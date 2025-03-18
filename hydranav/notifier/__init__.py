@@ -1,6 +1,6 @@
 import pygame
-from core.event_dispatcher import EventDispatcher
 from pathlib import Path
+from core.event_dispatcher import EventDispatcher
 from core.gcs_module import GCSModule
 from core.logger import system_logger
 from core.request_manager import RequestManager

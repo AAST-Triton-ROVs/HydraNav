@@ -1,11 +1,11 @@
 from typing import Optional
 import pygame
-from core.event_dispatcher import EventDispatcher
-from core.logger import system_logger
-from core.gcs_module import GCSModule
 import time
 import signal
 import sys
+from core.event_dispatcher import EventDispatcher
+from core.logger import system_logger
+from core.gcs_module import GCSModule
 
 # time in seconds before forcefully exiting
 QUIT_TIMEOUT = 5
