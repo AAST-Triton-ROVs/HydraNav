@@ -1,6 +1,6 @@
 import threading
 from typing import Tuple
-from admin.enums import AdminCommands
+from pi_admin.enums import AdminCommands
 from core.logger import system_logger
 from threading import Thread
 from queue import Queue
@@ -8,6 +8,7 @@ import socket
 import time
 import struct
 
+SOCKET_TIMEOUT = 1.0
 
 class PiAdminDaemon(Thread):
     """
@@ -43,6 +44,7 @@ class PiAdminDaemon(Thread):
 
         self.__address = address
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.settimeout(SOCKET_TIMEOUT)
         self.server_socket.bind(self.__address)
 
     def run(self):
@@ -54,8 +56,11 @@ class PiAdminDaemon(Thread):
         """
         self.server_socket.listen()
         while not self.__quit_event.is_set():
-            connection, address = self.server_socket.accept()
-            system_logger.info(f"Admin daemon accepted connection from {address}")
+            try:
+                connection, address = self.server_socket.accept()
+                system_logger.info(f"Admin daemon accepted connection from {address}")
+            except socket.timeout:
+                system_logger.debug("Admin daemon no connection")
             if not self.__admin_queue.empty():
                 command = self.__admin_queue.get()
                 data = struct.pack("!I", command.value)

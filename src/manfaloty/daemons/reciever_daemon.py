@@ -8,8 +8,7 @@ import time
 
 from manfaloty.data import ManfalotyData, PHReading
 
-RETRY_DELAY = 1
-PH_VALUE_SIZE = struct.calcsize("f")
+PH_VALUE_SIZE = struct.calcsize("!f")
 
 
 class ManfalotyRecieverDaemon(Thread):
@@ -43,12 +42,13 @@ class ManfalotyRecieverDaemon(Thread):
                 ph_value = struct.unpack("!f", data)
             except socket.timeout:
                 system_logger.debug("Manfaloty reciever reading from socket timeout")
-                time.sleep(RETRY_DELAY)
+                continue
+            except socket.error as e:
+                system_logger.error(f"Manfaloty reciever daemon socket error: {e}")
                 continue
             except struct.error as e:
                 system_logger.error(f"Manfaloty reciever daemon unpack error: {e}")
-                time.sleep(RETRY_DELAY)
                 continue
-            else:
-                system_logger.success(f"Recieved data from {client[0]}:{client[1]}")
-                self.__data_queue.put(PHReading(ph_value[0]))
+
+            system_logger.success(f"Recieved data from {client[0]}:{client[1]}")
+            self.__data_queue.put(PHReading(ph_value[0]))

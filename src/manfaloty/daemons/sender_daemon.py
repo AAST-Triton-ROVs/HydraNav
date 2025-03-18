@@ -1,3 +1,4 @@
+from http import client
 from queue import Queue
 import queue
 import socket
@@ -46,19 +47,23 @@ class ManfalotySenderDaemon(Thread):
 
     def run(self):
         while not self.__quit_event.is_set():
-            try:
-                command = self.__command_queue.get()
-                system_logger.trace(f"Sending {command.value} to {self.__pi_address}")
-            except queue.Empty:
+            if self.__command_queue.empty():
+                system_logger.debug("Manfaloty sender daemon no new commands")
                 continue
+            
+            command = self.__command_queue.get()
+            system_logger.trace(f"Sending {command.value} to {self.__pi_address}")
 
             data = struct.pack("!i", command.value)
             try:
                 self.__server_socket.sendto(data, self.__pi_address)
+            except socket.timeout:
+                system_logger.debug("Manfaloty client not connected")
+                continue
             except socket.error as e:
                 system_logger.error(f"Manfaloty sender daemon socket error: {e}")
-                time.sleep(RETRY_DELAY)
-            else:
-                system_logger.success(
-                    f"Sent {command.value} to {self.__pi_address[0]}:{self.__pi_address[1]}"
-                )
+                continue
+            
+            system_logger.success(
+                f"Sent {command.value} to {self.__pi_address[0]}:{self.__pi_address[1]}"
+            )

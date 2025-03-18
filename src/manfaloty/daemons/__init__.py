@@ -11,7 +11,7 @@ from manfaloty.enums import ManfalotyCommands
 __all__ = ["ManfalotyDaemonManager"]
 
 RETRY_DELAY = 2
-SOCKET_TIMEOUT = 1
+SOCKET_TIMEOUT = 1.0
 
 
 class ManfalotyDaemonManager:
@@ -49,8 +49,8 @@ class ManfalotyDaemonManager:
 
     def quit(self):
         self.__quit_event.set()
-        self.__server_socket.close()
         self.join()
+        self.__server_socket.close()
         
     def join(self):
         self.__reciever_daemon.join()
@@ -65,8 +65,8 @@ class ManfalotyDaemonManager:
         while True:
             try:
                 server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                server_socket.bind(self.__address)
                 server_socket.settimeout(SOCKET_TIMEOUT)
+                server_socket.bind(self.__address)
                 system_logger.success(
                     f"Manfaloty daemons bound to {self.__address[0]}:{self.__address[1]}"
                 )

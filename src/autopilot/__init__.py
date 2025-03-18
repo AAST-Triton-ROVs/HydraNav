@@ -66,10 +66,10 @@ class Autopilot(GCSModule):
         )
         self.__connection_daemon.start()
 
-        self.__dispatcher.subscribe(
+        self._dispatcher.subscribe(
             "controller_button_down", self.__on_controller_button_down
         )
-        self.__dispatcher.subscribe(
+        self._dispatcher.subscribe(
             "controller_joysticks", self.__handle_controller_joysticks
         )
 
@@ -144,6 +144,8 @@ class Autopilot(GCSModule):
     def quit(self):
         self.__quit_event.set()
         self.__connection_daemon.join()
+        
+        self._quit_successful()
 
     def move(
         self,
@@ -234,14 +236,14 @@ class Autopilot(GCSModule):
             notification = self.__notification_queue.get()
 
             if isinstance(notification, VehicleDisconnected):
-                self.__dispatcher.dispatch("rov_vehicle_disconnected")
+                self._dispatcher.dispatch("rov_vehicle_disconnected")
             elif isinstance(notification, VehicleConnected):
-                self.__dispatcher.dispatch("rov_vehicle_connected")
+                self._dispatcher.dispatch("rov_vehicle_connected")
             elif isinstance(notification, Armed):
-                self.__dispatcher.dispatch("rov_armed")
+                self._dispatcher.dispatch("rov_armed")
             elif isinstance(notification, Disarmed):
-                self.__dispatcher.dispatch("rov_disarmed")
+                self._dispatcher.dispatch("rov_disarmed")
             elif isinstance(notification, GainChange):
-                self.__dispatcher.dispatch("rov_gain_change", notification.new_gain)
+                self._dispatcher.dispatch("rov_gain_change", notification.new_gain)
             elif isinstance(notification, SystemModeChanged):
-                self.__dispatcher.dispatch("rov_system_mode_changed", notification.mode)
+                self._dispatcher.dispatch("rov_system_mode_changed", notification.mode)

@@ -10,7 +10,7 @@ from pi_telemetry.data import TelemetryData
 
 BUFFER_SIZE = struct.calcsize("!" + "I" * 8)
 RECONNECT_DELAY = 2
-
+SOCKET_TIMEOUT = 1.0
 
 class TelemetryDaemon(Thread):
     """
@@ -51,6 +51,7 @@ class TelemetryDaemon(Thread):
             try:
                 self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 self.server_socket.bind(self.address)
+                self.server_socket.settimeout(SOCKET_TIMEOUT)
                 system_logger.success(
                     f"Telemetry daemon bound to {self.address[0]}:{self.address[1]}"
                 )
@@ -84,6 +85,9 @@ class TelemetryDaemon(Thread):
             try:
                 data, client = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
                 system_logger.info(f"Telemetry data packet recieved from {client}")
+            except socket.timeout:
+                system_logger.debug("No new telemetery data")
+                continue
             except socket.error as e:
                 system_logger.error(f"Telemetry daemon socket error: {e}")
                 self.close_connection()

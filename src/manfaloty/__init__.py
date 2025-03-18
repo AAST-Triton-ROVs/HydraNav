@@ -35,13 +35,13 @@ class Manfaloty(GCSModule):
         )
         self.__daemon_manager.start_daemons()
 
-        self.__dispatcher.subscribe(
+        self._dispatcher.subscribe(
             "controller_button_down", self.__on_controller_button_down
         )
         # self.__dispatcher.subscribe(
         #     "controller_button_up", self.__on_controller_button_up
         # )
-        self.__request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor)
+        self._request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor)
 
     def __on_controller_button_down(self, button: str):
         match button:
@@ -74,6 +74,7 @@ class Manfaloty(GCSModule):
 
     def quit(self):
         self.__daemon_manager.quit()
+        self._quit_successful()
 
     def restart_arduino(self):
         self.__send_command(ManfalotyCommands.RESTART_ARDUINO)
@@ -118,4 +119,4 @@ class Manfaloty(GCSModule):
         if not self.__data_queue.empty():
             data = self.__data_queue.get()
             if isinstance(data, PHReading):
-                self.__dispatcher.dispatch("manfaloty_ph_reading", data.value)
+                self._dispatcher.dispatch("manfaloty_ph_reading", data.value)

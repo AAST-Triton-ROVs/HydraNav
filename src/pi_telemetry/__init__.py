@@ -57,6 +57,8 @@ class PiTelemetery(GCSModule):
     def quit(self):
         self.__quit_event.set()
         self.__listener_thread.join()
+        
+        self._quit_successful()
 
     def update(self):
         """
@@ -69,7 +71,7 @@ class PiTelemetery(GCSModule):
         except queue.Empty:
             return
         else:
-            self.__dispatcher.dispatch("telemetery", recieved_data)
+            self._dispatcher.dispatch("telemetery", recieved_data)
 
     def close(self):
         """

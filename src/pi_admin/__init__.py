@@ -1,12 +1,12 @@
 import queue
 import threading
 from typing import Tuple
-from admin.enums import AdminCommands
+from pi_admin.enums import AdminCommands
 from core.event_dispatcher import EventDispatcher
 from core.gcs_module import GCSModule
 from core.logger import system_logger
 from queue import Queue
-from admin.daemon import PiAdminDaemon
+from pi_admin.daemon import PiAdminDaemon
 from core.request_manager import RequestManager
 
 
@@ -47,6 +47,8 @@ class PiAdmin(GCSModule):
     def quit(self):
         self.__quit_event.set()
         self.__admin_daemon.join()
+        
+        self._quit_successful()
 
     def poweroff(self):
         """
