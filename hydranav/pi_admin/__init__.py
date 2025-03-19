@@ -35,7 +35,10 @@ class PiAdmin(GCSModule):
         self.__admin_daemon.start()
 
     def __send_command(self, command: AdminCommands):
-        self.__command_queue.put(command, block=False)
+        try:
+            self.__command_queue.put(command, block=False)
+        except queue.Full:
+            return
             
     def status_ok(self) -> bool:
         return self.__admin_daemon.is_alive()

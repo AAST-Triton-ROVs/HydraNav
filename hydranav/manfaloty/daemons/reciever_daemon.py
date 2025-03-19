@@ -1,4 +1,5 @@
 from queue import Queue
+import queue
 import socket
 import struct
 from threading import Thread
@@ -53,4 +54,8 @@ class ManfalotyRecieverDaemon(Thread):
                 continue
 
             system_logger.success(f"Recieved data from {client[0]}:{client[1]}")
-            self.__data_queue.put(PHReading(ph_value[0]))
+            try:
+                self.__data_queue.put(PHReading(ph_value[0]), block=False)
+            except queue.Full:
+                system_logger.error("Unable to put ph reading into data queue")
+                return

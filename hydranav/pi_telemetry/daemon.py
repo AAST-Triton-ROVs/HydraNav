@@ -11,6 +11,7 @@ BUFFER_SIZE = struct.calcsize("!" + "I" * 8)
 RECONNECT_DELAY = 2
 SOCKET_TIMEOUT = 1.0
 
+
 class TelemetryDaemon(Thread):
     """
     A daemon thread for receiving telemetry data packets over UDP.
@@ -56,7 +57,7 @@ class TelemetryDaemon(Thread):
                 system_logger.error(f"Telemetry daemon bounding error: {e}, retrying")
                 time.sleep(RECONNECT_DELAY)
                 continue
-            
+
             system_logger.success(
                 f"Telemetry daemon bound to {self.address[0]}:{self.address[1]}"
             )
@@ -96,14 +97,19 @@ class TelemetryDaemon(Thread):
                 continue
 
             unpacked_data = struct.unpack("i" * 8, data)
-            self.queue.put(
-                TelemetryData(
-                    unpacked_data[0],
-                    unpacked_data[1],
-                    unpacked_data[2],
-                    unpacked_data[3],
-                    unpacked_data[4],
-                    unpacked_data[5],
-                    (unpacked_data[6], unpacked_data[7]),
-                ),
-            )
+            try:
+                self.queue.put(
+                    TelemetryData(
+                        unpacked_data[0],
+                        unpacked_data[1],
+                        unpacked_data[2],
+                        unpacked_data[3],
+                        unpacked_data[4],
+                        unpacked_data[5],
+                        (unpacked_data[6], unpacked_data[7]),
+                    ),
+                    block=False,
+                )
+            except queue.Full:
+                system_logger.error("Unable to put telemetery data in queue")
+                return

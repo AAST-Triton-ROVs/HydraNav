@@ -141,7 +141,11 @@ class AutopilotConnectionDaemon(Thread):
         :param notification: ROVNotification to send.
         :type notification: ROVNotification
         """
-        self.__notification_queue.put(notification)
+        try:
+            self.__notification_queue.put(notification, block=False)
+        except queue.Full:
+            system_logger.error("Unable to put notification in queue")
+            return
 
     def arm(self) -> bool:
         """

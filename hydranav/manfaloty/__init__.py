@@ -68,7 +68,10 @@ class Manfaloty(GCSModule):
                 self.gripper_toggle_close_jaws()
 
     def __send_command(self, command: ManfalotyCommands):
-        self.__command_queue.put(command, block=False)
+        try:
+            self.__command_queue.put(command, block=False)
+        except queue.Full:
+            return
 
     def quit(self):
         self.__daemon_manager.quit()

@@ -81,6 +81,25 @@ class Autopilot(GCSModule):
 
         system_logger.trace(f"{movement = }")
 
+    def __on_controller_button_down(self, button: str):
+        match button:
+            case "A":
+                self.arm()
+            case "B":
+                self.disarm()
+            case "C":
+                self.flight_mode_stabilize()
+            case "D":
+                self.flight_mode_manual()
+            case "3":
+                self.gain_up()
+            case "1":
+                self.gain_down()
+            case "2":
+                self.move(0, 0, 0, 0, 100.0)
+            case "4":
+                self.move(0, 0, 0, 0, -100.0)
+
     def __move(
         self, forward: float, lateral: float, throttle: float, yaw: float, roll: float
     ):
@@ -109,25 +128,6 @@ class Autopilot(GCSModule):
         except queue.Full:
             return
 
-    def __on_controller_button_down(self, button: str):
-        match button:
-            case "A":
-                self.arm()
-            case "B":
-                self.disarm()
-            case "C":
-                self.flight_mode_stabilize()
-            case "D":
-                self.flight_mode_manual()
-            case "3":
-                self.gain_up()
-            case "1":
-                self.gain_down()
-            case "2":
-                self.move(0, 0, 0, 0, 100.0)
-            case "4":
-                self.move(0, 0, 0, 0, -100.0)
-
     def __command(self, command: ROVCommands):
         """
         Queues a command for the autopilot.
@@ -135,7 +135,10 @@ class Autopilot(GCSModule):
         :param command: ROV command to be sent.
         :type command: ROVCommands
         """
-        self.__command_queue.put(command, block=False)
+        try:
+            self.__command_queue.put(command, block=False)
+        except queue.Full:
+            return
 
     def quit(self):
         self.__quit_event.set()

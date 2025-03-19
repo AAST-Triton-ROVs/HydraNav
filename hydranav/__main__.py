@@ -76,7 +76,7 @@ class GCS:
 
         system_logger.info(f"Loaded modules: {' '.join(self.module_manager.loaded_modules)}")
         self.user_input.controller.update_connection_status()
-
+       
     def run(self):
         while True:
             # time_delta = (
