@@ -55,18 +55,18 @@ class GCS:
         self.request_manager = RequestManager()
         self.module_manager = ModuleManager(self.dispatcher)
 
-        # self.gui = GUI(self.dispatcher, self.logging)
         self.user_input = UserInput(self.dispatcher, self.request_manager)
         self.module_manager.register_module(self.user_input)
 
-        self.pi_telemetery = PiTelemetery(self.dispatcher)
-        self.module_manager.register_module(self.pi_telemetery)
-
         if not self.companion_mode:
-            self.notifier = Notifier(self.dispatcher, self.request_manager)
-            self.module_manager.register_module(self.notifier)
             self.autopilot = Autopilot(self.dispatcher)
             self.module_manager.register_module(self.autopilot)
+            
+            self.notifier = Notifier(self.dispatcher, self.request_manager)
+            self.module_manager.register_module(self.notifier)
+
+        self.pi_telemetery = PiTelemetery(self.dispatcher)
+        self.module_manager.register_module(self.pi_telemetery)
 
         self.admin = PiAdmin(self.request_manager)
         self.module_manager.register_module(self.admin)
@@ -92,10 +92,6 @@ class GCS:
                 self.autopilot.update()
 
             self.clock.tick(60)
-
-    def quit(self):
-        self.pi_telemetery.close()
-        sys.exit()
 
 
 if __name__ == "__main__":

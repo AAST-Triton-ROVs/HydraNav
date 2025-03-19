@@ -53,9 +53,9 @@ class Autopilot(GCSModule):
         self.__movement_queue: Queue[ROVMovement] = Queue(1)
         self.__command_queue: Queue[ROVCommands] = Queue(1)
         self.__notification_queue: PriorityQueue[ROVNotification] = PriorityQueue()
-        
+
         self.__dispatcher = dispatcher
-        
+
         self.__quit_event = threading.Event()
         self.__connection_daemon = AutopilotConnectionDaemon(
             self.__movement_queue,
@@ -107,8 +107,7 @@ class Autopilot(GCSModule):
                 ROVMovement(forward, lateral, throttle, yaw, roll), block=False
             )
         except queue.Full:
-            self.__movement_queue.get()
-            self.__move(forward, lateral, throttle, yaw, roll)
+            return
 
     def __on_controller_button_down(self, button: str):
         match button:
@@ -136,16 +135,12 @@ class Autopilot(GCSModule):
         :param command: ROV command to be sent.
         :type command: ROVCommands
         """
-        try:
-            self.__command_queue.put(command, block=False)
-        except queue.Full:
-            self.__command_queue.get()
-            self.__command(command)
+        self.__command_queue.put(command, block=False)
 
     def quit(self):
         self.__quit_event.set()
         self.__connection_daemon.join()
-                
+
     def status_ok(self) -> bool:
         return self.__connection_daemon.is_alive()
 
@@ -234,8 +229,11 @@ class Autopilot(GCSModule):
         * :class:`GainChange` -> ``rov_gain_change``
         * :class:`SystemModeChanged` -> ``rov_system_mode_changed``
         """
-        while not self.__notification_queue.empty():
-            notification = self.__notification_queue.get()
+        while True:
+            try:
+                notification = self.__notification_queue.get(block=False)
+            except queue.Empty:
+                return
 
             if isinstance(notification, VehicleDisconnected):
                 self.__dispatcher.dispatch("rov_vehicle_disconnected")

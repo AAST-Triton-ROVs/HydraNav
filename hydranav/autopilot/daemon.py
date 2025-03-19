@@ -1,4 +1,5 @@
 from queue import PriorityQueue, Queue
+import queue
 from threading import Thread
 import threading
 import time
@@ -345,8 +346,11 @@ class AutopilotConnectionDaemon(Thread):
 
                 self.__time_since_last_heartbeat = time.monotonic()
 
-            if not self.__movement_queue.empty():
-                action = self.__movement_queue.get()
+            try:
+                action = self.__movement_queue.get(block=False)
+            except queue.Empty:
+                pass
+            else:
                 if (
                     previous_movement != action
                     or time.monotonic() - self.__time_since_last_movement >= 0.9
@@ -361,9 +365,11 @@ class AutopilotConnectionDaemon(Thread):
                     previous_movement = action
                     self.__time_since_last_movement = time.monotonic()
 
-            if not self.__command_queue.empty():
-                command = self.__command_queue.get()
-
+            try:
+                command = self.__command_queue.get(block=False)
+            except queue.Empty:
+                pass
+            else:
                 match command:
                     case ROVCommands.ARM:
                         ack = self.arm()

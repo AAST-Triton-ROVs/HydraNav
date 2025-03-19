@@ -33,14 +33,9 @@ class PiAdmin(GCSModule):
             self.__command_queue, address, self.__quit_event
         )
         self.__admin_daemon.start()
-        system_logger.success("Admin daemon started")
 
     def __send_command(self, command: AdminCommands):
-        try:
-            self.__command_queue.put(command, block=False)
-        except queue.Full:
-            self.__command_queue.get()
-            self.__send_command(command)
+        self.__command_queue.put(command, block=False)
             
     def status_ok(self) -> bool:
         return self.__admin_daemon.is_alive()

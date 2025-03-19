@@ -68,11 +68,7 @@ class Manfaloty(GCSModule):
                 self.gripper_toggle_close_jaws()
 
     def __send_command(self, command: ManfalotyCommands):
-        try:
-            self.__command_queue.put(command, block=False)
-        except queue.Full:
-            self.__command_queue.get()
-            self.__send_command(command)
+        self.__command_queue.put(command, block=False)
 
     def quit(self):
         self.__daemon_manager.quit()
@@ -120,7 +116,10 @@ class Manfaloty(GCSModule):
         self.__send_command(ManfalotyCommands.PUMP_OFF)
 
     def update(self):
-        if not self.__data_queue.empty():
-            data = self.__data_queue.get()
-            if isinstance(data, PHReading):
-                self.__dispatcher.dispatch("manfaloty_ph_reading", data.value)
+        try:
+            data = self.__data_queue.get(block=False)
+        except queue.Empty:
+            return
+        
+        if isinstance(data, PHReading):
+            self.__dispatcher.dispatch("manfaloty_ph_reading", data.value)

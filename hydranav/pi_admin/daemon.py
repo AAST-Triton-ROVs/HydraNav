@@ -1,3 +1,4 @@
+import queue
 import threading
 from typing import Tuple
 from threading import Thread
@@ -43,9 +44,22 @@ class PiAdminDaemon(Thread):
         self.__quit_event = quit_event
 
         self.__address = address
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.settimeout(SOCKET_TIMEOUT)
-        self.server_socket.bind(self.__address)
+        self.server_socket = self.__create_socket()
+        
+        system_logger.success(f"Admin daemon bound to {address[0]}:{address[1]}")
+        
+    def __create_socket(self) -> socket.socket:
+        while True:
+            try:
+                server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                server_socket.settimeout(SOCKET_TIMEOUT)
+                server_socket.bind(self.__address)
+            except socket.error as e:
+                system_logger.error(f"PiAdmin daemon bounding error: {e}")
+                continue
+            
+            return server_socket
 
     def run(self):
         """
@@ -58,13 +72,18 @@ class PiAdminDaemon(Thread):
         while not self.__quit_event.is_set():
             try:
                 connection, address = self.server_socket.accept()
-                system_logger.info(f"Admin daemon accepted connection from {address}")
             except socket.timeout:
                 system_logger.debug("Admin daemon no connection")
-            if not self.__admin_queue.empty():
-                command = self.__admin_queue.get()
-                data = struct.pack("!I", command.value)
-                try:
-                    connection.send(data)
-                except socket.error as e:
-                    system_logger.error(f"Admin daemon failed with error: {e}")
+                continue
+            
+            system_logger.success(f"Admin daemon accepted connection from {address}")
+            try:
+                command = self.__admin_queue.get(block=False)
+            except queue.Empty:
+                continue
+            
+            data = struct.pack("!I", command.value)
+            try:
+                connection.send(data)
+            except socket.error as e:
+                system_logger.error(f"Admin daemon failed with error: {e}")

@@ -68,12 +68,15 @@ class ManfalotyDaemonManager:
         while True:
             try:
                 server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server_socket.settimeout(SOCKET_TIMEOUT)
                 server_socket.bind(self.__address)
-                system_logger.success(
-                    f"Manfaloty daemons bound to {self.__address[0]}:{self.__address[1]}"
-                )
-                return server_socket
             except socket.error as e:
                 system_logger.error(f"Manfaloty daemon bounding error: {e}, retrying")
                 time.sleep(RETRY_DELAY)
+                continue
+        
+            system_logger.success(
+                f"Manfaloty daemons bound to {self.__address[0]}:{self.__address[1]}"
+            )
+            return server_socket

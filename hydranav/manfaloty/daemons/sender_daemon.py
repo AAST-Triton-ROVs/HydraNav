@@ -1,4 +1,5 @@
 from queue import Queue
+import queue
 import socket
 import struct
 from threading import Thread
@@ -45,14 +46,20 @@ class ManfalotySenderDaemon(Thread):
 
     def run(self):
         while not self.__quit_event.is_set():
-            if self.__command_queue.empty():
-                system_logger.debug("Manfaloty sender daemon no new commands")
+            try:
+                command = self.__command_queue.get(block=False)
+            except queue.Empty:
+                system_logger.trace("Manfaloty daemon no new commands")
+                continue
+
+            system_logger.info(f"Sending {command.value} to {self.__pi_address}")
+
+            try:
+                data = struct.pack("!i", command.value)
+            except struct.error as e:
+                system_logger.critical(f"Manfaloty Sender daemon packing error: {e}")
                 continue
             
-            command = self.__command_queue.get()
-            system_logger.trace(f"Sending {command.value} to {self.__pi_address}")
-
-            data = struct.pack("!i", command.value)
             try:
                 self.__server_socket.sendto(data, self.__pi_address)
             except socket.timeout:
@@ -61,7 +68,7 @@ class ManfalotySenderDaemon(Thread):
             except socket.error as e:
                 system_logger.error(f"Manfaloty sender daemon socket error: {e}")
                 continue
-            
+
             system_logger.success(
                 f"Sent {command.value} to {self.__pi_address[0]}:{self.__pi_address[1]}"
             )

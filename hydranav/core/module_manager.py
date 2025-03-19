@@ -56,7 +56,7 @@ class ModuleManager:
         system_logger.info("Starting shutdown sequence")
         self.quit_all()
         pygame.quit()
-        system_logger.info("Done!")
+        system_logger.info("Goodbye!")
         sys.exit(0)
         
     def get_module_status(self, module: str) -> Optional[bool]:

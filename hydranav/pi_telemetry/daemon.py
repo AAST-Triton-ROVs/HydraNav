@@ -4,7 +4,6 @@ import socket
 from threading import Thread
 import threading
 import time
-from typing import Optional
 from core.logger import system_logger
 from pi_telemetry.data import TelemetryData
 
@@ -33,11 +32,11 @@ class TelemetryDaemon(Thread):
     ):
         super().__init__(daemon=True)
         self.address = (base_ip, port)
-        self.server_socket: Optional[socket.socket] = None
+        self.server_socket = self.__create_socket()
         self.queue = queue
         self.__quit_event = quit_event
 
-    def __bind_socket(self):
+    def __create_socket(self) -> socket.socket:
         """
         Bind the server socket to the specified address.
 
@@ -49,16 +48,19 @@ class TelemetryDaemon(Thread):
         """
         while True:
             try:
-                self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                self.server_socket.bind(self.address)
-                self.server_socket.settimeout(SOCKET_TIMEOUT)
-                system_logger.success(
-                    f"Telemetry daemon bound to {self.address[0]}:{self.address[1]}"
-                )
-                return
+                server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                server_socket.settimeout(SOCKET_TIMEOUT)
+                server_socket.bind(self.address)
             except socket.error as e:
                 system_logger.error(f"Telemetry daemon bounding error: {e}, retrying")
                 time.sleep(RECONNECT_DELAY)
+                continue
+            
+            system_logger.success(
+                f"Telemetry daemon bound to {self.address[0]}:{self.address[1]}"
+            )
+            return server_socket
 
     def close_connection(self):
         """
@@ -80,7 +82,6 @@ class TelemetryDaemon(Thread):
 
         :raises socket.error: If a socket error occurs.
         """
-        self.__bind_socket()
         while not self.__quit_event.is_set():
             try:
                 data, client = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
@@ -91,7 +92,7 @@ class TelemetryDaemon(Thread):
             except socket.error as e:
                 system_logger.error(f"Telemetry daemon socket error: {e}")
                 self.close_connection()
-                self.__bind_socket()
+                self.__create_socket()
                 continue
 
             unpacked_data = struct.unpack("i" * 8, data)
