@@ -300,7 +300,7 @@ class AutopilotConnectionDaemon(Thread):
         """
         self.__master.mav.set_mode_send(
             self.__master.target_system,
-            mavutil.mavlink.MAV_CMD_DO_SET_MODE,
+            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
             mode.value,
         )
 
