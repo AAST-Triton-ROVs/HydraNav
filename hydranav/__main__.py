@@ -9,7 +9,7 @@ from notifier import Notifier
 from pi_telemetry import PiTelemetry
 from pi_admin import PiAdmin
 from autopilot import Autopilot
-from core import system_logger, LogLevels, event_dispatcher
+from core import system_logger, LogLevels
 
 DESCRIPTION = "HydraNav, a revolutionary Ground Control System (GCS) for underwater ROVs, providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features."
 
