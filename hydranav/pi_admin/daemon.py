@@ -7,7 +7,7 @@ import socket
 import time
 import struct
 from pi_admin.enums import AdminCommands
-from core.logger import system_logger
+from core import system_logger
 
 SOCKET_TIMEOUT = 1.0
 

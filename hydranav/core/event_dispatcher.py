@@ -69,3 +69,5 @@ class EventDispatcher:
                     listener(event.data)
                 except Exception as e:
                     system_logger.critical(f"'{listener}' produced an error: {e}")
+
+event_dispatcher = EventDispatcher()

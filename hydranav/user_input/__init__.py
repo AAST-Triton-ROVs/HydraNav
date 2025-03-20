@@ -1,6 +1,4 @@
-from core.event_dispatcher import EventDispatcher
-from core.gcs_module import GCSModule
-from core.request_manager import RequestManager
+from core import GCSModule
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
@@ -23,8 +21,6 @@ class UserInput(GCSModule):
 
     def __init__(
         self,
-        dispatcher: EventDispatcher,
-        request_manager: RequestManager,
         joystick_deadzone_factor: float = 2,
         joystick_roundoff: int = 1,
         joystick_multiplier: int = 100,
@@ -43,14 +39,12 @@ class UserInput(GCSModule):
         """
         super().__init__()
         
-        self.__dispatcher = dispatcher
         self.controller = Controller(
-            self.__dispatcher,
             joystick_deadzone_factor,
             joystick_roundoff,
             joystick_multiplier,
         )
-        self.keyboard = Keyboard(self.__dispatcher)
+        self.keyboard = Keyboard()
 
     def quit(self):
         self.controller.quit()

@@ -1,9 +1,7 @@
 import pygame
 from pathlib import Path
-from core.event_dispatcher import EventDispatcher
-from core.gcs_module import GCSModule
+from core import event_dispatcher, request_manager, GCSModule
 from core.logger import system_logger
-from core.request_manager import RequestManager
 
 __all__ = ["Notifier"]
 
@@ -15,7 +13,7 @@ class Notifier(GCSModule):
     :param dispatcher: An instance of EventDispatcher used to subscribe to events.
     :type dispatcher: EventDispatcher
     :param audio_assests_path: Path to the directory containing audio assets.
-                               Defaults to "./assets/audio".
+    Defaults to "./assets/audio".
     :type audio_assests_path: str
 
     .. note::
@@ -26,8 +24,6 @@ class Notifier(GCSModule):
 
     def __init__(
         self,
-        dispatcher: EventDispatcher,
-        request_manager: RequestManager,
         audio_assests_path: str = "./assets/audio",
     ):
         super().__init__()
@@ -37,34 +33,30 @@ class Notifier(GCSModule):
         self.volume = 100
 
         self.__audio_assets_path = Path(audio_assests_path)
-        self.__dispatcher = dispatcher
-        self.__request_manager = request_manager
 
-        self.__dispatcher.subscribe(
+        event_dispatcher.subscribe(
             "controller_connected", lambda _: self.play("controller_connected")
         )
-        self.__dispatcher.subscribe(
+        event_dispatcher.subscribe(
             "controller_disconnected", lambda _: self.play("controller_disconnected")
         )
-        self.__dispatcher.subscribe("controller_button_down", self.__on_controller_down)
+        event_dispatcher.subscribe("controller_button_down", self.__on_controller_down)
 
-        self.__dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
-        self.__dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
-        self.__dispatcher.subscribe(
+        event_dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
+        event_dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
+        event_dispatcher.subscribe(
             "rov_gain_change", lambda g: self.play(f"{g}_percent_gain")
         )
-        self.__dispatcher.subscribe(
+        event_dispatcher.subscribe(
             "rov_vehicle_connected", lambda _: self.play("vehicle_connected")
         )
-        self.__dispatcher.subscribe(
+        event_dispatcher.subscribe(
             "rov_vehicle_disconnected", lambda _: self.play("vehicle_disconnected")
         )
-        self.__dispatcher.subscribe(
+        event_dispatcher.subscribe(
             "rov_system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
-        self.__request_manager.register_handler(
-            "notifier_get_volume", self.__dispatch_volume
-        )
+        request_manager.register_handler("notifier_get_volume", self.__dispatch_volume)
 
         self.__change_volume(self.volume)
 
@@ -74,7 +66,7 @@ class Notifier(GCSModule):
                 self.play("dua")
 
     def __dispatch_volume(self):
-        self.__dispatcher.dispatch("notifier_volume_state", self.volume)
+        event_dispatcher.dispatch("notifier_volume_state", self.volume)
 
     def __change_volume(self, inc: int):
         """
@@ -96,11 +88,11 @@ class Notifier(GCSModule):
             self.volume += inc
 
         pygame.mixer.music.set_volume(self.volume)
-        self.__dispatcher.dispatch("notifier_volume_change", self.volume)
+        event_dispatcher.dispatch("notifier_volume_change", self.volume)
 
     def quit(self):
         return
-    
+
     def status_ok(self) -> bool:
         return True
 

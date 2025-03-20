@@ -6,7 +6,7 @@ import time
 from numpy import interp
 from pymavlink import mavutil  # type: ignore
 
-from core.logger import system_logger
+from core import system_logger
 from autopilot.enums import ControlChannels, Directions, SystemModes
 from autopilot.movement import ROVMovement
 from autopilot.command import ROVCommands

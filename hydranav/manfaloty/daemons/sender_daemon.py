@@ -6,7 +6,7 @@ from threading import Thread
 import threading
 import time
 
-from core.logger import system_logger
+from core import system_logger
 from manfaloty.enums import ManfalotyCommands
 
 RETRY_DELAY = 2

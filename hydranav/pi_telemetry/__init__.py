@@ -3,14 +3,12 @@ from queue import Queue
 import threading
 from pi_telemetry.data import TelemetryData
 from pi_telemetry.daemon import TelemetryDaemon
-from core.event_dispatcher import EventDispatcher
-from core.gcs_module import GCSModule
-from core.request_manager import RequestManager
+from core import event_dispatcher, GCSModule
 
-__all__ = ["Telemetery", "TelemeteryData"]
+__all__ = ["PiTelemetry", "TelemetryData"]
 
 
-class PiTelemetery(GCSModule):
+class PiTelemetry(GCSModule):
     """
     A class for handling telemetry data via a queue and threading.
 
@@ -24,7 +22,6 @@ class PiTelemetery(GCSModule):
 
     def __init__(
         self,
-        dispatcher: EventDispatcher,
         host: str = "0.0.0.0",
         port=2010,
     ):
@@ -39,8 +36,6 @@ class PiTelemetery(GCSModule):
         :type port: int
         """
         super().__init__()
-
-        self.__dispatcher = dispatcher
 
         self.__host = host
         self.__port = port
@@ -73,7 +68,7 @@ class PiTelemetery(GCSModule):
         except queue.Empty:
             return
         else:
-            self.__dispatcher.dispatch("telemetery", recieved_data)
+            event_dispatcher.dispatch("telemetery", recieved_data)
 
     def close(self):
         """

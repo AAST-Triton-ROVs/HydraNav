@@ -2,7 +2,7 @@ from queue import Queue
 import socket
 import threading
 import time
-from core.logger import system_logger
+from core import system_logger
 from manfaloty.daemons.reciever_daemon import ManfalotyRecieverDaemon
 from manfaloty.daemons.sender_daemon import ManfalotySenderDaemon
 from manfaloty.data import ManfalotyData

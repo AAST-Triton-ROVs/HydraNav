@@ -1,5 +1,5 @@
 from typing import Callable, Dict
-
+from core.logger import system_logger
 
 class RequestManager:
     """
@@ -27,6 +27,7 @@ class RequestManager:
             return
 
         self.request_handlers[name] = handler
+        system_logger.debug(f"{handler} registered to {name}")
 
     def remove_request(self, name: str):
         """
@@ -38,6 +39,7 @@ class RequestManager:
         :rtype: None
         """
         if self.request_handlers.get(name):
+            system_logger.debug(f"{self.request_handlers[name]} unregistered to {name}")
             del self.request_handlers[name]
 
     def request(self, name: str, *args, **kwargs):
@@ -53,4 +55,7 @@ class RequestManager:
         if not self.request_handlers.get(name):
             return
 
+        system_logger.debug(f"{name} is being requested, calling {self.request_handlers[name]}")
         self.request_handlers[name](*args, **kwargs)
+
+request_manager = RequestManager()

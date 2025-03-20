@@ -1,11 +1,7 @@
 from typing import Optional, Tuple
 import pygame
-from core.event_dispatcher import EventDispatcher
-from core.gcs_module import GCSModule
-from core.logger import system_logger
+from core import request_manager, system_logger, GCSModule, event_dispatcher
 from pygame_gui import UIManager
-
-from core.request_manager import RequestManager
 
 # armed or disarmed
 # max gain
@@ -22,10 +18,8 @@ from core.request_manager import RequestManager
 class GUI(GCSModule):
     def __init__(
         self,
-        dispatcher: EventDispatcher,
-        request_manager: RequestManager,
     ):
-        super().__init__(dispatcher, request_manager)
+        super().__init__()
 
         pygame.display.set_caption("Triton GCS")
         self.window_surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)

@@ -4,9 +4,7 @@ from typing import Tuple
 from queue import Queue
 from pi_admin.daemon import PiAdminDaemon
 from pi_admin.enums import AdminCommands
-from core.request_manager import RequestManager
-from core.gcs_module import GCSModule
-from core.logger import system_logger
+from core import system_logger, GCSModule
 
 
 class PiAdmin(GCSModule):
@@ -16,7 +14,6 @@ class PiAdmin(GCSModule):
 
     def __init__(
         self,
-        request_manager: RequestManager,
         address: Tuple[str, int] = ("0.0.0.0", 2015),
     ):
         """

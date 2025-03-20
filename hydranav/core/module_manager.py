@@ -1,11 +1,9 @@
 from typing import Optional
 import pygame
-import time
 import signal
 import sys
-from core.event_dispatcher import EventDispatcher
 from core.logger import system_logger
-from core.gcs_module import GCSModule
+from core import GCSModule
 
 # time in seconds before forcefully exiting
 QUIT_TIMEOUT = 5
@@ -16,9 +14,8 @@ class TimeoutError(Exception):
 
 
 class ModuleManager:
-    def __init__(self, dispatcher: EventDispatcher):
+    def __init__(self):
         self.__modules: dict[str, GCSModule] = {}
-        self.__dispatcher = dispatcher
 
         signal.signal(signal.SIGINT, lambda a, b: self.shutdown())
         signal.signal(signal.SIGALRM, self.__timeout_handler)
@@ -31,6 +28,10 @@ class ModuleManager:
         self.__modules[type(module).__name__] = module
 
         system_logger.debug(f"Loaded {type(module).__name__}: {module}")
+        
+    def register_modules(self, modules: list[GCSModule]):
+        for module in modules:
+            self.register_module(module)
 
     def deregister_module(self, module: str):
         if self.__modules.get(module):

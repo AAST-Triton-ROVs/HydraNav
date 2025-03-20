@@ -8,8 +8,7 @@ import jsonschema
 import jsonschema.exceptions
 import pygame
 
-from core.event_dispatcher import EventDispatcher
-from core.logger import system_logger
+from core import event_dispatcher, system_logger
 
 __all__ = ["Controller"]
 
@@ -61,7 +60,6 @@ CONFIG_DIRECTORY = "assets/controller/configurations"
 class Controller:
     def __init__(
         self,
-        dispatcher: EventDispatcher,
         deadzone_factor: float = 2,
         joystick_roundoff: int = 1,
         joystick_multiplier: int = 100,
@@ -79,7 +77,6 @@ class Controller:
         :type joystick_multiplier: int
         """
         pygame.joystick.init()
-        self.__dispatcher = dispatcher
         self.__deadzone: float = 0.5
         self.__deadzone_factor: float = deadzone_factor
         self.__joystick_roundoff: int = joystick_roundoff
@@ -99,7 +96,7 @@ class Controller:
 
         self.__load_config_libary()
 
-        self.__dispatcher.subscribe(
+        event_dispatcher.subscribe(
             "controller_button_down", self.__on_controller_button_down
         )
 
@@ -166,7 +163,7 @@ class Controller:
             system_logger.trace(f"__process_axes = {name = } {axes = }")
             joystick_values[name] = tuple(filtered_axes[axis] for axis in axes)
 
-        self.__dispatcher.dispatch("controller_joysticks", joystick_values)
+        event_dispatcher.dispatch("controller_joysticks", joystick_values)
         system_logger.debug(f"Controller joysticks: {pformat(joystick_values)}")
 
     def __process_triggers(self) -> None:
@@ -189,7 +186,7 @@ class Controller:
             system_logger.trace(f"trigger {trigger_name} value = {value}")
             if value > 0.5:
                 system_logger.info(f"Controller trigger {trigger_name} pressed")
-                self.__dispatcher.dispatch("controller_button_down", trigger_name)
+                event_dispatcher.dispatch("controller_button_down", trigger_name)
 
     def __process_buttons(self) -> None:
         """
@@ -226,8 +223,8 @@ class Controller:
             system_logger.error(f"{buttons_pressed_up} is not mapped to anything")
             return
 
-        self.__dispatcher.dispatch("controller_button_down", button_down_mapping)
-        self.__dispatcher.dispatch("controller_button_up", button_up_mapping)
+        event_dispatcher.dispatch("controller_button_down", button_down_mapping)
+        event_dispatcher.dispatch("controller_button_up", button_up_mapping)
         system_logger.info(
             f"Controller buttons pressed: down -> {button_down_mapping}, up -> {button_up_mapping}"
         )
@@ -258,7 +255,7 @@ class Controller:
 
             controller_button = self.__library_hat_mappings[direction]
 
-            self.__dispatcher.dispatch("controller_button_down", controller_button)
+            event_dispatcher.dispatch("controller_button_down", controller_button)
             system_logger.info(f"Controller hat pressed: {controller_button}")
 
             self.__previous_hat_value = (int(direction[0]), int(direction[1]))
@@ -524,7 +521,7 @@ class Controller:
         """
         self.update_connection_status()
         if not self.is_connected():
-            self.__dispatcher.dispatch("controller_waiting_connection")
+            event_dispatcher.dispatch("controller_waiting_connection")
             return False
 
         try:
@@ -551,7 +548,7 @@ class Controller:
                 if event.type == pygame.JOYDEVICEADDED:
                     pygame.joystick.init()
                     self.__joystick = pygame.joystick.Joystick(event.device_index)
-                    self.__dispatcher.dispatch("controller_connected")
+                    event_dispatcher.dispatch("controller_connected")
                     system_logger.info("Controller connected")
                     self.autoload_config()
                     self.calibrate()
@@ -559,7 +556,7 @@ class Controller:
                 else:
                     if self.__joystick is not None:
                         self.__joystick.quit()
-                    self.__dispatcher.dispatch("controller_disconnected")
+                    event_dispatcher.dispatch("controller_disconnected")
                     system_logger.info("Controller disconnected")
                     return
         except Exception:

@@ -1,11 +1,9 @@
 from queue import Queue
 import queue
-from core.event_dispatcher import EventDispatcher
-from core.gcs_module import GCSModule
 from manfaloty.daemons import ManfalotyDaemonManager
 from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
-from core.request_manager import RequestManager
+from core import request_manager, event_dispatcher, GCSModule
 
 
 class Manfaloty(GCSModule):
@@ -15,8 +13,6 @@ class Manfaloty(GCSModule):
 
     def __init__(
         self,
-        dispatcher: EventDispatcher,
-        request_manager: RequestManager,
         base_ip: str = "0.0.0.0",
         pi_ip: str = "192.168.1.100",
         port: int = 2005,
@@ -35,15 +31,13 @@ class Manfaloty(GCSModule):
         )
         self.__daemon_manager.start_daemons()
 
-        self.__dispatcher = dispatcher
-        self.__request_manager = request_manager
-        self.__dispatcher.subscribe(
+        event_dispatcher.subscribe(
             "controller_button_down", self.__on_controller_button_down
         )
-        # self.__dispatcher.subscribe(
+        # event_dispatcher.subscribe(
         #     "controller_button_up", self.__on_controller_button_up
         # )
-        self.__request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor)
+        request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor)
 
     def __on_controller_button_down(self, button: str):
         match button:
@@ -75,7 +69,7 @@ class Manfaloty(GCSModule):
 
     def quit(self):
         self.__daemon_manager.quit()
-        
+
     def status_ok(self) -> bool:
         return self.__daemon_manager.status_ok()
 
@@ -123,6 +117,6 @@ class Manfaloty(GCSModule):
             data = self.__data_queue.get(block=False)
         except queue.Empty:
             return
-        
+
         if isinstance(data, PHReading):
-            self.__dispatcher.dispatch("manfaloty_ph_reading", data.value)
+            event_dispatcher.dispatch("manfaloty_ph_reading", data.value)
