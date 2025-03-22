@@ -1,10 +1,10 @@
 import pygame
 from pathlib import Path
-from core import event_dispatcher, request_manager, GCSModule
-from core.logger import system_logger
+from core import event_dispatcher, request_manager, GCSModule, config_manager, system_logger
 
 __all__ = ["Notifier"]
 
+AUDIO_ASSETS_PATH: str = config_manager.get("notifier", "assetsPath")
 
 class Notifier(GCSModule):
     """
@@ -22,17 +22,14 @@ class Notifier(GCSModule):
        It automatically subscribes to several events and triggers corresponding audio notifications.
     """
 
-    def __init__(
-        self,
-        audio_assests_path: str = "./assets/audio",
-    ):
+    def __init__(self):
         super().__init__()
 
         pygame.mixer.init()
 
         self.volume = 100
 
-        self.__audio_assets_path = Path(audio_assests_path)
+        self.__audio_assets_path = Path(AUDIO_ASSETS_PATH)
 
         event_dispatcher.subscribe(
             "controller_connected", lambda _: self.play("controller_connected")
@@ -45,16 +42,16 @@ class Notifier(GCSModule):
         event_dispatcher.subscribe("rov/armed", lambda _: self.play("armed"))
         event_dispatcher.subscribe("rov/disarmed", lambda _: self.play("disarmed"))
         event_dispatcher.subscribe(
-            "rov_gain_change", lambda g: self.play(f"{g}_percent_gain")
+            "rov/gain_change", lambda g: self.play(f"{g}_percent_gain")
         )
         event_dispatcher.subscribe(
-            "rov_vehicle_connected", lambda _: self.play("vehicle_connected")
+            "rov/vehicle_connected", lambda _: self.play("vehicle_connected")
         )
         event_dispatcher.subscribe(
-            "rov_vehicle_disconnected", lambda _: self.play("vehicle_disconnected")
+            "rov/vehicle_disconnected", lambda _: self.play("vehicle_disconnected")
         )
         event_dispatcher.subscribe(
-            "rov_system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
+            "rov/system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
         request_manager.register_handler("notifier/get_volume", self.__dispatch_volume)
 

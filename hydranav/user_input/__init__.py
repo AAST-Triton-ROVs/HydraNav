@@ -1,4 +1,4 @@
-from core import GCSModule
+from core import GCSModule, config_manager
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
@@ -20,10 +20,7 @@ class UserInput(GCSModule):
     """
 
     def __init__(
-        self,
-        joystick_deadzone_factor: float = 2,
-        joystick_roundoff: int = 1,
-        joystick_multiplier: int = 100,
+        self
     ):
         """
         Initialize the UserInput class.
@@ -39,11 +36,7 @@ class UserInput(GCSModule):
         """
         super().__init__()
         
-        self.controller = Controller(
-            joystick_deadzone_factor,
-            joystick_roundoff,
-            joystick_multiplier,
-        )
+        self.controller = Controller()
         self.keyboard = Keyboard()
 
     def quit(self):

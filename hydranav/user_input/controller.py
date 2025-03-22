@@ -4,66 +4,20 @@ import os
 from typing import Optional, Tuple
 from pprint import pformat
 
-import jsonschema
-import jsonschema.exceptions
 import pygame
 
-from core import event_dispatcher, system_logger
+from core import event_dispatcher, system_logger, config_manager
 
 __all__ = ["Controller"]
 
-CONFIG_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
-        "displayName": {"type": "string"},
-        "pygameName": {"type": "string"},
-        "buttons": {"type": "integer"},
-        "axes": {"type": "integer"},
-        "hats": {"type": "integer"},
-        "mappings": {
-            "type": "object",
-            "patternProperties": {
-                "^[A-Z0-9]+$": {
-                    "type": "object",
-                    "properties": {
-                        "type": {
-                            "type": "string",
-                            "enum": ["button", "axis", "hat", "trigger"],
-                        },
-                        "mapping": {
-                            "type": "array",
-                            "items": {"type": "integer"},
-                            "minItems": 0,
-                        },
-                        "axis": {
-                            "type": "array",
-                            "items": {"type": "integer"},
-                            "minItems": 0,
-                        },
-                    },
-                    "required": ["type"],
-                    "additionalProperties": True,
-                }
-            },
-            "additionalProperties": False,
-        },
-    },
-    "required": ["displayName", "pygameName", "buttons", "axes", "hats", "mappings"],
-    "additionalProperties": False,
-}
-
-
-CONFIG_DIRECTORY = "assets/controller/configurations"
+JOYSTICK_DEAD_ZONE_FACTOR = config_manager.get("controller", "joystickDeadZoneFactor")
+JOYSTICK_ROUND_OFF = config_manager.get("controller", "joystickRoundOff")
+JOYSTICK_MULTIPLIER = config_manager.get("controller", "joystickMultiplier")
+CONTROLLER_CONFIGS = config_manager.get("controller", "configs")
 
 
 class Controller:
-    def __init__(
-        self,
-        deadzone_factor: float = 2,
-        joystick_roundoff: int = 1,
-        joystick_multiplier: int = 100,
-    ) -> None:
+    def __init__(self) -> None:
         """
         Initialize a new Controller instance.
 
@@ -78,23 +32,21 @@ class Controller:
         """
         pygame.joystick.init()
         self.__deadzone: float = 0.5
-        self.__deadzone_factor: float = deadzone_factor
-        self.__joystick_roundoff: int = joystick_roundoff
-        self.__joystick_multiplier: int = joystick_multiplier
+        self.__deadzone_factor: float = JOYSTICK_DEAD_ZONE_FACTOR
+        self.__joystick_roundoff: int = JOYSTICK_ROUND_OFF
+        self.__joystick_multiplier: int = JOYSTICK_MULTIPLIER
         self.__joystick: Optional[pygame.joystick.JoystickType] = None
 
         self.__previous_hat_value: Tuple[int, int] = (0, 0)
         self.__previous_trigger_value: float = 0.0
 
-        self.__config_library: dict[str, dict] = {}
+        self.__config_library: dict[str, dict] = CONTROLLER_CONFIGS
         self.__current_config_name: Optional[str] = None
 
         self.__library_button_mappings: dict[frozenset, str] = {}
         self.__library_hat_mappings: dict[tuple, str] = {}
         self.__library_joystick_mappings: dict[str, tuple] = {}
         self.__library_trigger_mappings: dict[int, str] = {}
-
-        self.__load_config_libary()
 
         event_dispatcher.subscribe(
             "controller_button_down", self.__on_controller_button_down
@@ -280,25 +232,6 @@ class Controller:
             else round(value)
         )
 
-    def __load_config_libary(self):
-        """
-        Load the configuration library by reading valid configuration files.
-
-        Iterates through valid configuration files and stores their contents in the internal configuration library.
-        Logs success and debugging information.
-
-        :return: None
-        """
-        configs = self.__get_valid_config()
-        names = self.__get_valid_config_names()
-
-        self.__config_library = {}
-        for name, config in zip(names, configs):
-            self.__config_library[name] = config
-
-        system_logger.success("Loaded config library")
-        system_logger.debug(f"Config Library: {pformat(self.__config_library)}")
-
     def __generate_library_mappings(self):
         """
         Generate mappings for buttons, hats, joysticks, and triggers based on the current configuration.
@@ -337,91 +270,6 @@ class Controller:
         system_logger.trace(f"{self.__library_joystick_mappings = }")
         system_logger.trace(f"{self.__library_trigger_mappings = }")
 
-    def __validate_configuration(self, config: dict) -> bool:
-        """
-        Validate a configuration dictionary against the predefined JSON schema.
-
-        :param config: The configuration dictionary to validate.
-        :type config: dict
-        :return: True if configuration is valid; False otherwise.
-        :rtype: bool
-        :raises jsonschema.exceptions.ValidationError: If the configuration is invalid.
-        """
-        try:
-            jsonschema.validate(config, CONFIG_SCHEMA)
-        except jsonschema.exceptions.ValidationError as err:
-            system_logger.error(
-                f"Controller invalid configuration {config}; err msg: {err}"
-            )
-            return False
-        else:
-            return True
-
-    def __get_valid_config_files(self) -> list[str]:
-        """
-        Scan and return a list of valid configuration file paths.
-
-        Reads files from the configuration directory, validates each configuration,
-        and returns absolute paths for valid configuration files.
-
-        :return: List of valid configuration file paths.
-        :rtype: list[str]
-        :raises json.JSONDecodeError: If a file cannot be parsed as JSON.
-        """
-
-        files_path = [
-            os.path.abspath(f"{CONFIG_DIRECTORY}/{x}")
-            for x in os.listdir(CONFIG_DIRECTORY)
-        ]
-
-        system_logger.trace(f"{files_path = }")
-
-        valid_config_paths = []
-        for file in files_path:
-            with open(file) as f:
-                try:
-                    data = json.load(f)
-                except json.JSONDecodeError as err:
-                    system_logger.error(f"Config decoding error; err msg: {err}")
-                    continue
-                else:
-                    if self.__validate_configuration(data):
-                        valid_config_paths.append(file)
-
-        system_logger.debug(f"Valid config paths: {valid_config_paths}")
-        return valid_config_paths
-
-    def __get_valid_config(self) -> list[dict]:
-        """
-        Retrieve and parse valid configuration files.
-
-        Iterates over valid configuration file paths, parses JSON content,
-        and returns a list of configuration dictionaries.
-
-        :return: List of valid configurations.
-        :rtype: list[dict]
-        """
-        valid_configs = []
-        for file in self.__get_valid_config_files():
-            with open(file) as f:
-                data = json.load(f)
-                valid_configs.append(data)
-
-        system_logger.trace(f"{valid_configs = }")
-        return valid_configs
-
-    def __get_valid_config_names(self) -> list[str]:
-        """
-        Retrieve the base names of valid configuration files.
-
-        Strips directory path and file extension to return configuration names.
-
-        :return: List of configuration names.
-        :rtype: list[str]
-        """
-        files = self.__get_valid_config_files()
-        return [os.path.basename(file).split(".")[0] for file in files]
-
     def max_value(self) -> float:
         """
         Calculate the maximum value adjusted by the deadzone factor.
@@ -457,7 +305,7 @@ class Controller:
         """
         if self.__joystick is not None:
             self.__joystick.quit()
-            
+
     def status_ok(self) -> bool:
         return self.__joystick is not None and self.__joystick.get_init()
 
@@ -570,14 +418,6 @@ class Controller:
         :rtype: list[str]
         """
         return list(self.__config_library.keys())
-
-    def reload_config_library(self):
-        """
-        Reload the configuration library by re-reading configuration files.
-
-        Invokes internal loading mechanism to ensure the library is up-to-date.
-        """
-        self.__load_config_libary()
 
     def autoload_config(self):
         """

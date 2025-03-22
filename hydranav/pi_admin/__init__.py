@@ -4,7 +4,7 @@ from typing import Tuple
 from queue import Queue
 from pi_admin.daemon import PiAdminDaemon
 from pi_admin.enums import AdminCommands
-from core import system_logger, GCSModule
+from core import GCSModule
 
 
 class PiAdmin(GCSModule):
@@ -14,7 +14,6 @@ class PiAdmin(GCSModule):
 
     def __init__(
         self,
-        address: Tuple[str, int] = ("0.0.0.0", 2015),
     ):
         """
         Initialize the PiAdmin object.
@@ -23,11 +22,12 @@ class PiAdmin(GCSModule):
         :type address: Tuple[str, int]
         """
         super().__init__()
-        
+
         self.__quit_event = threading.Event()
         self.__command_queue: Queue[AdminCommands] = Queue(1)
         self.__admin_daemon = PiAdminDaemon(
-            self.__command_queue, address, self.__quit_event
+            self.__command_queue,
+            self.__quit_event,
         )
         self.__admin_daemon.start()
 
@@ -36,14 +36,14 @@ class PiAdmin(GCSModule):
             self.__command_queue.put(command, block=False)
         except queue.Full:
             return
-            
+
     def status_ok(self) -> bool:
         return self.__admin_daemon.is_alive()
 
     def quit(self):
         self.__quit_event.set()
         self.__admin_daemon.join()
-        
+
     def poweroff(self):
         """
         Send poweroff command.

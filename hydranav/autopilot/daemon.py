@@ -6,7 +6,7 @@ import time
 from numpy import interp
 from pymavlink import mavutil  # type: ignore
 
-from core import system_logger
+from core import system_logger, config_manager
 from autopilot.enums import ControlChannels, Directions, SystemModes
 from autopilot.movement import ROVMovement
 from autopilot.command import ROVCommands
@@ -21,11 +21,13 @@ from autopilot.notification import (
 )
 
 
-MAX_BACKWARD_PWM = 1100
-NEUTRAL_PWM = 1500
-MAX_FORWARD_PWM = 1900
-GAIN_LEVELS = (25, 40, 50, 75, 90)
-TIME_OUT_SEC = 2
+MAX_BACKWARD_PWM = config_manager.get("autopilot", "maxBackwardPWM")
+NEUTRAL_PWM = config_manager.get("autopilot", "neutralPWM")
+MAX_FORWARD_PWM = config_manager.get("autopilot", "maxForwardPWM")
+GAIN_LEVELS = config_manager.get("autopilot", "gainLevels")
+TIME_OUT_SEC = config_manager.get("autopilot", "timeoutSec")
+PORT = config_manager.get("autopilot", "port")
+BASE_IP = config_manager.get("networking", "baseIP")
 
 
 class AutopilotConnectionDaemon(Thread):
@@ -42,8 +44,6 @@ class AutopilotConnectionDaemon(Thread):
         movement_queue: Queue[ROVMovement],
         command_queue: Queue[ROVCommands],
         notification_queue: PriorityQueue[ROVNotification],
-        base_ip: str,
-        port: int,
         quit_event: threading.Event,
     ):
         """
@@ -63,21 +63,16 @@ class AutopilotConnectionDaemon(Thread):
         super().__init__(daemon=True)
         self.__gain_index = 0
 
-        self.__base_ip = base_ip
-        self.__port = port
-
         self.__movement_queue: Queue[ROVMovement] = movement_queue
         self.__command_queue: Queue[ROVCommands] = command_queue
         self.__notification_queue: PriorityQueue[ROVNotification] = notification_queue
 
         self.__time_since_last_heartbeat = time.monotonic()
         self.__time_since_last_movement = time.monotonic()
-        
+
         self.__quit_event = quit_event
 
-        self.__master = mavutil.mavlink_connection(
-            f"udpin:{self.__base_ip}:{self.__port}"
-        )
+        self.__master = mavutil.mavlink_connection(f"udpin:{BASE_IP}:{PORT}")
 
     def __component_arm_disarm(self, act: int):
         """

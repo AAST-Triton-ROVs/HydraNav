@@ -2,8 +2,8 @@ from queue import Queue
 import socket
 import threading
 import time
-from core import system_logger
-from manfaloty.daemons.reciever_daemon import ManfalotyRecieverDaemon
+from core import system_logger, config_manager
+from manfaloty.daemons.receiver_daemon import ManfalotyReceiverDaemon
 from manfaloty.daemons.sender_daemon import ManfalotySenderDaemon
 from manfaloty.data import ManfalotyData
 from manfaloty.enums import ManfalotyCommands
@@ -12,6 +12,9 @@ __all__ = ["ManfalotyDaemonManager"]
 
 RETRY_DELAY = 2
 SOCKET_TIMEOUT = 1.0
+BASE_IP = config_manager.get("networking", "baseIP")
+PI_IP = config_manager.get("networking", "raspIP")
+PORT = config_manager.get("manfaloty", "port")
 
 
 class ManfalotyDaemonManager:
@@ -19,18 +22,15 @@ class ManfalotyDaemonManager:
         self,
         command_queue: Queue[ManfalotyCommands],
         data_queue: Queue[ManfalotyData],
-        base_ip: str,
-        pi_ip: str,
-        port: int,
     ):
-        self.__address = base_ip, port
+        self.__address = BASE_IP, PORT
         self.__server_socket = self.__create_socket()
 
         self.__command_queue = command_queue
         self.__data_queue = data_queue
         self.__quit_event = threading.Event()
 
-        self.__reciever_daemon = ManfalotyRecieverDaemon(
+        self.__receiver_daemon = ManfalotyReceiverDaemon(
             self.__server_socket,
             self.__data_queue,
             self.__quit_event,
@@ -38,17 +38,17 @@ class ManfalotyDaemonManager:
         self.__sender_daemon = ManfalotySenderDaemon(
             self.__server_socket,
             self.__command_queue,
-            pi_ip,
-            port,
+            PI_IP,
+            PORT,
             self.__quit_event,
         )
 
     def start_daemons(self):
-        self.__reciever_daemon.start()
+        self.__receiver_daemon.start()
         self.__sender_daemon.start()
         
     def status_ok(self):
-        return self.__reciever_daemon.is_alive() and self.__sender_daemon.is_alive()
+        return self.__receiver_daemon.is_alive() and self.__sender_daemon.is_alive()
 
     def quit(self):
         self.__quit_event.set()
@@ -56,7 +56,7 @@ class ManfalotyDaemonManager:
         self.__server_socket.close()
         
     def join(self):
-        self.__reciever_daemon.join()
+        self.__receiver_daemon.join()
         self.__sender_daemon.join()
 
     def __create_socket(self) -> socket.socket:

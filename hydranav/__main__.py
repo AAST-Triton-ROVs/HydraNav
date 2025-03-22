@@ -1,7 +1,7 @@
 import sys
 import pygame
 import argparse
-from core import ModuleManager
+from core import ModuleManager, config_manager
 from user_input import UserInput
 from gui import GUI
 from manfaloty import Manfaloty
@@ -36,6 +36,7 @@ def init_parser() -> argparse.ArgumentParser:
 class GCS:
     def __init__(self):
         pygame.init()
+        config_manager.init()
 
         parser = init_parser()
         args = parser.parse_args()

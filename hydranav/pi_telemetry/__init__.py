@@ -20,11 +20,7 @@ class PiTelemetry(GCSModule):
     :type port: int
     """
 
-    def __init__(
-        self,
-        host: str = "0.0.0.0",
-        port=2010,
-    ):
+    def __init__(self):
         """
         Constructor method that sets up the telemetry daemon and queue.
 
@@ -37,23 +33,19 @@ class PiTelemetry(GCSModule):
         """
         super().__init__()
 
-        self.__host = host
-        self.__port = port
         self.__queue: Queue = Queue(1)
 
         self.__quit_event = threading.Event()
         self.__listener_thread = TelemetryDaemon(
             self.__queue,
-            self.__host,
-            self.__port,
             self.__quit_event,
         )
         self.__listener_thread.start()
-        
+
     def quit(self):
         self.__quit_event.set()
         self.__listener_thread.join()
-                
+
     def status_ok(self) -> bool:
         return self.__listener_thread.is_alive()
 
@@ -64,11 +56,11 @@ class PiTelemetry(GCSModule):
         :raises queue.Empty: If the queue is empty.
         """
         try:
-            recieved_data: TelemetryData = self.__queue.get(block=False)
+            received_data: TelemetryData = self.__queue.get(block=False)
         except queue.Empty:
             return
         else:
-            event_dispatcher.dispatch("telemetery", recieved_data)
+            event_dispatcher.dispatch("telemetry", received_data)
 
     def close(self):
         """

@@ -5,18 +5,13 @@ from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
 from core import request_manager, event_dispatcher, GCSModule
 
-
 class Manfaloty(GCSModule):
     """
     Manages communication with the Manfaloty system.
     """
 
     def __init__(
-        self,
-        base_ip: str = "0.0.0.0",
-        pi_ip: str = "192.168.1.100",
-        port: int = 2005,
-    ):
+        self):
         super().__init__()
 
         self.__command_queue: Queue[ManfalotyCommands] = Queue(1)
@@ -25,14 +20,11 @@ class Manfaloty(GCSModule):
         self.__daemon_manager = ManfalotyDaemonManager(
             self.__command_queue,
             self.__data_queue,
-            base_ip,
-            pi_ip,
-            port,
         )
         self.__daemon_manager.start_daemons()
 
         event_dispatcher.subscribe(
-            "controller_button_down", self.__on_controller_button_down
+            "controller/button_down", self.__on_controller_button_down
         )
         # event_dispatcher.subscribe(
         #     "controller_button_up", self.__on_controller_button_up

@@ -9,8 +9,6 @@ import time
 from core import system_logger
 from manfaloty.enums import ManfalotyCommands
 
-RETRY_DELAY = 2
-
 
 class ManfalotySenderDaemon(Thread):
     """
@@ -59,7 +57,7 @@ class ManfalotySenderDaemon(Thread):
             except struct.error as e:
                 system_logger.critical(f"Manfaloty Sender daemon packing error: {e}")
                 continue
-            
+
             try:
                 self.__server_socket.sendto(data, self.__pi_address)
             except socket.timeout:

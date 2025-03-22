@@ -5,12 +5,14 @@ from threading import Thread
 import threading
 import time
 from core.logger import system_logger
+from core import config_manager
 from pi_telemetry.data import TelemetryData
 
 BUFFER_SIZE = struct.calcsize("!" + "I" * 8)
-RECONNECT_DELAY = 2
-SOCKET_TIMEOUT = 1.0
-
+RECONNECT_DELAY = config_manager.get("networking", "retryDelaySec")
+SOCKET_TIMEOUT = config_manager.get("networking", "socketTimeout")
+HOST = config_manager.get("networking", "baseIP")
+PORT = config_manager.get("piTelemetry", "port")
 
 class TelemetryDaemon(Thread):
     """
@@ -27,12 +29,10 @@ class TelemetryDaemon(Thread):
     def __init__(
         self,
         queue: queue.Queue,
-        base_ip: str,
-        port: int,
         quit_event: threading.Event,
     ):
         super().__init__(daemon=True)
-        self.address = (base_ip, port)
+        self.address = (HOST, PORT)
         self.server_socket = self.__create_socket()
         self.queue = queue
         self.__quit_event = quit_event

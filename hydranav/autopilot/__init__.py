@@ -16,7 +16,6 @@ from autopilot.notification import (
     VehicleConnected,
     VehicleDisconnected,
 )
-from core.request_manager import RequestManager
 
 __all__ = ["ROV"]
 
@@ -30,11 +29,7 @@ class Autopilot(GCSModule):
     queues, read by :class:`AutopilotConnectionDaemon`.
     """
 
-    def __init__(
-        self,
-        base_ip: str = "0.0.0.0",
-        port: int = 2000,
-    ):
+    def __init__(self):
         """
         Initializes Autopilot.
 
@@ -56,8 +51,6 @@ class Autopilot(GCSModule):
             self.__movement_queue,
             self.__command_queue,
             self.__notification_queue,
-            base_ip,
-            port,
             self.__quit_event,
         )
         self.__connection_daemon.start()

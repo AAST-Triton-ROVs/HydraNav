@@ -12,7 +12,7 @@ from manfaloty.data import ManfalotyData, PHReading
 PH_VALUE_SIZE = struct.calcsize("!f")
 
 
-class ManfalotyRecieverDaemon(Thread):
+class ManfalotyReceiverDaemon(Thread):
     """
     A daemon thread responsible for receiving sensor data from the Manfaloty.
     This class continuously reads incoming raw pH values from a server socket, unpacks

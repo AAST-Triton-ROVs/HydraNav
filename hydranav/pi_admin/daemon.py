@@ -6,10 +6,14 @@ from queue import Queue
 import socket
 import time
 import struct
+from core import config_manager
 from pi_admin.enums import AdminCommands
 from core import system_logger
 
-SOCKET_TIMEOUT = 1.0
+SOCKET_TIMEOUT = config_manager.get("networking", "socketTimeout")
+BASE = config_manager.get("networking", "baseIP")
+PORT = config_manager.get("piAdmin", "port")
+
 
 class PiAdminDaemon(Thread):
     """
@@ -26,7 +30,6 @@ class PiAdminDaemon(Thread):
     def __init__(
         self,
         admin_queue: Queue[AdminCommands],
-        address: Tuple[str, int],
         quit_event: threading.Event,
     ):
         """
@@ -43,11 +46,11 @@ class PiAdminDaemon(Thread):
         self.__admin_queue = admin_queue
         self.__quit_event = quit_event
 
-        self.__address = address
+        self.__address = (BASE, PORT)
         self.server_socket = self.__create_socket()
-        
-        system_logger.success(f"Admin daemon bound to {address[0]}:{address[1]}")
-        
+
+        system_logger.success(f"Admin daemon bound to {BASE}:{PORT}")
+
     def __create_socket(self) -> socket.socket:
         while True:
             try:
@@ -58,7 +61,7 @@ class PiAdminDaemon(Thread):
             except socket.error as e:
                 system_logger.error(f"PiAdmin daemon bounding error: {e}")
                 continue
-            
+
             return server_socket
 
     def run(self):
@@ -75,13 +78,13 @@ class PiAdminDaemon(Thread):
             except socket.timeout:
                 system_logger.debug("Admin daemon no connection")
                 continue
-            
+
             system_logger.success(f"Admin daemon accepted connection from {address}")
             try:
                 command = self.__admin_queue.get(block=False)
             except queue.Empty:
                 continue
-            
+
             data = struct.pack("!I", command.value)
             try:
                 connection.send(data)

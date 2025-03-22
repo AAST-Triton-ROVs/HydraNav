@@ -57,12 +57,7 @@ class SystemLogger:
 
         self.logger = logger
 
-        self.__stderr_handler: Optional[int] = self.logger.add(
-            sys.stderr, level="ERROR", backtrace=True, diagnose=True
-        )
-        self.__custom_handler: Optional[int] = None
-        self.__file_handler: Optional[int] = None
-        self.__stdout_handler: Optional[int] = None
+        self.set_level(LogLevels.INFO)
 
     def set_level(self, level: LogLevels):
         """
@@ -78,18 +73,18 @@ class SystemLogger:
 
         self.logger.remove()
 
-        self.__custom_handler = self.logger.add(
+        self.logger.add(
             self.__handler,
             format="{time:HH:mm:ss} | {level} | {message}",
             level=level.value,
         )
-        self.__stdout_handler = self.logger.add(
+        self.logger.add(
             sys.stdout,
             format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <level>{message}</level>",
             colorize=True,
             level=level.value,
         )
-        self.__file_handler = self.logger.add(
+        self.logger.add(
             "gcs.log",
             format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function} | {message}",
             level=level.value,
