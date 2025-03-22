@@ -37,7 +37,7 @@ class Manfaloty(GCSModule):
         # event_dispatcher.subscribe(
         #     "controller_button_up", self.__on_controller_button_up
         # )
-        request_manager.register_handler("manfaloty_get_ph", self.read_ph_sensor)
+        request_manager.register_handler("manfaloty/get_ph", self.read_ph_sensor)
 
     def __on_controller_button_down(self, button: str):
         match button:

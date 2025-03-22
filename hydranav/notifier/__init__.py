@@ -40,10 +40,10 @@ class Notifier(GCSModule):
         event_dispatcher.subscribe(
             "controller_disconnected", lambda _: self.play("controller_disconnected")
         )
-        event_dispatcher.subscribe("controller_button_down", self.__on_controller_down)
+        event_dispatcher.subscribe("controller/button_down", self.__on_controller_down)
 
-        event_dispatcher.subscribe("rov_armed", lambda _: self.play("armed"))
-        event_dispatcher.subscribe("rov_disarmed", lambda _: self.play("disarmed"))
+        event_dispatcher.subscribe("rov/armed", lambda _: self.play("armed"))
+        event_dispatcher.subscribe("rov/disarmed", lambda _: self.play("disarmed"))
         event_dispatcher.subscribe(
             "rov_gain_change", lambda g: self.play(f"{g}_percent_gain")
         )
@@ -56,7 +56,7 @@ class Notifier(GCSModule):
         event_dispatcher.subscribe(
             "rov_system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
-        request_manager.register_handler("notifier_get_volume", self.__dispatch_volume)
+        request_manager.register_handler("notifier/get_volume", self.__dispatch_volume)
 
         self.__change_volume(self.volume)
 
@@ -66,7 +66,7 @@ class Notifier(GCSModule):
                 self.play("dua")
 
     def __dispatch_volume(self):
-        event_dispatcher.dispatch("notifier_volume_state", self.volume)
+        event_dispatcher.dispatch("notifier/volume_state", self.volume)
 
     def __change_volume(self, inc: int):
         """
@@ -88,7 +88,7 @@ class Notifier(GCSModule):
             self.volume += inc
 
         pygame.mixer.music.set_volume(self.volume)
-        event_dispatcher.dispatch("notifier_volume_change", self.volume)
+        event_dispatcher.dispatch("notifier/volume_change", self.volume)
 
     def quit(self):
         return

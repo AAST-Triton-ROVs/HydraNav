@@ -234,14 +234,14 @@ class Autopilot(GCSModule):
                 return
 
             if isinstance(notification, VehicleDisconnected):
-                event_dispatcher.dispatch("rov_vehicle_disconnected")
+                event_dispatcher.dispatch("rov/vehicle_disconnected")
             elif isinstance(notification, VehicleConnected):
-                event_dispatcher.dispatch("rov_vehicle_connected")
+                event_dispatcher.dispatch("rov/vehicle_connected")
             elif isinstance(notification, Armed):
-                event_dispatcher.dispatch("rov_armed")
+                event_dispatcher.dispatch("rov/armed")
             elif isinstance(notification, Disarmed):
-                event_dispatcher.dispatch("rov_disarmed")
+                event_dispatcher.dispatch("rov/disarmed")
             elif isinstance(notification, GainChange):
-                event_dispatcher.dispatch("rov_gain_change", notification.new_gain)
+                event_dispatcher.dispatch("rov/gain_change", notification.new_gain)
             elif isinstance(notification, SystemModeChanged):
-                event_dispatcher.dispatch("rov_system_mode_changed", notification.mode)
+                event_dispatcher.dispatch("rov/system_mode_changed", notification.mode)
