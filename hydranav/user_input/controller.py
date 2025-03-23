@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+from turtle import st
 from typing import Optional, Tuple
 from pprint import pformat
 
@@ -40,8 +41,8 @@ class Controller:
         self.__previous_hat_value: Tuple[int, int] = (0, 0)
         self.__previous_trigger_value: float = 0.0
 
-        self.__config_library: dict[str, dict] = CONTROLLER_CONFIGS
-        self.__current_config_name: Optional[str] = None
+        self.__config_library: list[dict] = CONTROLLER_CONFIGS
+        self.__current_config: Optional[dict] = None
 
         self.__library_button_mappings: dict[frozenset, str] = {}
         self.__library_hat_mappings: dict[tuple, str] = {}
@@ -242,12 +243,10 @@ class Controller:
         :raises KeyError: If the expected keys are not present in the configuration.
         :return: None
         """
-        if not self.__current_config_name:
+        if not self.__current_config:
             return
 
-        mappings: dict[str, dict] = self.__config_library[self.__current_config_name][
-            "mappings"
-        ]
+        mappings: dict[str, dict] = self.__current_config["mappings"]
 
         for name, mapping in mappings.items():
             system_logger.trace(f"mappings {name = } {mapping = }")
@@ -417,7 +416,7 @@ class Controller:
         :return: List of configuration names.
         :rtype: list[str]
         """
-        return list(self.__config_library.keys())
+        return [config["displayName"] for config in self.__config_library]
 
     def autoload_config(self):
         """
@@ -442,15 +441,17 @@ class Controller:
         )
 
         config_found = False
-        for name, config in self.__config_library.items():
+        for config in self.__config_library:
             if (
                 config["pygameName"] == pygame_name
                 and config["buttons"] == num_buttons
                 and config["hats"] == num_hats
                 and config["axes"] == num_axes
             ):
-                self.__current_config_name = name
-                system_logger.info(f"Autoloaded {name} as the current configuration")
+                self.__current_config = config
+                system_logger.info(
+                    f"Autoloaded {config['displayName']} as the current configuration"
+                )
                 config_found = True
                 break
 
@@ -458,26 +459,34 @@ class Controller:
             system_logger.warning(
                 f"{pygame_name} with {num_buttons} buttons, {num_hats} hats and {num_axes} axes is not a known controller type, using similar config"
             )
-            for name, config in self.__config_library.items():
+            for config in self.__config_library:
                 if (
                     config["buttons"] == num_buttons
                     and config["hats"] == num_hats
                     and config["axes"] == num_axes
                 ):
-                    self.__current_config_name = name
+                    self.__current_config = config
                     system_logger.info(
-                        f"Autoloaded similar config {name} as the current configuration"
+                        f"Autoloaded similar config {config['displayName']} as the current configuration"
                     )
                     break
 
         self.__generate_library_mappings()
 
-    def manual_config(self, config_name: str):
-        """
-        Manually select a configuration by name and update mappings.
+    @property
+    def current_config_name(self) -> str | None:
+        if self.__current_config is None:
+            return None
 
-        :param config_name: The configuration name to set as current.
-        :type config_name: str
-        """
-        self.__current_config_name = config_name
+        return self.__current_config["displayName"]
+
+    @current_config_name.setter
+    def current_config_name(self, value: str):
+        if all(config.get(value) is not None for config in self.__config_library):
+            raise ValueError(f"{value} is not a valid config name")
+
+        for config in self.__config_library:
+            if config["displayName"] == value:
+                self.__current_config = config
+                break
         self.__generate_library_mappings()
