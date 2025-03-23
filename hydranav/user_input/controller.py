@@ -322,41 +322,6 @@ class Controller:
         else:
             return False
 
-    def set_rgb_led(self, r: int, g: int, b: int) -> bool:
-        """
-        Set the RGB LED color by adjusting brightness values.
-
-        :param r: Red brightness (0-255).
-        :type r: int
-        :param g: Green brightness (0-255).
-        :type g: int
-        :param b: Blue brightness (0-255).
-        :type b: int
-        :raises ValueError: If any color value is not in the range 0-255.
-        :raises IOError: If write permission to the LED files is not available.
-        :return: True if the LED was successfully set; False if files not found.
-        :rtype: bool
-        """
-        color = ["red", "green", "blue"]
-
-        for c, value in zip(color, [r, g, b]):
-            if not 0 <= value <= 255:
-                raise ValueError(
-                    f"Invalid value for {c} color. Must be between 0 and 255."
-                )
-
-            brightness_file = glob.glob(f"/sys/class/leds/input*:{c}/brightness")
-
-            if not brightness_file:
-                return False
-
-            if not os.access(brightness_file[0], os.W_OK):
-                raise IOError("No write permission to the led files")
-
-            with open(brightness_file[0], "w") as f:
-                f.write(str(value))
-        return True
-
     def update(self) -> bool:
         """
         Update the controller status and process input events.
