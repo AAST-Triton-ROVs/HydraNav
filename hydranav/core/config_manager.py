@@ -33,6 +33,8 @@ DEFAULT_CONFIG = {
         "joystickDeadZoneFactor": 2,
         "joystickRoundOff": 1,
         "joystickMultiplier": 100,
+        "timeUntilHoldTriggeredSec": 0.5,
+        "timeBetweenHoldTriggerSec": 0.2,
         "mappings": [
             {
                 "name": "zizo-style",
@@ -239,6 +241,8 @@ REQUIRED_CONTROLLER_FIELDS = [
     "joystickMultiplier",
     "mappings",
     "configs",
+    "timeUntilHoldTriggeredSec",
+    "timeBetweenHoldTriggerSec",
 ]
 
 

@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import time
 from turtle import st
 from typing import Optional, Tuple
 from pprint import pformat
@@ -15,6 +16,12 @@ JOYSTICK_DEAD_ZONE_FACTOR = config_manager.get("controller", "joystickDeadZoneFa
 JOYSTICK_ROUND_OFF = config_manager.get("controller", "joystickRoundOff")
 JOYSTICK_MULTIPLIER = config_manager.get("controller", "joystickMultiplier")
 CONTROLLER_CONFIGS = config_manager.get("controller", "configs")
+TIME_UNTIL_HOLD_TRIGGERED = config_manager.get(
+    "controller", "timeUntilHoldTriggeredSec"
+)
+TIME_BETWEEN_HOLD_TRIGGERS = config_manager.get(
+    "controller", "timeBetweenHoldTriggerSec"
+)
 
 
 class Controller:
@@ -49,14 +56,14 @@ class Controller:
         self.__library_joystick_mappings: dict[str, tuple] = {}
         self.__library_trigger_mappings: dict[int, str] = {}
 
-        event_dispatcher.subscribe(
-            "controller_button_down", self.__on_controller_button_down
-        )
-
-    def __on_controller_button_down(self, button: str):
-        match button:
-            case "M":
-                self.calibrate()
+        self.__buttons_held: dict[str, dict[str, float | bool]] = {}
+        """
+        ```
+        {
+            "<BUTTON_NAME>" : {"time": float, "held_before": bool}
+        }
+        ```
+        """
 
     def __calc_deadzones(self) -> Optional[float]:
         """
@@ -138,6 +145,7 @@ class Controller:
             value = self.__joystick.get_axis(axis_index)
             system_logger.trace(f"trigger {trigger_name} value = {value}")
             if value > 0.5:
+                # TODO: PREVENT MULTIPLE BUTTON_DOWN EVENTS BEING SENT
                 system_logger.info(f"Controller trigger {trigger_name} pressed")
                 event_dispatcher.dispatch("controller/button_down", trigger_name)
 
@@ -175,6 +183,37 @@ class Controller:
         if button_up_mapping is None and len(buttons_pressed_up) > 0:
             system_logger.error(f"{buttons_pressed_up} is not mapped to anything")
             return
+
+        if (
+            button_down_mapping is not None
+            and self.__buttons_held.get(button_down_mapping) is None
+        ):
+            self.__buttons_held[button_down_mapping] = {
+                "time": time.monotonic(),
+                "held_before": False,
+            }
+
+        if (
+            button_up_mapping is not None
+            and self.__buttons_held.get(button_up_mapping) is not None
+        ):
+            del self.__buttons_held[button_up_mapping]
+
+        for button, data in self.__buttons_held.items():
+            if (
+                time.monotonic() - data["time"] >= TIME_UNTIL_HOLD_TRIGGERED
+                and not self.__buttons_held[button]["held_before"]
+            ):
+                event_dispatcher.dispatch("controller/button_hold", button)
+                self.__buttons_held[button]["time"] = time.monotonic()
+                self.__buttons_held[button]["held_before"] = True
+            elif (
+                time.monotonic() - data["time"] >= TIME_BETWEEN_HOLD_TRIGGERS
+                and self.__buttons_held[button]["held_before"]
+            ):
+                # This triggers the high frequency emit mode
+                event_dispatcher.dispatch("controller/button_hold", button)
+                self.__buttons_held[button]["time"] = time.monotonic()
 
         event_dispatcher.dispatch("controller/button_down", button_down_mapping)
         event_dispatcher.dispatch("controller/button_up", button_up_mapping)
