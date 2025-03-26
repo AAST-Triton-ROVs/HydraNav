@@ -55,11 +55,24 @@ class Autopilot(GCSModule):
         )
         self.__connection_daemon.start()
 
+        event_dispatcher.subscribe("mapper/ARM", lambda _: self.arm())
+        event_dispatcher.subscribe("mapper/DISARM", lambda _: self.disarm())
+        event_dispatcher.subscribe("mapper/GAIN_UP", lambda _: self.gain_up())
+        event_dispatcher.subscribe("mapper/GAIN_DOWN", lambda _: self.gain_down())
         event_dispatcher.subscribe(
-            "controller_button_down", self.__on_controller_button_down
+            "mapper/hold/ROLL_RIGHT", lambda _: self.move(0, 0, 0, 0, 100)
         )
         event_dispatcher.subscribe(
-            "controller_joysticks", self.__handle_controller_joysticks
+            "mapper/hold/ROLL_LEFT", lambda _: self.move(0, 0, 0, 0, -100)
+        )
+        event_dispatcher.subscribe(
+            "mapper/STABILIZATION_MODE", lambda _: self.flight_mode_stabilize()
+        )
+        event_dispatcher.subscribe(
+            "mapper/MANUAL_MODE", lambda _: self.flight_mode_manual()
+        )
+        event_dispatcher.subscribe(
+            "controller/joysticks", self.__handle_controller_joysticks
         )
 
     def __handle_controller_joysticks(self, movement: dict[str, Tuple[float, float]]):
@@ -68,25 +81,6 @@ class Autopilot(GCSModule):
         self.move(-x, y, -z, w, 0)
 
         system_logger.trace(f"{movement = }")
-
-    def __on_controller_button_down(self, button: str):
-        match button:
-            case "A":
-                self.arm()
-            case "B":
-                self.disarm()
-            case "C":
-                self.flight_mode_stabilize()
-            case "D":
-                self.flight_mode_manual()
-            case "3":
-                self.gain_up()
-            case "1":
-                self.gain_down()
-            case "2":
-                self.move(0, 0, 0, 0, 100.0)
-            case "4":
-                self.move(0, 0, 0, 0, -100.0)
 
     def __move(
         self, forward: float, lateral: float, throttle: float, yaw: float, roll: float

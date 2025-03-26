@@ -5,13 +5,13 @@ from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
 from core import request_manager, event_dispatcher, GCSModule
 
+
 class Manfaloty(GCSModule):
     """
     Manages communication with the Manfaloty system.
     """
 
-    def __init__(
-        self):
+    def __init__(self):
         super().__init__()
 
         self.__command_queue: Queue[ManfalotyCommands] = Queue(1)
@@ -24,34 +24,32 @@ class Manfaloty(GCSModule):
         self.__daemon_manager.start_daemons()
 
         event_dispatcher.subscribe(
-            "controller/button_down", self.__on_controller_button_down
+            "mapper/GRIPPER_JAW_OPEN", lambda _: self.gripper_open_jaws()
         )
-        # event_dispatcher.subscribe(
-        #     "controller_button_up", self.__on_controller_button_up
-        # )
-        request_manager.register_handler("manfaloty/get_ph", self.read_ph_sensor)
-
-    def __on_controller_button_down(self, button: str):
-        match button:
-            case "R1":
-                self.gripper_toggle_open_jaws()
-            case "L1":
-                self.gripper_toggle_close_jaws()
-            case "R2":
-                self.gripper_roll_right()
-            case "L2":
-                self.gripper_roll_left()
-            case "R4":
-                self.gripper_pitch_up()
-            case "L4":
-                self.gripper_pitch_down()
-
-    def __on_controller_button_up(self, button: str):
-        match button:
-            case "R1":
-                self.gripper_toggle_open_jaws()
-            case "L1":
-                self.gripper_toggle_close_jaws()
+        event_dispatcher.subscribe(
+            "mapper/GRIPPER_JAW_CLOSE", lambda _: self.gripper_close_jaws()
+        )
+        event_dispatcher.subscribe(
+            "mapper/hold/GRIPPER_JAW_OPEN", lambda _: self.gripper_open_jaws()
+        )
+        event_dispatcher.subscribe(
+            "mapper/hold/GRIPPER_JAW_CLOSE", lambda _: self.gripper_close_jaws()
+        )
+        event_dispatcher.subscribe(
+            "mapper/GRIPPER_ROLL_LEFT", lambda _: self.gripper_roll_left()
+        )
+        event_dispatcher.subscribe(
+            "mapper/GRIPPER_ROLL_RIGHT", lambda _: self.gripper_roll_right()
+        )
+        event_dispatcher.subscribe(
+            "mapper/GRIPPER_PITCH_UP", lambda _: self.gripper_pitch_up()
+        )
+        event_dispatcher.subscribe(
+            "mapper/GRIPPER_PITCH_DOWN", lambda _: self.gripper_pitch_down()
+        )
+        request_manager.register_handler(
+            "manfaloty/get_ph", lambda _: self.read_ph_sensor()
+        )
 
     def __send_command(self, command: ManfalotyCommands):
         try:
@@ -71,10 +69,10 @@ class Manfaloty(GCSModule):
     def reset_motors(self):
         self.__send_command(ManfalotyCommands.RESET_MOTORS)
 
-    def gripper_toggle_open_jaws(self):
+    def gripper_open_jaws(self):
         self.__send_command(ManfalotyCommands.GRIPPER_TOGGLE_JAW_OPEN)
 
-    def gripper_toggle_close_jaws(self):
+    def gripper_close_jaws(self):
         self.__send_command(ManfalotyCommands.GRIPPER_TOGGLE_JAW_CLOSE)
 
     def gripper_pitch_up(self):

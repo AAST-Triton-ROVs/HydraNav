@@ -53,6 +53,7 @@ class GCS:
         self.module_manager = ModuleManager()
 
         self.user_input = UserInput()
+        self.user_input.controller_mapper.set_mapping("zizo-style")
         self.pi_telemetry = PiTelemetry()
         self.admin = PiAdmin()
         self.manfaloty = Manfaloty()

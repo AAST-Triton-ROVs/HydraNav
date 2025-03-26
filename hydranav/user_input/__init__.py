@@ -1,4 +1,5 @@
 from core import GCSModule, config_manager
+from hydranav.user_input.input_mapper import InputMapper
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
@@ -38,6 +39,7 @@ class UserInput(GCSModule):
         
         self.controller = Controller()
         self.keyboard = Keyboard()
+        self.input_mapper = InputMapper()
 
     def quit(self):
         self.controller.quit()

@@ -1,10 +1,17 @@
 import pygame
 from pathlib import Path
-from core import event_dispatcher, request_manager, GCSModule, config_manager, system_logger
+from core import (
+    event_dispatcher,
+    request_manager,
+    GCSModule,
+    config_manager,
+    system_logger,
+)
 
 __all__ = ["Notifier"]
 
 AUDIO_ASSETS_PATH: str = config_manager.get("notifier", "assetsPath")
+
 
 class Notifier(GCSModule):
     """
@@ -32,12 +39,11 @@ class Notifier(GCSModule):
         self.__audio_assets_path = Path(AUDIO_ASSETS_PATH)
 
         event_dispatcher.subscribe(
-            "controller_connected", lambda _: self.play("controller_connected")
+            "controller/connected", lambda _: self.play("controller_connected")
         )
         event_dispatcher.subscribe(
-            "controller_disconnected", lambda _: self.play("controller_disconnected")
+            "controller/disconnected", lambda _: self.play("controller_disconnected")
         )
-        event_dispatcher.subscribe("controller/button_down", self.__on_controller_down)
 
         event_dispatcher.subscribe("rov/armed", lambda _: self.play("armed"))
         event_dispatcher.subscribe("rov/disarmed", lambda _: self.play("disarmed"))
@@ -54,13 +60,6 @@ class Notifier(GCSModule):
             "rov/system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
         request_manager.register_handler("notifier/get_volume", self.__dispatch_volume)
-
-        self.__change_volume(self.volume)
-
-    def __on_controller_down(self, button: str):
-        match button:
-            case "L":
-                self.play("dua")
 
     def __dispatch_volume(self):
         event_dispatcher.dispatch("notifier/volume_state", self.volume)
