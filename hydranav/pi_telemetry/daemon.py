@@ -14,6 +14,7 @@ SOCKET_TIMEOUT = config_manager.get("networking", "socketTimeout")
 HOST = config_manager.get("networking", "baseIP")
 PORT = config_manager.get("piTelemetry", "port")
 
+
 class TelemetryDaemon(Thread):
     """
     A daemon thread for receiving telemetry data packets over UDP.
@@ -88,7 +89,7 @@ class TelemetryDaemon(Thread):
                 data, client = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
                 system_logger.info(f"Telemetry data packet recieved from {client}")
             except socket.timeout:
-                system_logger.debug("No new telemetery data")
+                system_logger.debug("No new telemetry data")
                 continue
             except socket.error as e:
                 system_logger.error(f"Telemetry daemon socket error: {e}")
@@ -96,20 +97,23 @@ class TelemetryDaemon(Thread):
                 self.__create_socket()
                 continue
 
-            unpacked_data = struct.unpack("i" * 8, data)
+            unpacked_data = struct.unpack("!" + "I" * 8, data)
+            telemetry_data = TelemetryData(
+                unpacked_data[0],
+                unpacked_data[1],
+                unpacked_data[2],
+                unpacked_data[3],
+                unpacked_data[4],
+                unpacked_data[5],
+                (unpacked_data[6], unpacked_data[7]),
+            )
+            system_logger.debug(f"Recieved telemetry packet: {telemetry_data}")
+
             try:
                 self.queue.put(
-                    TelemetryData(
-                        unpacked_data[0],
-                        unpacked_data[1],
-                        unpacked_data[2],
-                        unpacked_data[3],
-                        unpacked_data[4],
-                        unpacked_data[5],
-                        (unpacked_data[6], unpacked_data[7]),
-                    ),
+                    data,
                     block=False,
                 )
             except queue.Full:
-                system_logger.error("Unable to put telemetery data in queue")
+                system_logger.error("Unable to put telemetry data in queue")
                 return

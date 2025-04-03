@@ -28,3 +28,15 @@ class TelemetryData:
     gpu_usage: int
     gpu_temp: int
     network_usage: Tuple[int, int]
+
+    def __str__(self) -> str:
+        return (
+            f"CPU Usage: {self.cpu_usage}% | "
+            f"CPU Temp: {self.cpu_temp}°C | "
+            f"RAM Usage: {self.ram_usage}% | "
+            f"Disk Usage: {self.disk_usage}% | "
+            f"GPU Usage: {self.gpu_usage}% | "
+            f"GPU Temp: {self.gpu_temp}°C | "
+            f"Network Usage: Download {self.network_usage[0]} bytes, "
+            f"Upload {self.network_usage[1]} bytes"
+        )
