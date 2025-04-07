@@ -2,7 +2,7 @@ from dimits import Dimits # type: ignore
 import tqdm # type: ignore
 
 
-dt = Dimits("en_GB-alan-medium")
+dt = Dimits("en_GB-jenny_dioco-medium")
 
 with open("assets/audio/audio_lines") as file:
     lines = file.readlines()
