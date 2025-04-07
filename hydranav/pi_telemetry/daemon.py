@@ -8,7 +8,7 @@ from core.logger import system_logger
 from core import config_manager
 from pi_telemetry.data import TelemetryData
 
-BUFFER_SIZE = struct.calcsize("!" + "I" * 8)
+BUFFER_SIZE = struct.calcsize("!" + "I" * 7)
 RECONNECT_DELAY = config_manager.get("networking", "retryDelaySec")
 SOCKET_TIMEOUT = config_manager.get("networking", "socketTimeout")
 HOST = config_manager.get("networking", "baseIP")
@@ -97,15 +97,14 @@ class TelemetryDaemon(Thread):
                 self.__create_socket()
                 continue
 
-            unpacked_data = struct.unpack("!" + "I" * 8, data)
+            unpacked_data = struct.unpack("!" + "I" * 7, data)
             telemetry_data = TelemetryData(
                 unpacked_data[0],
                 unpacked_data[1],
                 unpacked_data[2],
                 unpacked_data[3],
                 unpacked_data[4],
-                unpacked_data[5],
-                (unpacked_data[6], unpacked_data[7]),
+                (unpacked_data[5], unpacked_data[6]),
             )
             system_logger.debug(f"Recieved telemetry packet: {telemetry_data}")
 

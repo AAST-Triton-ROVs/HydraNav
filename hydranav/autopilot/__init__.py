@@ -16,11 +16,12 @@ from autopilot.notification import (
     VehicleConnected,
     VehicleDisconnected,
 )
+from core import Updatable
 
 __all__ = ["ROV"]
 
 
-class Autopilot(GCSModule):
+class Autopilot(GCSModule, Updatable):
     """
     Manages and controls the Pixhawk autopilot.
 

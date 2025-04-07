@@ -2,12 +2,13 @@ import queue
 import threading
 from typing import Tuple
 from queue import Queue
+from core import Updatable
 from pi_admin.daemon import PiAdminDaemon
 from pi_admin.enums import AdminCommands
 from core import GCSModule
 
 
-class PiAdmin(GCSModule):
+class PiAdmin(GCSModule, Updatable):
     """
     Manages administrative commands to the PiAdminDaemon.
     """
@@ -36,6 +37,9 @@ class PiAdmin(GCSModule):
             self.__command_queue.put(command, block=False)
         except queue.Full:
             return
+        
+    def update(self):
+        return 
 
     def status_ok(self) -> bool:
         return self.__admin_daemon.is_alive()

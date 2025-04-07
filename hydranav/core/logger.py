@@ -5,10 +5,11 @@ from loguru import logger
 
 __all__ = ["system_logger", "LogLevels"]
 
+
 class LogLevels(Enum):
     """
     This enum defines common log levels for consistent logging throughout the application.
-    
+
     * TRACE
         Provides highly detailed logs, used for debugging or tracing the code flow.
     * DEBUG
@@ -77,18 +78,21 @@ class SystemLogger:
             self.__handler,
             format="{time:HH:mm:ss} | {level} | {message}",
             level=level.value,
+            enqueue=True,
         )
         self.logger.add(
             sys.stdout,
             format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <level>{message}</level>",
             colorize=True,
             level=level.value,
+            enqueue=True,
         )
         self.logger.add(
             "gcs.log",
             format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function} | {message}",
             level=level.value,
             mode="w",
+            enqueue=True,
         )
 
     def set_level_str(self, level: str):

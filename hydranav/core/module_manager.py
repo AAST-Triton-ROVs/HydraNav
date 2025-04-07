@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import Any, Optional
 import pygame
 import signal
 import sys
 from core.logger import system_logger
 from core import GCSModule
+from core import Updatable
 
 # time in seconds before forcefully exiting
 QUIT_TIMEOUT = 5
@@ -24,14 +25,27 @@ class ModuleManager:
     def __timeout_handler(signum, frame):
         raise TimeoutError()
 
+    def __getattr__(self, name: str) -> Any:
+        if not self.__modules.get(name):
+            raise AttributeError
+
+        return self.__modules[name]
+
     def register_module(self, module: GCSModule):
         self.__modules[type(module).__name__] = module
 
         system_logger.debug(f"Loaded {type(module).__name__}: {module}")
-        
+
     def register_modules(self, modules: list[GCSModule]):
         for module in modules:
             self.register_module(module)
+
+    def init_module(self, module_class: type[GCSModule]):
+        self.register_module(module_class())
+
+    def init_modules(self, module_classes: list[type[GCSModule]]):
+        for _class in module_classes:
+            self.init_module(_class)
 
     def deregister_module(self, module: str):
         if self.__modules.get(module):
@@ -42,7 +56,19 @@ class ModuleManager:
     def quit_module(self, module: str):
         if self.__modules.get(module):
             self.__modules[module].quit()
+            del self.__modules[module]
             system_logger.success(f"{module} has been quit")
+
+    def get_instance(self, module: str) -> Optional[GCSModule]:
+        if self.__modules.get(module):
+            return self.__modules[module]
+
+        return None
+    
+    def update_all(self):
+        for module in self.__modules.values():
+            if isinstance(module, Updatable):
+                module.update()
 
     def quit_all(self):
         module_names = list(self.__modules.keys())
@@ -59,22 +85,22 @@ class ModuleManager:
         pygame.quit()
         system_logger.info("Goodbye!")
         sys.exit(0)
-        
+
     def get_module_status(self, module: str) -> Optional[bool]:
         if self.__modules.get(module) is None:
             return None
-        
+
         return self.__modules[module].status_ok()
-    
+
     def get_all_module_statuses(self) -> dict[str, bool]:
         data: dict[str, bool] = {}
         for name in self.__modules.keys():
             status = self.get_module_status(name)
             if status is None:
                 continue
-            
+
             data[name] = status
-        
+
         return data
 
     @property
@@ -84,3 +110,6 @@ class ModuleManager:
     @property
     def loaded_modules(self) -> list[str]:
         return list(self.__modules.keys())
+
+
+module_manager = ModuleManager()

@@ -1,15 +1,13 @@
-import sys
 import pygame
 import argparse
-from core import ModuleManager, config_manager
+from core import config_manager, system_logger, LogLevels, module_manager
 from user_input import UserInput
 from gui import GUI
 from manfaloty import Manfaloty
 from notifier import Notifier
-from pi_telemetry import PiTelemetry
 from pi_admin import PiAdmin
 from autopilot import Autopilot
-from core import system_logger, LogLevels
+from pi_telemetry import PiTelemetry
 
 DESCRIPTION = "HydraNav, a revolutionary Ground Control System (GCS) for underwater ROVs, providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features."
 
@@ -50,45 +48,20 @@ class GCS:
         )
 
         self.clock = pygame.time.Clock()
-        self.module_manager = ModuleManager()
 
-        self.user_input = UserInput()
-        self.user_input.controller_mapper.set_mapping("zizo-style")
-        self.pi_telemetry = PiTelemetry()
-        self.admin = PiAdmin()
-        self.manfaloty = Manfaloty()
-        self.module_manager.register_modules(
-            [
-                self.user_input,
-                self.pi_telemetry,
-                self.admin,
-                self.manfaloty,
-            ]
-        )
+        module_manager.init_modules([UserInput, PiTelemetry, PiAdmin, Manfaloty])
 
         if not self.companion_mode:
-            self.autopilot = Autopilot()
-            self.notifier = Notifier()
-            self.module_manager.register_modules([self.notifier, self.autopilot])
+            module_manager.init_modules([Autopilot, Notifier])
 
-        system_logger.info(
-            f"Loaded modules: {' '.join(self.module_manager.loaded_modules)}"
-        )
-        self.user_input.controller.update_connection_status()
+        system_logger.info(f"Loaded modules: {' '.join(module_manager.loaded_modules)}")
+        module_manager.UserInput.controller.update_connection_status()
 
     def run(self):
         while True:
-            # time_delta = (
-            #     self.clock.tick(60) / 1000.0
-            # )  # .tick return the time sinze last frame in milliseconds so we must divide it by 1000.0
+            module_manager.update_all()
 
-            # self.gui.update(time_delta)
-            self.user_input.update()
-            self.pi_telemetry.update()
-            self.manfaloty.update()
-
-            if not self.companion_mode:
-                self.autopilot.update()
+            system_logger.trace(str(self.clock.get_fps()))
 
             self.clock.tick(60)
 

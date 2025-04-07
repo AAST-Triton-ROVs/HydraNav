@@ -1,12 +1,13 @@
 from core import GCSModule, config_manager
-from hydranav.user_input.input_mapper import InputMapper
+from core import Updatable
+from user_input.input_mapper import InputMapper
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
 __all__ = ["UserInput", "KeyboardKeys"]
 
 
-class UserInput(GCSModule):
+class UserInput(GCSModule, Updatable):
     """
     UserInput class to handle user input through a controller.
 

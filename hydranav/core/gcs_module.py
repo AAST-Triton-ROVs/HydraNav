@@ -7,6 +7,6 @@ class GCSModule(ABC):
 
     @abstractmethod
     def quit(self): ...
-    
+
     @abstractmethod
     def status_ok(self): ...

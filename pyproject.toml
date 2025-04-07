@@ -1,25 +1,32 @@
+[project]
+name = "hydranav"
+version = "0.1.0"
+description = "Ground Control Station Software from Triton ROVs control software subteam."
+authors = [{ name = "jsyph", email = "youlof123@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "jsonschema (>=4.23.0,<5.0.0)",
+    "mavproxy (>=1.8.71,<2.0.0)",
+    "pyyaml (>=6.0.2,<7.0.0)",
+    "platformdirs (>=4.3.7,<5.0.0)",
+    "numpy (>=2.2.4,<3.0.0)",
+    "pygame-ce (>=2.5.3,<3.0.0)",
+    "pygame-gui (>=0.6.13,<0.7.0)",
+    "loguru (>=0.7.3,<0.8.0)",
+    "mypy (>=1.15.0,<2.0.0)",
+    "types-pyyaml (>=6.0.12.20250326,<7.0.0.0)",
+    "types-jsonschema (>=4.23.0.20241208,<5.0.0.0)",
+]
+
 [[tool.mypy.overrides]]
 module = ["untyped_package.*"]
 follow_untyped_imports = true
 ignore_missing_imports = true
-[project]
-name = "hydranav"
-version = "0.1.0"
-description = "Ground Control Station software by Triton ROVs control software subteam"
-authors = [
-    {name = "jsyph",email = "youlof123@gmail.com"}
-]
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "mavproxy (>=1.8.71,<2.0.0)",
-    "pygame-ce (>=2.5.3,<3.0.0)",
-    "pygame-gui (>=0.6.13,<0.7.0)",
-    "loguru (>=0.7.3,<0.8.0)",
-    "typer (>=0.15.2,<0.16.0)",
-    "jsonschema (>=4.23.0,<5.0.0)"
-]
 
+
+[tool.poetry.group.dev.dependencies]
+dimits = "^0.0.31a0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

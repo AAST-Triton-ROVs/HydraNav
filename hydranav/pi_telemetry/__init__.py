@@ -1,6 +1,7 @@
 import queue
 from queue import Queue
 import threading
+from core import Updatable
 from pi_telemetry.data import TelemetryData
 from pi_telemetry.daemon import TelemetryDaemon
 from core import event_dispatcher, GCSModule
@@ -8,7 +9,7 @@ from core import event_dispatcher, GCSModule
 __all__ = ["PiTelemetry", "TelemetryData"]
 
 
-class PiTelemetry(GCSModule):
+class PiTelemetry(GCSModule, Updatable):
     """
     A class for handling telemetry data via a queue and threading.
 

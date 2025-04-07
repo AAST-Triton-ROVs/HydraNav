@@ -1,12 +1,13 @@
 from queue import Queue
 import queue
+from core.updatable_mixin import Updatable
 from manfaloty.daemons import ManfalotyDaemonManager
 from manfaloty.data import ManfalotyData, PHReading
 from manfaloty.enums import ManfalotyCommands
 from core import request_manager, event_dispatcher, GCSModule
 
 
-class Manfaloty(GCSModule):
+class Manfaloty(GCSModule, Updatable):
     """
     Manages communication with the Manfaloty system.
     """

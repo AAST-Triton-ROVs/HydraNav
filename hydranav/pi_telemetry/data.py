@@ -14,8 +14,6 @@ class TelemetryData:
     :type ram_usage: int
     :param disk_usage: Disk usage as a percentage
     :type disk_usage: int
-    :param gpu_usage: GPU usage as a percentage
-    :type gpu_usage: int
     :param gpu_temp: GPU temperature in Celsius
     :type gpu_temp: int
     :param network_usage: Network usage (download, upload) in bytes
@@ -25,7 +23,6 @@ class TelemetryData:
     cpu_temp: int
     ram_usage: int
     disk_usage: int
-    gpu_usage: int
     gpu_temp: int
     network_usage: Tuple[int, int]
 
@@ -35,7 +32,6 @@ class TelemetryData:
             f"CPU Temp: {self.cpu_temp}°C | "
             f"RAM Usage: {self.ram_usage}% | "
             f"Disk Usage: {self.disk_usage}% | "
-            f"GPU Usage: {self.gpu_usage}% | "
             f"GPU Temp: {self.gpu_temp}°C | "
             f"Network Usage: Download {self.network_usage[0]} bytes, "
             f"Upload {self.network_usage[1]} bytes"
