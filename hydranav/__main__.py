@@ -49,10 +49,22 @@ class GCS:
 
         self.clock = pygame.time.Clock()
 
-        module_manager.init_modules([UserInput, PiTelemetry, PiAdmin, Manfaloty])
+        module_manager.init_modules(
+            [
+                UserInput,
+                PiTelemetry,
+                PiAdmin,
+                Manfaloty,
+            ]
+        )
 
         if not self.companion_mode:
-            module_manager.init_modules([Autopilot, Notifier])
+            module_manager.init_modules(
+                [
+                    Autopilot,
+                    Notifier,
+                ]
+            )
 
         system_logger.info(f"Loaded modules: {' '.join(module_manager.loaded_modules)}")
         module_manager.UserInput.controller.update_connection_status()

@@ -40,12 +40,12 @@ class ModuleManager:
         for module in modules:
             self.register_module(module)
 
-    def init_module(self, module_class: type[GCSModule]):
+    def init_module(self, module_class: type):
         self.register_module(module_class())
 
-    def init_modules(self, module_classes: list[type[GCSModule]]):
-        for _class in module_classes:
-            self.init_module(_class)
+    def init_modules(self, module_classes: list[type]):
+        for module_class in module_classes:
+            self.init_module(module_class)
 
     def deregister_module(self, module: str):
         if self.__modules.get(module):
