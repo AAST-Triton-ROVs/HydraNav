@@ -1,14 +1,11 @@
-import glob
-import json
-import os
 import time
-from turtle import st
 from typing import Optional, Tuple
 from pprint import pformat
 
 import pygame
 
 from core import event_dispatcher, system_logger, config_manager
+from user_input.input_mapper import InputMapper
 
 __all__ = ["Controller"]
 
@@ -22,22 +19,11 @@ TIME_UNTIL_HOLD_TRIGGERED = config_manager.get(
 TIME_BETWEEN_HOLD_TRIGGERS = config_manager.get(
     "controller", "timeBetweenHoldTriggerSec"
 )
+TRIGGER_PRESS_THRESHOLD = config_manager.get("controller", "triggerPressThreshold")
 
 
 class Controller:
-    def __init__(self) -> None:
-        """
-        Initialize a new Controller instance.
-
-        :param dispatcher: The event dispatcher for handling events.
-        :type dispatcher: EventDispatcher
-        :param deadzone_factor: The factor by which deadzone is multiplied (default 2).
-        :type deadzone_factor: float
-        :param joystick_roundoff: Rounding precision for joystick values (default 1).
-        :type joystick_roundoff: int
-        :param joystick_multiplier: Multiplier for scaling joystick values (default 100).
-        :type joystick_multiplier: int
-        """
+    def __init__(self, input_mapper: InputMapper) -> None:
         pygame.joystick.init()
         self.__deadzone: float = 0.5
         self.__deadzone_factor: float = JOYSTICK_DEAD_ZONE_FACTOR
@@ -45,17 +31,26 @@ class Controller:
         self.__joystick_multiplier: int = JOYSTICK_MULTIPLIER
         self.__joystick: Optional[pygame.joystick.JoystickType] = None
 
+        self.__input_mapper = input_mapper
+
         self.__previous_hat_value: Tuple[int, int] = (0, 0)
-        self.__previous_trigger_value: float = 0.0
 
         self.__config_library: list[dict] = CONTROLLER_CONFIGS
         self.__current_config: Optional[dict] = None
 
-        self.__library_button_mappings: dict[frozenset, str] = {}
+        self.__library_button_mappings: dict[int, str] = {}
         self.__library_hat_mappings: dict[tuple, str] = {}
         self.__library_joystick_mappings: dict[str, tuple] = {}
         self.__library_trigger_mappings: dict[int, str] = {}
 
+        self.__trigger_hold_states: dict[str, dict[str, float | bool]] = {}
+        """
+        ```
+        {
+            "<TRIGGER_NAME>" : {"time": float, "held_before": bool}
+        }
+        ```
+        """
         self.__buttons_held: dict[str, dict[str, float | bool]] = {}
         """
         ```
@@ -66,14 +61,6 @@ class Controller:
         """
 
     def __calc_deadzones(self) -> Optional[float]:
-        """
-        Calculate the deadzone for joystick axes based on the current input values.
-
-        Retrieves axis values and computes a deadzone based on the max absolute value multiplied by the deadzone factor.
-
-        :return: The computed deadzone value, or None if the joystick is not connected or an error occurs.
-        :rtype: Optional[float]
-        """
         if self.__joystick is None:
             return None
 
@@ -98,13 +85,6 @@ class Controller:
         return deadzone
 
     def __process_axes(self) -> None:
-        """
-        Process joystick axes inputs with deadzone filtering and dispatch the values.
-
-        Maps the filtered axis values to corresponding joystick names based on the configuration.
-
-        :return: None
-        """
         if self.__joystick is None:
             return
 
@@ -124,17 +104,9 @@ class Controller:
             joystick_values[name] = tuple(filtered_axes[axis] for axis in axes)
 
         event_dispatcher.dispatch("controller/joysticks", joystick_values)
-        system_logger.debug(f"Controller joysticks: {pformat(joystick_values)}")
+        system_logger.trace(f"Controller joysticks: {pformat(joystick_values)}")
 
     def __process_triggers(self) -> None:
-        """
-        Process trigger inputs and dispatch events when a trigger threshold is crossed.
-
-        Checks current trigger axis values against the previous value and dispatches a button down event
-        when the threshold (value > 0.5) is crossed.
-
-        :return: None
-        """
         if self.__joystick is None:
             return
 
@@ -144,45 +116,98 @@ class Controller:
         for axis_index, trigger_name in self.__library_trigger_mappings.items():
             value = self.__joystick.get_axis(axis_index)
             system_logger.trace(f"trigger {trigger_name} value = {value}")
-            if value > 0.5:
-                # TODO: PREVENT MULTIPLE BUTTON_DOWN EVENTS BEING SENT
+            if value > TRIGGER_PRESS_THRESHOLD:
+                # check if trigger is in dict
+                if trigger_name not in self.__trigger_hold_states.keys():
+                    # trigger is not in dict
+                    self.__trigger_hold_states[trigger_name] = {
+                        "time": time.monotonic(),
+                        "held_before": False,
+                    }
+                    self.__input_mapper.button_down(trigger_name)
+                else:
+                    if (
+                        time.monotonic()
+                        - self.__trigger_hold_states[trigger_name]["time"]
+                        >= TIME_UNTIL_HOLD_TRIGGERED
+                        and not self.__trigger_hold_states[trigger_name]["held_before"]
+                    ):
+                        self.__trigger_hold_states[trigger_name] = {
+                            "time": time.monotonic(),
+                            "held_before": True,
+                        }
+                        self.__input_mapper.button_down(trigger_name)
+                    elif (
+                        time.monotonic()
+                        - self.__trigger_hold_states[trigger_name]["time"]
+                        >= TIME_BETWEEN_HOLD_TRIGGERS
+                        and self.__trigger_hold_states[trigger_name]["held_before"]
+                    ):
+                        self.__input_mapper.button_down(trigger_name)
                 system_logger.info(f"Controller trigger {trigger_name} pressed")
-                event_dispatcher.dispatch("controller/button_down", trigger_name)
 
     def __process_buttons(self) -> None:
-        """
-        Process joystick button press and release events and dispatch associated actions.
-
-        Retrieves button events from pygame, maps them using library mappings and dispatches appropriate events.
-        Logs an error if a button combination is not recognized.
-
-        :return: None
-        """
         if self.__joystick is None:
             return
 
-        buttons_pressed_down = frozenset(
-            {e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONDOWN])}
-        )
-        buttons_pressed_up = frozenset(
-            {e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONUP])}
-        )
+        buttons_pressed_down = [
+            e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONDOWN])
+        ]
 
-        system_logger.trace(f"{len(buttons_pressed_down) = }")
-        system_logger.trace(f"{len(buttons_pressed_up) = }")
+        buttons_pressed_up = [
+            e.dict["button"] for e in pygame.event.get([pygame.JOYBUTTONUP])
+        ]
+        buttons_held_down = [
+            i
+            for i in range(self.__joystick.get_numbuttons())
+            if self.__joystick.get_button(i)
+        ]
+
+        system_logger.debug(pformat(self.__buttons_held))
+        for button, data in self.__buttons_held.items():
+            if (
+                time.monotonic() - data["time"] >= TIME_UNTIL_HOLD_TRIGGERED
+                and not self.__buttons_held[button]["held_before"]
+            ):
+                self.__input_mapper.button_hold(button)
+                system_logger.info(f"Controller button held: {button}")
+                self.__buttons_held[button]["time"] = time.monotonic()
+                self.__buttons_held[button]["held_before"] = True
+            elif (
+                time.monotonic() - data["time"] >= TIME_BETWEEN_HOLD_TRIGGERS
+                and self.__buttons_held[button]["held_before"]
+            ):
+                # This triggers the high frequency emit mode
+                self.__input_mapper.button_hold(button)
+                system_logger.info(f"Controller button held: {button}")
+                self.__buttons_held[button]["time"] = time.monotonic()
 
         if len(buttons_pressed_down) == 0 and len(buttons_pressed_up) == 0:
             return
 
-        button_down_mapping = self.__library_button_mappings.get(buttons_pressed_down)
-        if button_down_mapping is None and len(buttons_pressed_down) > 0:
-            system_logger.error(f"{buttons_pressed_down} is not mapped to anything")
-            return
+        button_down_mapping = None
+        if len(buttons_pressed_down) > 0:
+            button_down_mapping = self.__library_button_mappings.get(
+                buttons_pressed_down[0]
+            )
+            if button_down_mapping is None:
+                system_logger.error(f"{buttons_pressed_down} is not mapped to anything")
 
-        button_up_mapping = self.__library_button_mappings.get(buttons_pressed_up)
-        if button_up_mapping is None and len(buttons_pressed_up) > 0:
-            system_logger.error(f"{buttons_pressed_up} is not mapped to anything")
-            return
+        button_up_mapping = None
+        if len(buttons_pressed_up) > 0:
+            button_up_mapping = self.__library_button_mappings.get(
+                buttons_pressed_up[0]
+            )
+            if button_up_mapping is None:
+                system_logger.error(f"{buttons_pressed_up} is not mapped to anything")
+
+        button_held_mapping = None
+        if len(buttons_held_down) > 0:
+            button_held_mapping = self.__library_button_mappings.get(
+                buttons_held_down[0]
+            )
+            if button_held_mapping is None:
+                system_logger.error(f"{button_held_mapping} is not mapped to anything")
 
         if (
             button_down_mapping is not None
@@ -192,44 +217,29 @@ class Controller:
                 "time": time.monotonic(),
                 "held_before": False,
             }
+            system_logger.debug(
+                f"Adding button to hold dictionary: {button_down_mapping}"
+            )
 
         if (
             button_up_mapping is not None
             and self.__buttons_held.get(button_up_mapping) is not None
         ):
             del self.__buttons_held[button_up_mapping]
+            system_logger.debug(
+                f"Removing button from hold dictionary: {button_up_mapping}"
+            )
 
-        for button, data in self.__buttons_held.items():
-            if (
-                time.monotonic() - data["time"] >= TIME_UNTIL_HOLD_TRIGGERED
-                and not self.__buttons_held[button]["held_before"]
-            ):
-                event_dispatcher.dispatch("controller/button_hold", button)
-                self.__buttons_held[button]["time"] = time.monotonic()
-                self.__buttons_held[button]["held_before"] = True
-            elif (
-                time.monotonic() - data["time"] >= TIME_BETWEEN_HOLD_TRIGGERS
-                and self.__buttons_held[button]["held_before"]
-            ):
-                # This triggers the high frequency emit mode
-                event_dispatcher.dispatch("controller/button_hold", button)
-                self.__buttons_held[button]["time"] = time.monotonic()
+        if button_held_mapping is None and len(self.__buttons_held) > 0:
+            self.__buttons_held = {}
 
-        event_dispatcher.dispatch("controller/button_down", button_down_mapping)
-        event_dispatcher.dispatch("controller/button_up", button_up_mapping)
         system_logger.info(
-            f"Controller buttons pressed: down -> {button_down_mapping}, up -> {button_up_mapping}"
+            f"Controller buttons pressed: down: {button_down_mapping} | up: {button_up_mapping} | held: {button_held_mapping}"
         )
+        if button_down_mapping is not None:
+            self.__input_mapper.button_down(button_down_mapping)
 
     def __process_hat(self) -> None:
-        """
-        Process hat (D-pad) events and dispatch corresponding controller button actions.
-
-        Reads the hat switch state, compares with the previous state, and dispatches an event if a change is detected.
-        Logs the action accordingly.
-
-        :return: None
-        """
         if self.__joystick is None:
             return
         hat_events = [
@@ -253,19 +263,6 @@ class Controller:
             self.__previous_hat_value = (int(direction[0]), int(direction[1]))
 
     def __process_joystick_value(self, value: float, deadzone: float) -> float:
-        """
-        Process a joystick axis value with deadzone filtering and scaling.
-
-        If the absolute value exceeds the deadzone, the value is rounded and scaled; otherwise,
-        it is simply rounded.
-
-        :param value: The raw joystick axis value.
-        :type value: float
-        :param deadzone: The threshold below which the value is ignored.
-        :type deadzone: float
-        :return: The processed axis value.
-        :rtype: float
-        """
         return (
             round(value, self.__joystick_roundoff) * self.__joystick_multiplier
             if abs(value) > deadzone
@@ -273,15 +270,6 @@ class Controller:
         )
 
     def __generate_library_mappings(self):
-        """
-        Generate mappings for buttons, hats, joysticks, and triggers based on the current configuration.
-
-        Populates internal mapping dictionaries using the data defined in the configuration.
-        Does nothing if no current configuration is selected.
-
-        :raises KeyError: If the expected keys are not present in the configuration.
-        :return: None
-        """
         if not self.__current_config:
             return
 
@@ -290,9 +278,7 @@ class Controller:
         for name, mapping in mappings.items():
             system_logger.trace(f"mappings {name = } {mapping = }")
             if mapping["type"] == "button":
-                self.__library_button_mappings[frozenset(set(mapping["mapping"]))] = (
-                    name
-                )
+                self.__library_button_mappings[mapping["mapping"]] = name
 
             if mapping["type"] == "hat":
                 self.__library_hat_mappings[tuple(mapping["mapping"])] = name
@@ -301,7 +287,7 @@ class Controller:
                 self.__library_joystick_mappings[name] = tuple(mapping["axis"])
 
             if mapping["type"] == "trigger":
-                self.__library_trigger_mappings[mapping["axis"][0]] = name
+                self.__library_trigger_mappings[mapping["axis"]] = name
 
         system_logger.trace(f"{self.__library_button_mappings = }")
         system_logger.trace(f"{self.__library_hat_mappings = }")
@@ -309,38 +295,15 @@ class Controller:
         system_logger.trace(f"{self.__library_trigger_mappings = }")
 
     def max_value(self) -> float:
-        """
-        Calculate the maximum value adjusted by the deadzone factor.
-
-        :return: The maximum adjusted value.
-        :rtype: float
-        """
         return 1 * self.__deadzone_factor
 
     def min_value(self) -> float:
-        """
-        Calculate the minimum value adjusted by the deadzone factor.
-
-        :return: The minimum adjusted value.
-        :rtype: float
-        """
         return -1 * self.__deadzone_factor
 
     def is_connected(self) -> bool:
-        """
-        Check if the joystick controller is connected.
-
-        :return: True if connected and initialized, False otherwise.
-        :rtype: bool
-        """
         return self.__joystick is not None and self.__joystick.get_init()
 
     def quit(self) -> None:
-        """
-        Quit the joystick instance safely if it is initialized.
-
-        If the joystick is initialized, its quit method is called.
-        """
         if self.__joystick is not None:
             self.__joystick.quit()
 
@@ -348,12 +311,6 @@ class Controller:
         return self.__joystick is not None and self.__joystick.get_init()
 
     def calibrate(self) -> bool:
-        """
-        Calibrate the controller by computing and setting the deadzone.
-
-        :return: True if calibration succeeds, False otherwise.
-        :rtype: bool
-        """
         res = self.__calc_deadzones()
         if res is not None:
             self.__deadzone = res
@@ -362,14 +319,6 @@ class Controller:
             return False
 
     def update(self) -> bool:
-        """
-        Update the controller status and process input events.
-
-        If the controller is not connected, dispatches the waiting event.
-
-        :return: True if processing was successful; False otherwise.
-        :rtype: bool
-        """
         self.update_connection_status()
         if not self.is_connected():
             event_dispatcher.dispatch("controller/waiting_connection")
@@ -386,12 +335,6 @@ class Controller:
         return True
 
     def update_connection_status(self) -> None:
-        """
-        Update the connection status of the joystick by processing connection events.
-
-        When a connection or disconnection event is detected, appropriate events are dispatched and the joystick
-        instance is either initialized or closed. In case an exception occurs, the method retries recursively.
-        """
         try:
             for event in pygame.event.get(
                 [pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED]
@@ -414,24 +357,9 @@ class Controller:
             return self.update_connection_status()
 
     def config_names(self) -> list[str]:
-        """
-        Get a list of available configuration names from the library.
-
-        :return: List of configuration names.
-        :rtype: list[str]
-        """
         return [config["displayName"] for config in self.__config_library]
 
     def autoload_config(self):
-        """
-        Autoload the configuration using the connected joystick's properties.
-
-        Searches the configuration library for an exact or similar match based on
-        pygame name, number of buttons, hats, and axes. Sets the current configuration
-        and regenerates library mappings accordingly.
-
-        :raises AttributeError: If required attributes are not defined.
-        """
         if not self.__joystick:
             return
 

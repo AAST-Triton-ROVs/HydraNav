@@ -16,10 +16,7 @@ class InputMapper:
         except IndexError:
             system_logger.warning("No input mapping, no mapping will be done.")
 
-        event_dispatcher.subscribe("controller/button_down", self.__button_down)
-        event_dispatcher.subscribe("controller/button_hold", self.__button_hold)
-
-    def __button_down(self, button: str):
+    def button_down(self, button: str):
         if self.__current_mapping is None:
             return
 
@@ -29,7 +26,7 @@ class InputMapper:
 
         event_dispatcher.dispatch(f"mapper/{self.__current_mapping[button]}")
 
-    def __button_hold(self, button: str):
+    def button_hold(self, button: str):
         if self.__current_mapping is None or self.__current_mapping is None:
             return
 
