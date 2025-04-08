@@ -57,6 +57,7 @@ DEFAULT_CONFIG = {
         "joystickMultiplier": 100,
         "timeUntilHoldTriggeredSec": 0.35,
         "timeBetweenHoldTriggerSec": 0.05,
+        "triggerPressThreshold": 0.8,
         "configs": [
             {
                 "displayName": "8BitDo 2C Ultimate Bluetooth",
@@ -86,6 +87,34 @@ DEFAULT_CONFIG = {
                     "R2": {"type": "button", "mapping": 9},
                     "R3": {"type": "button", "mapping": 14},
                     "R4": {"type": "button", "mapping": 5},
+                },
+            },
+            {
+                "displayName": "DualSense",
+                "pygameName": "DualSense Wireless Controller",
+                "buttons": 17,
+                "axes": 6,
+                "hats": 0,
+                "mappings": {
+                    "1": {"type": "button", "mapping": 12},
+                    "2": {"type": "button", "mapping": 14},
+                    "3": {"type": "button", "mapping": 11},
+                    "4": {"type": "button", "mapping": 13},
+                    "A": {"type": "button", "mapping": 0},
+                    "B": {"type": "button", "mapping": 1},
+                    "C": {"type": "button", "mapping": 3},
+                    "D": {"type": "button", "mapping": 2},
+                    "L": {"type": "button", "mapping": 4},
+                    "M": {"type": "button", "mapping": 5},
+                    "R": {"type": "button", "mapping": 6},
+                    "LJ": {"type": "axis", "axis": [0, 1]},
+                    "L1": {"type": "button", "mapping": 9},
+                    "L2": {"type": "trigger", "axis": 4},
+                    "L3": {"type": "button", "mapping": 7},
+                    "RJ": {"type": "axis", "axis": [2, 3]},
+                    "R1": {"type": "button", "mapping": 10},
+                    "R2": {"type": "trigger", "axis": 5},
+                    "R3": {"type": "button", "mapping": 8},
                 },
             },
             {
@@ -236,6 +265,7 @@ REQUIRED_CONTROLLER_FIELDS = [
     "configs",
     "timeUntilHoldTriggeredSec",
     "timeBetweenHoldTriggerSec",
+    "triggerPressThreshold",
 ]
 
 
