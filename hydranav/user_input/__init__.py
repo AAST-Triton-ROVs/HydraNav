@@ -38,9 +38,9 @@ class UserInput(GCSModule, Updatable):
         """
         super().__init__()
         
-        self.controller = Controller()
-        self.keyboard = Keyboard()
         self.input_mapper = InputMapper()
+        self.controller = Controller(self.input_mapper)
+        self.keyboard = Keyboard()
 
     def quit(self):
         self.controller.quit()

@@ -1,6 +1,5 @@
 from enum import Enum
 import sys
-from typing import Optional
 from loguru import logger
 
 __all__ = ["system_logger", "LogLevels"]

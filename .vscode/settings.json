@@ -1,14 +1,27 @@
 {
     "cSpell.words": [
+        "appname",
+        "Autoloaded",
         "calcsize",
+        "deadzone",
+        "deadzones",
         "DGRAM",
         "hydranav",
+        "JOYBUTTONDOWN",
+        "JOYBUTTONUP",
+        "JOYDEVICEADDED",
+        "JOYDEVICEREMOVED",
         "manfaloty",
         "mypy",
+        "numaxes",
+        "numbuttons",
+        "numhats",
         "pygame",
         "recieved",
         "Recived",
         "REUSEADDR",
+        "roundoff",
+        "rtype",
         "subteam",
         "zizo"
     ]
