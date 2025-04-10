@@ -17,6 +17,7 @@ from autopilot.notification import (
     VehicleDisconnected,
 )
 from core import Updatable
+from hydranav.core import request_manager
 
 __all__ = ["ROV"]
 
@@ -74,6 +75,17 @@ class Autopilot(GCSModule, Updatable):
         )
         event_dispatcher.subscribe(
             "controller/joysticks", self.__handle_controller_joysticks
+        )
+
+        request_manager.register_handler("autopilot/arm", self.arm)
+        request_manager.register_handler("autopilot/disarm", self.disarm)
+        request_manager.register_handler("autopilot/gain-up", self.gain_up)
+        request_manager.register_handler("autopilot/gain-down", self.gain_down)
+        request_manager.register_handler(
+            "autopilot/manual-flight", self.flight_mode_manual
+        )
+        request_manager.register_handler(
+            "autopilot/stabilize-flight", self.flight_mode_stabilize
         )
 
     def __handle_controller_joysticks(self, movement: dict[str, Tuple[float, float]]):

@@ -1,4 +1,4 @@
-from core import GCSModule, config_manager
+from core import GCSModule
 from core import Updatable
 from user_input.input_mapper import InputMapper
 from user_input.controller import Controller

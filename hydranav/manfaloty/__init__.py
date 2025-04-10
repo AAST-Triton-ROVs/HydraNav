@@ -49,8 +49,12 @@ class Manfaloty(GCSModule, Updatable):
             "mapper/GRIPPER_PITCH_DOWN", lambda _: self.gripper_pitch_down()
         )
         request_manager.register_handler(
-            "manfaloty/get_ph", lambda _: self.read_ph_sensor()
+            "manfaloty/read-ph", lambda _: self.read_ph_sensor()
         )
+        request_manager.register_handler("manfaloty/restart", self.restart_arduino)
+        request_manager.register_handler("manfaloty/reset", self.reset_motors)
+        request_manager.register_handler("manfaloty/start-pump", self.start_pump)
+        request_manager.register_handler("manfaloty/stop-pump", self.stop_pump)
 
     def __send_command(self, command: ManfalotyCommands):
         try:

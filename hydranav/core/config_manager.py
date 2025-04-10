@@ -25,6 +25,7 @@ DEFAULT_CONFIG = {
         "neutralPWM": 1500,
         "gainLevels": [25, 40, 50, 75, 90],
         "timeoutSec": 2,
+        "sensorReadingRequestHz": 2,
     },
     "userInput": {
         "mappings": [

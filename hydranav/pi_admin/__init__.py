@@ -3,6 +3,7 @@ import threading
 from typing import Tuple
 from queue import Queue
 from core import Updatable
+from hydranav.core import request_manager
 from pi_admin.daemon import PiAdminDaemon
 from pi_admin.enums import AdminCommands
 from core import GCSModule
@@ -31,6 +32,13 @@ class PiAdmin(GCSModule, Updatable):
             self.__quit_event,
         )
         self.__admin_daemon.start()
+        
+        request_manager.register_handler("pi-admin/poweroff")
+        request_manager.register_handler("pi-admin/reboot")
+        request_manager.register_handler("pi-admin/restart/mavproxy")
+        request_manager.register_handler("pi-admin/restart/manfaloty-bridge")
+        request_manager.register_handler("pi-admin/restart/telemetry")
+        request_manager.register_handler("pi-admin/restart/admin")
 
     def __send_command(self, command: AdminCommands):
         try:
@@ -66,7 +74,7 @@ class PiAdmin(GCSModule, Updatable):
         """
         self.__send_command(AdminCommands.RESTART_MAVPROXY)
 
-    def restart_gripper(self):
+    def restart_manfaloty_bridge(self):
         """
         Send gripper restart command.
         """

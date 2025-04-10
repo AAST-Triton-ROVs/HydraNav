@@ -5,6 +5,7 @@ from pprint import pformat
 import pygame
 
 from core import event_dispatcher, system_logger, config_manager
+from hydranav.core import request_manager
 from user_input.input_mapper import InputMapper
 
 __all__ = ["Controller"]
@@ -59,6 +60,8 @@ class Controller:
         }
         ```
         """
+        
+        request_manager.register_handler("controller/calibrate", self.calibrate)
 
     def __calc_deadzones(self) -> Optional[float]:
         if self.__joystick is None:
