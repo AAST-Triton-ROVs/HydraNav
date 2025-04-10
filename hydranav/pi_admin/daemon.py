@@ -1,13 +1,9 @@
+import multiprocessing.synchronize
 import queue
-import threading
-from typing import Tuple
-from threading import Thread
-from queue import Queue
+import multiprocessing
 import socket
-import time
 import struct
 from core import config_manager
-from pi_admin.enums import AdminCommands
 from core import system_logger
 
 SOCKET_TIMEOUT = config_manager.get("networking", "socketTimeout")
@@ -15,7 +11,7 @@ BASE = config_manager.get("networking", "baseIP")
 PORT = config_manager.get("piAdmin", "port")
 
 
-class PiAdminDaemon(Thread):
+class PiAdminDaemon(multiprocessing.Process):
     """
     A daemon thread for listening to admin commands.
 
@@ -29,8 +25,8 @@ class PiAdminDaemon(Thread):
 
     def __init__(
         self,
-        admin_queue: Queue[AdminCommands],
-        quit_event: threading.Event,
+        admin_queue: multiprocessing.Queue,
+        quit_event: multiprocessing.synchronize.Event,
     ):
         """
         Initialize the daemon with an admin commands queue and a network address.

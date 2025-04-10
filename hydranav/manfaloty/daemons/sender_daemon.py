@@ -1,4 +1,4 @@
-from queue import Queue
+import multiprocessing
 import queue
 import socket
 import struct
@@ -31,10 +31,10 @@ class ManfalotySenderDaemon(Thread):
     def __init__(
         self,
         server_socket: socket.socket,
-        command_queue: Queue[ManfalotyCommands],
+        command_queue: multiprocessing.Queue,
         pi_ip: str,
         port: int,
-        quit_event: threading.Event,
+        quit_event: multiprocessing.synchronize.Event,
     ):
         super().__init__(daemon=True)
         self.__command_queue = command_queue

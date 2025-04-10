@@ -1,12 +1,9 @@
-from queue import Queue
+import multiprocessing
 import socket
-import threading
 import time
 from core import system_logger, config_manager
 from manfaloty.daemons.receiver_daemon import ManfalotyReceiverDaemon
 from manfaloty.daemons.sender_daemon import ManfalotySenderDaemon
-from manfaloty.data import ManfalotyData
-from manfaloty.enums import ManfalotyCommands
 
 __all__ = ["ManfalotyDaemonManager"]
 
@@ -17,18 +14,19 @@ PI_IP = config_manager.get("networking", "raspIP")
 PORT = config_manager.get("manfaloty", "port")
 
 
-class ManfalotyDaemonManager:
+class ManfalotyDaemonManager(multiprocessing.Process):
     def __init__(
         self,
-        command_queue: Queue[ManfalotyCommands],
-        data_queue: Queue[ManfalotyData],
+        command_queue: multiprocessing.Queue,
+        data_queue: multiprocessing.Queue,
     ):
+        super().__init__(daemon=True)
         self.__address = BASE_IP, PORT
         self.__server_socket = self.__create_socket()
 
         self.__command_queue = command_queue
         self.__data_queue = data_queue
-        self.__quit_event = threading.Event()
+        self.__quit_event = multiprocessing.Event()
 
         self.__receiver_daemon = ManfalotyReceiverDaemon(
             self.__server_socket,
@@ -43,10 +41,11 @@ class ManfalotyDaemonManager:
             self.__quit_event,
         )
 
-    def start_daemons(self):
+    def start(self):
         self.__receiver_daemon.start()
         self.__sender_daemon.start()
-        
+        return super().start()
+
     def status_ok(self):
         return self.__receiver_daemon.is_alive() and self.__sender_daemon.is_alive()
 
@@ -54,8 +53,8 @@ class ManfalotyDaemonManager:
         self.__quit_event.set()
         self.join()
         self.__server_socket.close()
-        
-    def join(self):
+
+    def join(self, timeout=None):
         self.__receiver_daemon.join()
         self.__sender_daemon.join()
 
@@ -75,7 +74,7 @@ class ManfalotyDaemonManager:
                 system_logger.error(f"Manfaloty daemon bounding error: {e}, retrying")
                 time.sleep(RETRY_DELAY)
                 continue
-        
+
             system_logger.success(
                 f"Manfaloty daemons bound to {self.__address[0]}:{self.__address[1]}"
             )

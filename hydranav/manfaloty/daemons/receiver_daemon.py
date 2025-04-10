@@ -1,13 +1,12 @@
-from queue import Queue
+import multiprocessing
+import multiprocessing.synchronize
 import queue
 import socket
 import struct
 from threading import Thread
-import threading
-import time
 
 from core.logger import system_logger
-from manfaloty.data import ManfalotyData, PHReading
+from manfaloty.data import PHReading
 
 PH_VALUE_SIZE = struct.calcsize("!f")
 
@@ -28,8 +27,8 @@ class ManfalotyReceiverDaemon(Thread):
     def __init__(
         self,
         server_socket: socket.socket,
-        data_queue: Queue[ManfalotyData],
-        quit_event: threading.Event,
+        data_queue: multiprocessing.Queue,
+        quit_event: multiprocessing.synchronize.Event,
     ):
         super().__init__(daemon=True)
         self.__data_queue = data_queue
@@ -41,16 +40,16 @@ class ManfalotyReceiverDaemon(Thread):
             try:
                 data, client = self.__server_socket.recvfrom(PH_VALUE_SIZE)
             except socket.timeout:
-                system_logger.debug("Manfaloty reciever reading from socket timeout")
+                system_logger.debug("Manfaloty receiver reading from socket timeout")
                 continue
             except socket.error as e:
-                system_logger.error(f"Manfaloty reciever daemon socket error: {e}")
+                system_logger.error(f"Manfaloty receiver daemon socket error: {e}")
                 continue
             
             try:
                 ph_value = struct.unpack("!f", data)
             except struct.error as e:
-                system_logger.error(f"Manfaloty reciever daemon unpack error: {e}")
+                system_logger.error(f"Manfaloty receiver daemon unpack error: {e}")
                 continue
 
             system_logger.success(f"Recieved data from {client[0]}:{client[1]}")

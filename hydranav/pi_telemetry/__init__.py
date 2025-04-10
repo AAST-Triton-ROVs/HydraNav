@@ -1,6 +1,6 @@
 import queue
-from queue import Queue
-import threading
+import multiprocessing
+from multiprocessing import Queue
 from core import Updatable
 from pi_telemetry.data import TelemetryData
 from pi_telemetry.daemon import TelemetryDaemon
@@ -36,19 +36,19 @@ class PiTelemetry(GCSModule, Updatable):
 
         self.__queue: Queue = Queue(1)
 
-        self.__quit_event = threading.Event()
-        self.__listener_thread = TelemetryDaemon(
+        self.__quit_event = multiprocessing.Event()
+        self.__listener_daemon = TelemetryDaemon(
             self.__queue,
             self.__quit_event,
         )
-        self.__listener_thread.start()
+        self.__listener_daemon.start()
 
     def quit(self):
         self.__quit_event.set()
-        self.__listener_thread.join()
+        self.__listener_daemon.join()
 
     def status_ok(self) -> bool:
-        return self.__listener_thread.is_alive()
+        return self.__listener_daemon.is_alive()
 
     def update(self):
         """
@@ -67,4 +67,4 @@ class PiTelemetry(GCSModule, Updatable):
         """
         Close the listener thread's connection, releasing allocated resources.
         """
-        self.__listener_thread.close_connection()
+        self.__listener_daemon.close_connection()

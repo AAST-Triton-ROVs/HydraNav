@@ -1,6 +1,5 @@
-from queue import PriorityQueue, Queue
 import queue
-from threading import Thread
+import multiprocessing
 import threading
 import time
 from numpy import interp
@@ -26,24 +25,25 @@ NEUTRAL_PWM = config_manager.get("autopilot", "neutralPWM")
 MAX_FORWARD_PWM = config_manager.get("autopilot", "maxForwardPWM")
 GAIN_LEVELS = config_manager.get("autopilot", "gainLevels")
 TIME_OUT_SEC = config_manager.get("autopilot", "timeoutSec")
+SENSOR_READING_FREQ_HZ = config_manager.get("autopilot", "sensorReadingRequestHz")
 PORT = config_manager.get("autopilot", "port")
 BASE_IP = config_manager.get("networking", "baseIP")
 
 
-class AutopilotConnectionDaemon(Thread):
+class AutopilotConnectionDaemon(multiprocessing.Process):
     """
     AutopilotConnectionDaemon for controlling the ROV.
 
     :TODO:
-        - Configure Ardusub parameters
+        - Configure ArduSub parameters
         - PixhawK sensor readings
     """
 
     def __init__(
         self,
-        movement_queue: Queue[ROVMovement],
-        command_queue: Queue[ROVCommands],
-        notification_queue: PriorityQueue[ROVNotification],
+        movement_queue: multiprocessing.Queue,
+        command_queue: multiprocessing.Queue,
+        notification_queue: multiprocessing.Queue,
         quit_event: threading.Event,
     ):
         """
@@ -63,9 +63,11 @@ class AutopilotConnectionDaemon(Thread):
         super().__init__(daemon=True)
         self.__gain_index = 0
 
-        self.__movement_queue: Queue[ROVMovement] = movement_queue
-        self.__command_queue: Queue[ROVCommands] = command_queue
-        self.__notification_queue: PriorityQueue[ROVNotification] = notification_queue
+        self.__movement_queue: multiprocessing.Queue[ROVMovement] = movement_queue
+        self.__command_queue: multiprocessing.Queue[ROVCommands] = command_queue
+        self.__notification_queue: multiprocessing.Queue[ROVNotification] = (
+            notification_queue
+        )
 
         self.__time_since_last_heartbeat = time.monotonic()
         self.__time_since_last_movement = time.monotonic()
@@ -264,7 +266,7 @@ class AutopilotConnectionDaemon(Thread):
             f"Moved ROV with values: forward={forward_pwm}, lateral={lateral_pwm}, throttle={throttle_pwm}, yaw={yaw_pwm}, roll={roll_pwm}"
         )
 
-    def recieve_heartbeat(self) -> bool:
+    def receive_heartbeat(self) -> bool:
         """
         Wait for a heartbeat from the master.
 
@@ -331,7 +333,7 @@ class AutopilotConnectionDaemon(Thread):
             if time.monotonic() - self.__time_since_last_heartbeat >= 0.9:
                 self.send_heartbeat()
 
-                response = self.recieve_heartbeat()
+                response = self.receive_heartbeat()
                 if response and not is_connected:
                     self.__notify(VehicleConnected())
                     is_connected = True

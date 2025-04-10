@@ -1,8 +1,8 @@
+import multiprocessing.synchronize
 import queue
 import struct
 import socket
-from threading import Thread
-import threading
+import multiprocessing
 import time
 from core.logger import system_logger
 from core import config_manager
@@ -15,7 +15,7 @@ HOST = config_manager.get("networking", "baseIP")
 PORT = config_manager.get("piTelemetry", "port")
 
 
-class TelemetryDaemon(Thread):
+class TelemetryDaemon(multiprocessing.Process):
     """
     A daemon thread for receiving telemetry data packets over UDP.
 
@@ -29,8 +29,8 @@ class TelemetryDaemon(Thread):
 
     def __init__(
         self,
-        queue: queue.Queue,
-        quit_event: threading.Event,
+        queue: multiprocessing.Queue,
+        quit_event: multiprocessing.synchronize.Event,
     ):
         super().__init__(daemon=True)
         self.address = (HOST, PORT)

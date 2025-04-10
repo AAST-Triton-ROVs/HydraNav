@@ -1,4 +1,4 @@
-from queue import PriorityQueue, Queue
+import multiprocessing
 import queue
 import threading
 from typing import Tuple
@@ -44,9 +44,9 @@ class Autopilot(GCSModule, Updatable):
         """
         super().__init__()
 
-        self.__movement_queue: Queue[ROVMovement] = Queue(1)
-        self.__command_queue: Queue[ROVCommands] = Queue(1)
-        self.__notification_queue: PriorityQueue[ROVNotification] = PriorityQueue()
+        self.__movement_queue: multiprocessing.Queue[ROVMovement] = multiprocessing.Queue(1)
+        self.__command_queue: multiprocessing.Queue[ROVCommands] = multiprocessing.Queue(1)
+        self.__notification_queue: multiprocessing.Queue[ROVNotification] = multiprocessing.Queue()
 
         self.__quit_event = threading.Event()
         self.__connection_daemon = AutopilotConnectionDaemon(

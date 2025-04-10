@@ -1,4 +1,4 @@
-from queue import Queue
+import multiprocessing
 import queue
 from core.updatable_mixin import Updatable
 from manfaloty.daemons import ManfalotyDaemonManager
@@ -15,14 +15,14 @@ class Manfaloty(GCSModule, Updatable):
     def __init__(self):
         super().__init__()
 
-        self.__command_queue: Queue[ManfalotyCommands] = Queue(1)
-        self.__data_queue: Queue[ManfalotyData] = Queue(1)
+        self.__command_queue: multiprocessing.Queue[ManfalotyCommands] = multiprocessing.Queue(1)
+        self.__data_queue: multiprocessing.Queue[ManfalotyData] = multiprocessing.Queue(1)
 
         self.__daemon_manager = ManfalotyDaemonManager(
             self.__command_queue,
             self.__data_queue,
         )
-        self.__daemon_manager.start_daemons()
+        self.__daemon_manager.start()
 
         event_dispatcher.subscribe(
             "mapper/GRIPPER_JAW_OPEN", lambda _: self.gripper_open_jaws()

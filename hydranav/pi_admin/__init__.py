@@ -1,7 +1,5 @@
 import queue
-import threading
-from typing import Tuple
-from queue import Queue
+import multiprocessing
 from core import Updatable
 from hydranav.core import request_manager
 from pi_admin.daemon import PiAdminDaemon
@@ -25,29 +23,35 @@ class PiAdmin(GCSModule, Updatable):
         """
         super().__init__()
 
-        self.__quit_event = threading.Event()
-        self.__command_queue: Queue[AdminCommands] = Queue(1)
+        self.__quit_event = multiprocessing.Event()
+        self.__command_queue: multiprocessing.Queue[AdminCommands] = multiprocessing.Queue(1)
         self.__admin_daemon = PiAdminDaemon(
             self.__command_queue,
             self.__quit_event,
         )
         self.__admin_daemon.start()
-        
-        request_manager.register_handler("pi-admin/poweroff")
-        request_manager.register_handler("pi-admin/reboot")
-        request_manager.register_handler("pi-admin/restart/mavproxy")
-        request_manager.register_handler("pi-admin/restart/manfaloty-bridge")
-        request_manager.register_handler("pi-admin/restart/telemetry")
-        request_manager.register_handler("pi-admin/restart/admin")
+
+        request_manager.register_handler("pi-admin/poweroff", self.poweroff)
+        request_manager.register_handler("pi-admin/reboot", self.reboot)
+        request_manager.register_handler(
+            "pi-admin/restart/mavproxy", self.restart_mavproxy
+        )
+        request_manager.register_handler(
+            "pi-admin/restart/manfaloty-bridge", self.restart_manfaloty_bridge
+        )
+        request_manager.register_handler(
+            "pi-admin/restart/telemetry", self.restart_telemetry
+        )
+        request_manager.register_handler("pi-admin/restart/admin", self.restart_admin)
 
     def __send_command(self, command: AdminCommands):
         try:
             self.__command_queue.put(command, block=False)
         except queue.Full:
             return
-        
+
     def update(self):
-        return 
+        return
 
     def status_ok(self) -> bool:
         return self.__admin_daemon.is_alive()

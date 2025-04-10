@@ -1,3 +1,5 @@
+import multiprocessing
+import time
 from typing import Any, Optional
 import pygame
 import signal
@@ -17,13 +19,9 @@ class TimeoutError(Exception):
 class ModuleManager:
     def __init__(self):
         self.__modules: dict[str, GCSModule] = {}
+        self.__shutdown_lock = multiprocessing.Lock()
 
         signal.signal(signal.SIGINT, lambda a, b: self.shutdown())
-        signal.signal(signal.SIGALRM, self.__timeout_handler)
-
-    @staticmethod
-    def __timeout_handler(signum, frame):
-        raise TimeoutError()
 
     def __getattr__(self, name: str) -> Any:
         if not self.__modules.get(name):
@@ -55,36 +53,39 @@ class ModuleManager:
 
     def quit_module(self, module: str):
         if self.__modules.get(module):
-            self.__modules[module].quit()
+            try:
+                self.__modules[module].quit()
+            except AssertionError as e:
+                system_logger.error(str(e))
             del self.__modules[module]
             system_logger.success(f"{module} has been quit")
+
+    def shutdown(self):
+        system_logger.info("Starting shutdown sequence")
+        start_time = time.monotonic()
+        for module in list(self.__modules.keys()):
+            if time.monotonic() - start_time >= QUIT_TIMEOUT:
+                break
+
+            self.quit_module(module)
+
+        pygame.quit()
+        system_logger.info("Goodbye!")
+        for proc in multiprocessing.active_children():
+            proc.terminate()
+            proc.join()
+        sys.exit(0)
 
     def get_instance(self, module: str) -> Optional[GCSModule]:
         if self.__modules.get(module):
             return self.__modules[module]
 
         return None
-    
+
     def update_all(self):
         for module in self.__modules.values():
             if isinstance(module, Updatable):
                 module.update()
-
-    def quit_all(self):
-        module_names = list(self.__modules.keys())
-        signal.alarm(QUIT_TIMEOUT)
-        try:
-            for module in module_names:
-                self.quit_module(module)
-        except TimeoutError:
-            system_logger.warning(f"Failed to stop all modules in {QUIT_TIMEOUT}s.")
-
-    def shutdown(self):
-        system_logger.info("Starting shutdown sequence")
-        self.quit_all()
-        pygame.quit()
-        system_logger.info("Goodbye!")
-        sys.exit(0)
 
     def get_module_status(self, module: str) -> Optional[bool]:
         if self.__modules.get(module) is None:
