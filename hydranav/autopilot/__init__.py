@@ -17,7 +17,7 @@ from autopilot.notification import (
     VehicleDisconnected,
 )
 from core import Updatable
-from hydranav.core import request_manager
+from core import request_manager
 
 __all__ = ["ROV"]
 
