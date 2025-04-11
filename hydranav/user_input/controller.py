@@ -4,9 +4,8 @@ from pprint import pformat
 
 import pygame
 
-from core import event_dispatcher, system_logger, config_manager
-from hydranav.core import request_manager
-from user_input.input_mapper import InputMapper
+from core import event_dispatcher, system_logger, config_manager, request_manager
+from user_input.input_mapper import input_mapper
 
 __all__ = ["Controller"]
 
@@ -24,15 +23,13 @@ TRIGGER_PRESS_THRESHOLD = config_manager.get("controller", "triggerPressThreshol
 
 
 class Controller:
-    def __init__(self, input_mapper: InputMapper) -> None:
+    def __init__(self) -> None:
         pygame.joystick.init()
         self.__deadzone: float = 0.5
         self.__deadzone_factor: float = JOYSTICK_DEAD_ZONE_FACTOR
         self.__joystick_roundoff: int = JOYSTICK_ROUND_OFF
         self.__joystick_multiplier: int = JOYSTICK_MULTIPLIER
         self.__joystick: Optional[pygame.joystick.JoystickType] = None
-
-        self.__input_mapper = input_mapper
 
         self.__previous_hat_value: Tuple[int, int] = (0, 0)
 
@@ -60,7 +57,7 @@ class Controller:
         }
         ```
         """
-        
+
         request_manager.register_handler("controller/calibrate", self.calibrate)
 
     def __calc_deadzones(self) -> Optional[float]:
@@ -127,7 +124,7 @@ class Controller:
                         "time": time.monotonic(),
                         "held_before": False,
                     }
-                    self.__input_mapper.button_down(trigger_name)
+                    input_mapper.button_down(trigger_name)
                 else:
                     if (
                         time.monotonic()
@@ -139,14 +136,14 @@ class Controller:
                             "time": time.monotonic(),
                             "held_before": True,
                         }
-                        self.__input_mapper.button_down(trigger_name)
+                        input_mapper.button_down(trigger_name)
                     elif (
                         time.monotonic()
                         - self.__trigger_hold_states[trigger_name]["time"]
                         >= TIME_BETWEEN_HOLD_TRIGGERS
                         and self.__trigger_hold_states[trigger_name]["held_before"]
                     ):
-                        self.__input_mapper.button_down(trigger_name)
+                        input_mapper.button_down(trigger_name)
                 system_logger.info(f"Controller trigger {trigger_name} pressed")
 
     def __process_buttons(self) -> None:
@@ -172,7 +169,7 @@ class Controller:
                 time.monotonic() - data["time"] >= TIME_UNTIL_HOLD_TRIGGERED
                 and not self.__buttons_held[button]["held_before"]
             ):
-                self.__input_mapper.button_hold(button)
+                input_mapper.button_hold(button)
                 system_logger.info(f"Controller button held: {button}")
                 self.__buttons_held[button]["time"] = time.monotonic()
                 self.__buttons_held[button]["held_before"] = True
@@ -181,7 +178,7 @@ class Controller:
                 and self.__buttons_held[button]["held_before"]
             ):
                 # This triggers the high frequency emit mode
-                self.__input_mapper.button_hold(button)
+                input_mapper.button_hold(button)
                 system_logger.info(f"Controller button held: {button}")
                 self.__buttons_held[button]["time"] = time.monotonic()
 
@@ -240,7 +237,7 @@ class Controller:
             f"Controller buttons pressed: down: {button_down_mapping} | up: {button_up_mapping} | held: {button_held_mapping}"
         )
         if button_down_mapping is not None:
-            self.__input_mapper.button_down(button_down_mapping)
+            input_mapper.button_down(button_down_mapping)
 
     def __process_hat(self) -> None:
         if self.__joystick is None:
@@ -260,7 +257,7 @@ class Controller:
 
             controller_button = self.__library_hat_mappings[direction]
 
-            self.__input_mapper.button_down(controller_button)
+            input_mapper.button_down(controller_button)
             system_logger.info(f"Controller hat pressed: {controller_button}")
 
             self.__previous_hat_value = (int(direction[0]), int(direction[1]))

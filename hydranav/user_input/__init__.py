@@ -1,6 +1,5 @@
 from core import GCSModule
 from core import Updatable
-from user_input.input_mapper import InputMapper
 from user_input.controller import Controller
 from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
 
@@ -38,8 +37,7 @@ class UserInput(GCSModule, Updatable):
         """
         super().__init__()
         
-        self.input_mapper = InputMapper()
-        self.controller = Controller(self.input_mapper)
+        self.controller = Controller()
         self.keyboard = Keyboard()
 
     def quit(self):

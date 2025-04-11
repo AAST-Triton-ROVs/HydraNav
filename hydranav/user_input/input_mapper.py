@@ -53,3 +53,5 @@ class InputMapper:
     @property
     def mapping_names(self) -> list[str]:
         return [config["name"] for config in self.__mappings]
+
+input_mapper = InputMapper()
