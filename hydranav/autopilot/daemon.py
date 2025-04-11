@@ -1,3 +1,4 @@
+import multiprocessing.synchronize
 import queue
 import multiprocessing
 import threading
@@ -44,7 +45,7 @@ class AutopilotConnectionDaemon(multiprocessing.Process):
         movement_queue: multiprocessing.Queue,
         command_queue: multiprocessing.Queue,
         notification_queue: multiprocessing.Queue,
-        quit_event: threading.Event,
+        quit_event: multiprocessing.synchronize.Event,
     ):
         """
         Initialize the daemon.

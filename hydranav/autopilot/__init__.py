@@ -1,6 +1,5 @@
 import multiprocessing
 import queue
-import threading
 from typing import Tuple
 from numpy import interp
 from core import system_logger, GCSModule, event_dispatcher
@@ -48,7 +47,7 @@ class Autopilot(GCSModule, Updatable):
         self.__command_queue: multiprocessing.Queue[ROVCommands] = multiprocessing.Queue(1)
         self.__notification_queue: multiprocessing.Queue[ROVNotification] = multiprocessing.Queue()
 
-        self.__quit_event = threading.Event()
+        self.__quit_event = multiprocessing.Event()
         self.__connection_daemon = AutopilotConnectionDaemon(
             self.__movement_queue,
             self.__command_queue,
