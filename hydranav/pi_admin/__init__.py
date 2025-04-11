@@ -1,7 +1,7 @@
 import queue
 import multiprocessing
 from core import Updatable
-from hydranav.core import request_manager
+from core import request_manager
 from pi_admin.daemon import PiAdminDaemon
 from pi_admin.enums import AdminCommands
 from core import GCSModule
