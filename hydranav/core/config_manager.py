@@ -46,6 +46,7 @@ DEFAULT_CONFIG = {
                 "L2": "GRIPPER_PITCH_DOWN",
                 "R1": "GRIPPER_JAW_OPEN",
                 "L1": "GRIPPER_JAW_CLOSE",
+                "K_Q": "QUIT",
             },
         ],
     },
@@ -245,29 +246,31 @@ CONTROLLER_CONFIG_SCHEMA = {
 }
 
 
-REQUIRED_NETWORKING_FIELDS = ("baseIP", "raspIP", "retryDelaySec", "socketTimeout")
-REQUIRED_NOTIFIER_FIELDS = ["assetsPath"]
-REQUIRED_AUTOPILOT_FIELDS = [
-    "port",
-    "maxBackwardPWM",
-    "maxForwardPWM",
-    "neutralPWM",
-    "gainLevels",
-    "timeoutSec",
-]
-REQUIRED_MANFALOTY_FIELDS = ["port"]
-REQUIRED_PI_TELEMETRY_FIELDS = ["port"]
-REQUIRED_PI_ADMIN_FIELDS = ["port"]
-REQUIRED_CONTROLLER_FIELDS = [
-    "joystickDeadZoneFactor",
-    "joystickRoundOff",
-    "joystickMultiplier",
-    "mappings",
-    "configs",
-    "timeUntilHoldTriggeredSec",
-    "timeBetweenHoldTriggerSec",
-    "triggerPressThreshold",
-]
+REQUIRED_FIELDS = {
+    "networking": ("baseIP", "raspIP", "retryDelaySec", "socketTimeout"),
+    "notifier": ["assetsPath"],
+    "autopilot": [
+        "port",
+        "maxBackwardPWM",
+        "maxForwardPWM",
+        "neutralPWM",
+        "gainLevels",
+        "timeoutSec",
+    ],
+    "manfaloty": ["port"],
+    "piTelemetry": ["port"],
+    "piAdmin": ["port"],
+    "controller": [
+        "joystickDeadZoneFactor",
+        "joystickRoundOff",
+        "joystickMultiplier",
+        "mappings",
+        "configs",
+        "timeUntilHoldTriggeredSec",
+        "timeBetweenHoldTriggerSec",
+        "triggerPressThreshold",
+    ],
+}
 
 
 class InvalidConfigModule(Exception):
@@ -284,27 +287,19 @@ class ConfigManager:
 
     def __validate_config(self) -> bool:
         # check that all the required objects exist
-        networking_valid = self.config.get("networking") is not None and all(
-            k in self.config["networking"] for k in REQUIRED_NETWORKING_FIELDS
-        )
-        notifier_valid = self.config.get("notifier") is not None and all(
-            k in self.config["notifier"] for k in REQUIRED_NOTIFIER_FIELDS
-        )
-        autopilot_valid = self.config.get("autopilot") is not None and all(
-            k in self.config["autopilot"] for k in REQUIRED_AUTOPILOT_FIELDS
-        )
-        manfaloty_valid = self.config.get("manfaloty") is not None and all(
-            k in self.config["manfaloty"] for k in REQUIRED_MANFALOTY_FIELDS
-        )
-        piTelemetry_valid = self.config.get("piTelemetry") is not None and all(
-            k in self.config["piTelemetry"] for k in REQUIRED_PI_TELEMETRY_FIELDS
-        )
-        piAdmin_valid = self.config.get("piAdmin") is not None and all(
-            k in self.config["piAdmin"] for k in REQUIRED_PI_ADMIN_FIELDS
-        )
-        controller_valid = self.config.get("controller") is not None and all(
-            k in self.config["controller"] for k in REQUIRED_CONTROLLER_FIELDS
-        )
+        validation_results = {}
+        for module, required_fields in REQUIRED_FIELDS.items():
+            validation_results[module] = self.config.get(module) is not None and all(
+            field in self.config[module] for field in required_fields
+            )
+
+        networking_valid = validation_results.get("networking", False)
+        notifier_valid = validation_results.get("notifier", False)
+        autopilot_valid = validation_results.get("autopilot", False)
+        manfaloty_valid = validation_results.get("manfaloty", False)
+        piTelemetry_valid = validation_results.get("piTelemetry", False)
+        piAdmin_valid = validation_results.get("piAdmin", False)
+        controller_valid = validation_results.get("controller", False)
 
         # validate controller configurations
         if controller_valid:
@@ -369,10 +364,10 @@ class ConfigManager:
 
     def get(self, module: str, item: str) -> Any:
         if self.config.get(module) is None:
-            raise InvalidConfigModule()
+            raise InvalidConfigModule(module)
 
         if self.config[module].get(item) is None:
-            raise InvalidConfigItem()
+            raise InvalidConfigItem(item)
 
         return self.config[module][item]
 
