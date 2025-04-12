@@ -5,3 +5,4 @@ from core.logger import system_logger, LogLevels
 from core.module_manager import module_manager
 from core.config_manager import config_manager
 from core.request_manager import request_manager 
+from core.clock import central_clock
