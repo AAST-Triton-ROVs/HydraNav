@@ -59,7 +59,9 @@ class Notifier(GCSModule):
         event_dispatcher.subscribe(
             "rov/system_mode_changed", lambda m: self.play(f"{m.name.lower()}_mode")
         )
-        request_manager.register_handler("notifier/get_volume", self.__dispatch_volume)
+        request_manager.register_handler("notifier/volume-get", self.__dispatch_volume)
+        request_manager.register_handler("notifier/volume-up", self.__dispatch_volume)
+        request_manager.register_handler("notifier/volume-down", self.__dispatch_volume)
 
     def __dispatch_volume(self):
         event_dispatcher.dispatch("notifier/volume_state", self.volume)
