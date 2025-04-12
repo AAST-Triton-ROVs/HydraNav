@@ -1,5 +1,6 @@
 from typing import Optional
 from core import config_manager, event_dispatcher, system_logger
+from hydranav.core import request_manager
 
 
 class InputMapper:
@@ -25,6 +26,7 @@ class InputMapper:
             return
 
         event_dispatcher.dispatch(f"mapper/{self.__current_mapping[button]}")
+        request_manager.request(f"mapper/{self.__current_mapping[button]}")
 
     def button_hold(self, button: str):
         if self.__current_mapping is None or self.__current_mapping is None:
@@ -35,6 +37,7 @@ class InputMapper:
             return
 
         event_dispatcher.dispatch(f"mapper/hold/{self.__current_mapping[button]}")
+        request_manager.request(f"mapper/{self.__current_mapping[button]}")
 
     def set_mapping(self, name: str):
         for mapping in self.__mappings:

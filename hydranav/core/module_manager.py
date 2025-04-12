@@ -7,6 +7,7 @@ import sys
 from core.logger import system_logger
 from core import GCSModule
 from core import Updatable
+from core import event_dispatcher
 
 # time in seconds before forcefully exiting
 QUIT_TIMEOUT = 5
@@ -22,6 +23,7 @@ class ModuleManager:
         self.__shutdown_lock = multiprocessing.Lock()
 
         signal.signal(signal.SIGINT, lambda a, b: self.shutdown())
+        event_dispatcher.subscribe("mapper/QUIT", lambda _: self.shutdown())
 
     def __getattr__(self, name: str) -> Any:
         if not self.__modules.get(name):
@@ -62,6 +64,7 @@ class ModuleManager:
 
     def shutdown(self):
         system_logger.info("Starting shutdown sequence")
+        event_dispatcher.dispatch("module-manager/shutdown-begin")
         start_time = time.monotonic()
         for module in list(self.__modules.keys()):
             if time.monotonic() - start_time >= QUIT_TIMEOUT:
