@@ -43,9 +43,15 @@ class Autopilot(GCSModule, Updatable):
         """
         super().__init__()
 
-        self.__movement_queue: multiprocessing.Queue[ROVMovement] = multiprocessing.Queue(1)
-        self.__command_queue: multiprocessing.Queue[ROVCommands] = multiprocessing.Queue(1)
-        self.__notification_queue: multiprocessing.Queue[ROVNotification] = multiprocessing.Queue()
+        self.__movement_queue: multiprocessing.Queue[ROVMovement] = (
+            multiprocessing.Queue(1)
+        )
+        self.__command_queue: multiprocessing.Queue[ROVCommands] = (
+            multiprocessing.Queue(1)
+        )
+        self.__notification_queue: multiprocessing.Queue[ROVNotification] = (
+            multiprocessing.Queue()
+        )
 
         self.__quit_event = multiprocessing.Event()
         self.__connection_daemon = AutopilotConnectionDaemon(

@@ -3,15 +3,14 @@ import multiprocessing.synchronize
 import queue
 import socket
 import struct
-from threading import Thread
 
-from core.logger import system_logger
+from core import system_logger
 from manfaloty.data import PHReading
 
 PH_VALUE_SIZE = struct.calcsize("!f")
 
 
-class ManfalotyReceiverDaemon(Thread):
+class ManfalotyReceiverDaemon(multiprocessing.Process):
     """
     A daemon thread responsible for receiving sensor data from the Manfaloty.
     This class continuously reads incoming raw pH values from a server socket, unpacks

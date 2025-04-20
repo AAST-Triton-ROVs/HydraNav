@@ -2,15 +2,10 @@ import multiprocessing
 import queue
 import socket
 import struct
-from threading import Thread
-import threading
-import time
-
 from core import system_logger
-from manfaloty.enums import ManfalotyCommands
 
 
-class ManfalotySenderDaemon(Thread):
+class ManfalotySenderDaemon(multiprocessing.Process):
     """
     A daemon thread responsible for sending commands to the Manfaloty system.
     This thread continuously checks if any commands are available in the command queue.

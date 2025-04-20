@@ -1,6 +1,5 @@
 from typing import Optional
-from core import config_manager, event_dispatcher, system_logger
-from hydranav.core import request_manager
+from core import config_manager, event_dispatcher, system_logger, request_manager
 
 
 class InputMapper:

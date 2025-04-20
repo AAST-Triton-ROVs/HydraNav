@@ -51,6 +51,8 @@ class ManfalotyDaemonManager(multiprocessing.Process):
 
     def quit(self):
         self.__quit_event.set()
+        self.__receiver_daemon.join()
+        self.__sender_daemon.join()
         self.join()
         self.__server_socket.close()
 
