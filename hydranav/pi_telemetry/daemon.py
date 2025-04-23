@@ -97,16 +97,15 @@ class TelemetryDaemon(multiprocessing.Process):
                 self.__create_socket()
                 continue
 
-            unpacked_data = struct.unpack("!" + "I" * 7, data)
+            unpacked_data = struct.unpack("!" + "I" * 5, data)
             telemetry_data = TelemetryData(
                 unpacked_data[0],
                 unpacked_data[1],
                 unpacked_data[2],
                 unpacked_data[3],
                 unpacked_data[4],
-                (unpacked_data[5], unpacked_data[6]),
             )
-            system_logger.debug(f"Recieved telemetry packet: {telemetry_data}")
+            system_logger.info(f"Recieved telemetry packet: {telemetry_data}")
 
             try:
                 self.queue.put(

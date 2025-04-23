@@ -1,13 +1,11 @@
 import multiprocessing
 import queue
-from core.updatable_mixin import Updatable
-from manfaloty.daemons import ManfalotyDaemonManager
-from manfaloty.data import ManfalotyData, PHReading
+from hydranav.manfaloty.daemon import ManfalotyDaemon
 from manfaloty.enums import ManfalotyCommands
 from core import request_manager, event_dispatcher, GCSModule
 
 
-class Manfaloty(GCSModule, Updatable):
+class Manfaloty(GCSModule):
     """
     Manages communication with the Manfaloty system.
     """
@@ -15,14 +13,16 @@ class Manfaloty(GCSModule, Updatable):
     def __init__(self):
         super().__init__()
 
-        self.__command_queue: multiprocessing.Queue[ManfalotyCommands] = multiprocessing.Queue(1)
-        self.__data_queue: multiprocessing.Queue[ManfalotyData] = multiprocessing.Queue(1)
-
-        self.__daemon_manager = ManfalotyDaemonManager(
-            self.__command_queue,
-            self.__data_queue,
+        self.__command_queue: multiprocessing.Queue[ManfalotyCommands] = (
+            multiprocessing.Queue(1)
         )
-        self.__daemon_manager.start()
+        self.__quit_event = multiprocessing.Event()
+
+        self.__daemon = ManfalotyDaemon(
+            self.__command_queue,
+            self.__quit_event,
+        )
+        self.__daemon.start()
 
         event_dispatcher.subscribe(
             "mapper/GRIPPER_JAW_OPEN", lambda _: self.gripper_open_jaws()
@@ -48,9 +48,7 @@ class Manfaloty(GCSModule, Updatable):
         event_dispatcher.subscribe(
             "mapper/GRIPPER_PITCH_DOWN", lambda _: self.gripper_pitch_down()
         )
-        request_manager.register_handler(
-            "manfaloty/read-ph", lambda _: self.read_ph_sensor()
-        )
+
         request_manager.register_handler("manfaloty/restart", self.restart_arduino)
         request_manager.register_handler("manfaloty/reset", self.reset_motors)
         request_manager.register_handler("manfaloty/start-pump", self.start_pump)
@@ -63,10 +61,11 @@ class Manfaloty(GCSModule, Updatable):
             return
 
     def quit(self):
-        self.__daemon_manager.quit()
+        self.__quit_event.set()
+        self.__daemon.join()
 
     def status_ok(self) -> bool:
-        return self.__daemon_manager.status_ok()
+        return self.__daemon.is_alive()
 
     def restart_arduino(self):
         self.__send_command(ManfalotyCommands.RESTART_ARDUINO)
@@ -98,20 +97,8 @@ class Manfaloty(GCSModule, Updatable):
     def camera_pitch_down(self):
         self.__send_command(ManfalotyCommands.CAMERA_PITCH_DOWN)
 
-    def read_ph_sensor(self):
-        self.__send_command(ManfalotyCommands.PH_SENSOR_READ)
-
     def start_pump(self):
         self.__send_command(ManfalotyCommands.PUMP_ON)
 
     def stop_pump(self):
         self.__send_command(ManfalotyCommands.PUMP_OFF)
-
-    def update(self):
-        try:
-            data = self.__data_queue.get(block=False)
-        except queue.Empty:
-            return
-
-        if isinstance(data, PHReading):
-            event_dispatcher.dispatch("manfaloty_ph_reading", data.value)

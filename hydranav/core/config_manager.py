@@ -23,7 +23,7 @@ DEFAULT_CONFIG = {
         "maxBackwardPWM": 1100,
         "maxForwardPWM": 1900,
         "neutralPWM": 1500,
-        "gainLevels": [25, 40, 50, 75, 90],
+        "gainLevels": [25, 40, 50, 75],
         "timeoutSec": 2,
         "sensorReadingRequestHz": 2,
     },

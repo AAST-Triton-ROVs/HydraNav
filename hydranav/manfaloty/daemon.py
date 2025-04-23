@@ -2,10 +2,17 @@ import multiprocessing
 import queue
 import socket
 import struct
-from core import system_logger
+from core import system_logger, config_manager
+import time
+
+RETRY_DELAY = 2
+SOCKET_TIMEOUT = 1.0
+BASE_IP = config_manager.get("networking", "baseIP")
+PI_IP = config_manager.get("networking", "raspIP")
+PORT = config_manager.get("manfaloty", "port")
 
 
-class ManfalotySenderDaemon(multiprocessing.Process):
+class ManfalotyDaemon(multiprocessing.Process):
     """
     A daemon thread responsible for sending commands to the Manfaloty system.
     This thread continuously checks if any commands are available in the command queue.
@@ -25,17 +32,37 @@ class ManfalotySenderDaemon(multiprocessing.Process):
 
     def __init__(
         self,
-        server_socket: socket.socket,
         command_queue: multiprocessing.Queue,
-        pi_ip: str,
-        port: int,
         quit_event: multiprocessing.synchronize.Event,
     ):
         super().__init__(daemon=True)
-        self.__command_queue = command_queue
-        self.__pi_address = pi_ip, port
-        self.__server_socket = server_socket
+        self.__address = BASE_IP, PORT
+        self.__pi_address = PI_IP, PORT
+        self.__server_socket = self.__create_socket()
         self.__quit_event = quit_event
+        self.__command_queue = command_queue
+
+    def __create_socket(self) -> socket.socket:
+        """
+        Binds the socket to the address.
+
+        :raises socket.error: On socket failure
+        """
+        while True:
+            try:
+                server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                server_socket.settimeout(SOCKET_TIMEOUT)
+                server_socket.bind(self.__address)
+            except socket.error as e:
+                system_logger.error(f"Manfaloty daemon bounding error: {e}, retrying")
+                time.sleep(RETRY_DELAY)
+                continue
+
+            system_logger.success(
+                f"Manfaloty daemons bound to {self.__address[0]}:{self.__address[1]}"
+            )
+            return server_socket
 
     def run(self):
         while not self.__quit_event.is_set():
@@ -45,21 +72,19 @@ class ManfalotySenderDaemon(multiprocessing.Process):
                 system_logger.trace("Manfaloty daemon no new commands")
                 continue
 
-            system_logger.info(f"Sending {command.value} to {self.__pi_address}")
-
             try:
                 data = struct.pack("!i", command.value)
             except struct.error as e:
-                system_logger.critical(f"Manfaloty Sender daemon packing error: {e}")
+                system_logger.critical(f"Manfaloty daemon packing error: {e}")
                 continue
 
             try:
                 self.__server_socket.sendto(data, self.__pi_address)
             except socket.timeout:
-                system_logger.debug("Manfaloty client not connected")
+                system_logger.warning("Manfaloty client not connected")
                 continue
             except socket.error as e:
-                system_logger.error(f"Manfaloty sender daemon socket error: {e}")
+                system_logger.error(f"Manfaloty daemon socket error: {e}")
                 continue
 
             system_logger.success(

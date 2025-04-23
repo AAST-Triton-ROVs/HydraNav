@@ -115,6 +115,10 @@ class SystemLogger:
 
         return self.__messages[-self.__max_messages :]
 
+    def quit(self):
+        self.logger.complete()
+        self.logger.remove()
+
     def trace(self, message: str) -> None:
         self.logger.trace(message)
 

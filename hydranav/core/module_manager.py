@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 import time
 from typing import Any, Optional
 import pygame
@@ -10,7 +11,7 @@ from core import Updatable
 from core import event_dispatcher
 
 # time in seconds before forcefully exiting
-QUIT_TIMEOUT = 5
+QUIT_TIMEOUT = 3
 
 
 class TimeoutError(Exception):
@@ -20,16 +21,24 @@ class TimeoutError(Exception):
 class ModuleManager:
     def __init__(self):
         self.__modules: dict[str, GCSModule] = {}
-        self.__shutdown_lock = multiprocessing.Lock()
 
-        signal.signal(signal.SIGINT, lambda a, b: self.shutdown())
+        signal.signal(signal.SIGINT, lambda a, b: self.__handle_sigint())
+
         event_dispatcher.subscribe("mapper/QUIT", lambda _: self.shutdown())
+        signal.signal(signal.SIGALRM, lambda a, b: self.__timeout_handler())
 
     def __getattr__(self, name: str) -> Any:
         if not self.__modules.get(name):
             raise AttributeError
 
         return self.__modules[name]
+
+    def __handle_sigint(self):
+        if multiprocessing.current_process().name == "MainProcess":
+            self.shutdown()
+
+    def __timeout_handler(self):
+        raise TimeoutError()
 
     def register_module(self, module: GCSModule):
         self.__modules[type(module).__name__] = module
@@ -65,19 +74,20 @@ class ModuleManager:
     def shutdown(self):
         system_logger.info("Starting shutdown sequence")
         event_dispatcher.dispatch("module-manager/shutdown-begin")
-        start_time = time.monotonic()
-        for module in list(self.__modules.keys()):
-            if time.monotonic() - start_time >= QUIT_TIMEOUT:
-                break
-
-            self.quit_module(module)
+        signal.alarm(QUIT_TIMEOUT)
+        try:
+            for module in list(self.__modules.keys()):
+                self.quit_module(module)
+        except TimeoutError:
+            system_logger.warning(f"Failed to stop modules in {QUIT_TIMEOUT}s")
 
         pygame.quit()
         system_logger.info("Goodbye!")
+        system_logger.quit()
         for proc in multiprocessing.active_children():
             proc.terminate()
             proc.join()
-        sys.exit(0)
+        os._exit(0)
 
     def get_instance(self, module: str) -> Optional[GCSModule]:
         if self.__modules.get(module):

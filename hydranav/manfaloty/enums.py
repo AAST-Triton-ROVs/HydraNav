@@ -38,9 +38,6 @@ class ManfalotyCommands(Enum):
     PUMP_OFF = -5
     """Deactivates the pump."""
 
-    PH_SENSOR_READ = 6
-    """Reads the pH sensor."""
-
     RESET_MOTORS = 100
     """Resets all motors."""
 
