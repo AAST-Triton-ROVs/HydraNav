@@ -17,6 +17,7 @@ dependencies = [
     "mypy (>=1.15.0,<2.0.0)",
     "types-pyyaml (>=6.0.12.20250326,<7.0.0.0)",
     "types-jsonschema (>=4.23.0.20241208,<5.0.0.0)",
+    "pynput (>=1.8.1,<2.0.0)",
 ]
 
 [[tool.mypy.overrides]]
@@ -27,6 +28,7 @@ ignore_missing_imports = true
 
 [tool.poetry.group.dev.dependencies]
 dimits = "^0.0.31a0"
+types-pynput = "^1.8.1.20250318"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

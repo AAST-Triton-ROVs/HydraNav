@@ -1,24 +1,22 @@
-import pygame
 from user_input.keyboard_keys import KeyboardKeys
 from user_input.input_mapper import input_mapper
-from core import system_logger, event_dispatcher
+from pynput import keyboard
 
 __all__ = ["Keyboard", "KeyboardKeys"]
 
 
 class Keyboard:
     def __init__(self):
-        pass
+        self.__listener = keyboard.Listener(on_press=self.__on_key_press)
+        self.__listener.start()
 
-    def update(self):
-        for button_event in pygame.event.get([pygame.KEYDOWN]):
-            processed_key = KeyboardKeys.from_pygame_key(button_event.key)
-            if processed_key is None:
-                system_logger.warning(
-                    f"{button_event.key} is not a supported button"
-                )
-                continue
-            input_mapper.button_down(f"K_{processed_key.name}")
-            system_logger.info(
-                f"keyboard button {KeyboardKeys.from_pygame_key(button_event.key).name} pressed down"
-            )
+    def __on_key_press(self, key):
+        keyboard_key = KeyboardKeys.from_pynput(key)
+        if keyboard_key is None:
+            return
+
+        input_mapper.button_down(f"K_{keyboard_key.name}")
+
+    def quit(self):
+        self.__listener.stop()
+        self.__listener.join()

@@ -25,11 +25,13 @@
         "poweroff",
         "pygame",
         "pymavlink",
+        "pynput",
         "recieved",
         "Recived",
         "REUSEADDR",
         "roundoff",
         "rtype",
+        "SIGALRM",
         "subteam",
         "udpin",
         "zizo"

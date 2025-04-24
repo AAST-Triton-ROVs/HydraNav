@@ -21,7 +21,6 @@ class InputMapper:
             return
 
         if self.__current_mapping.get(button) is None:
-            system_logger.warning(f"'{button}' is not mapped to anything")
             return
 
         event_dispatcher.dispatch(f"mapper/{self.__current_mapping[button]}")
@@ -32,7 +31,6 @@ class InputMapper:
             return
 
         if self.__current_mapping.get(button) is None:
-            system_logger.warning(f"'{button}' is not mapped to anything")
             return
 
         event_dispatcher.dispatch(f"mapper/hold/{self.__current_mapping[button]}")
@@ -55,5 +53,6 @@ class InputMapper:
     @property
     def mapping_names(self) -> list[str]:
         return [config["name"] for config in self.__mappings]
+
 
 input_mapper = InputMapper()

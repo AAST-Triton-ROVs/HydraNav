@@ -20,9 +20,7 @@ class UserInput(GCSModule, Updatable):
     :type joystick_multiplier: int, optional
     """
 
-    def __init__(
-        self
-    ):
+    def __init__(self):
         """
         Initialize the UserInput class.
 
@@ -36,16 +34,16 @@ class UserInput(GCSModule, Updatable):
         :type joystick_multiplier: int, optional
         """
         super().__init__()
-        
+
         self.controller = Controller()
         self.keyboard = Keyboard()
 
     def quit(self):
         self.controller.quit()
-        
+        self.keyboard.quit()
+
     def status_ok(self) -> bool:
         return self.controller.status_ok()
 
     def update(self):
         self.controller.update()
-        self.keyboard.update()

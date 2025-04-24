@@ -48,6 +48,8 @@ class Manfaloty(GCSModule):
         event_dispatcher.subscribe(
             "mapper/GRIPPER_PITCH_DOWN", lambda _: self.gripper_pitch_down()
         )
+        event_dispatcher.subscribe("mapper/PUMP_ON", lambda _: self.start_pump())
+        event_dispatcher.subscribe("mapper/PUMP_OFF", lambda _: self.stop_pump())
 
         request_manager.register_handler("manfaloty/restart", self.restart_arduino)
         request_manager.register_handler("manfaloty/reset", self.reset_motors)
