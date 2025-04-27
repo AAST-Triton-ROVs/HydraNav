@@ -98,7 +98,10 @@ class ModuleManager:
     def update_all(self):
         for module in self.__modules.values():
             if isinstance(module, Updatable):
-                module.update()
+                try:
+                    module.update()
+                except Exception as e:
+                    system_logger.error(f"Error while updating Updatable modules: {e}")
 
     def get_module_status(self, module: str) -> Optional[bool]:
         if self.__modules.get(module) is None:
