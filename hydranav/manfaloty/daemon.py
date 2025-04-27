@@ -53,8 +53,8 @@ class ManfalotyDaemon(multiprocessing.Process):
                 server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server_socket.settimeout(SOCKET_TIMEOUT)
-                server_socket.bind(self.__address)
-            except socket.error as e:
+                # server_socket.bind(self.__address)
+            except Exception as e:
                 system_logger.error(f"Manfaloty daemon bounding error: {e}, retrying")
                 time.sleep(RETRY_DELAY)
                 continue
@@ -83,8 +83,8 @@ class ManfalotyDaemon(multiprocessing.Process):
             except socket.timeout:
                 system_logger.warning("Manfaloty client not connected")
                 continue
-            except socket.error as e:
-                system_logger.error(f"Manfaloty daemon socket error: {e}")
+            except Exception as e:
+                system_logger.error(f"Manfaloty daemon error: {e}")
                 continue
 
             system_logger.success(

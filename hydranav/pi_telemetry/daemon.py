@@ -54,7 +54,7 @@ class TelemetryDaemon(multiprocessing.Process):
                 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server_socket.settimeout(SOCKET_TIMEOUT)
                 server_socket.bind(self.address)
-            except socket.error as e:
+            except Exception as e:
                 system_logger.error(f"Telemetry daemon bounding error: {e}, retrying")
                 time.sleep(RECONNECT_DELAY)
                 continue
@@ -91,7 +91,7 @@ class TelemetryDaemon(multiprocessing.Process):
             except socket.timeout:
                 system_logger.debug("No new telemetry data")
                 continue
-            except socket.error as e:
+            except Exception as e:
                 system_logger.error(f"Telemetry daemon socket error: {e}")
                 self.close_connection()
                 self.__create_socket()

@@ -54,7 +54,7 @@ class PiAdminDaemon(multiprocessing.Process):
                 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server_socket.settimeout(SOCKET_TIMEOUT)
                 server_socket.bind(self.__address)
-            except socket.error as e:
+            except Exception as e:
                 system_logger.error(f"PiAdmin daemon bounding error: {e}")
                 continue
 
@@ -84,5 +84,5 @@ class PiAdminDaemon(multiprocessing.Process):
             data = struct.pack("!I", command.value)
             try:
                 connection.send(data)
-            except socket.error as e:
+            except Exception as e:
                 system_logger.error(f"Admin daemon failed with error: {e}")
