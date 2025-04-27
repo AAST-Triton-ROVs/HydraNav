@@ -32,6 +32,8 @@ class Notifier(GCSModule):
     def __init__(self):
         super().__init__()
 
+        if not pygame.get_init():
+            pygame.init()
         pygame.mixer.init()
 
         self.volume = 100

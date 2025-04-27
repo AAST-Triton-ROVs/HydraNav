@@ -33,9 +33,6 @@ def init_parser() -> argparse.ArgumentParser:
 
 class GCS:
     def __init__(self):
-        pygame.init()
-        config_manager.init()
-
         parser = init_parser()
         args = parser.parse_args()
 

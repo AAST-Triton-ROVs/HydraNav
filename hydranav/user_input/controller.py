@@ -24,6 +24,7 @@ TRIGGER_PRESS_THRESHOLD = config_manager.get("controller", "triggerPressThreshol
 
 class Controller:
     def __init__(self) -> None:
+        pygame.init()
         pygame.joystick.init()
         self.__deadzone: float = 0.5
         self.__deadzone_factor: float = JOYSTICK_DEAD_ZONE_FACTOR
