@@ -24,7 +24,9 @@ class PiAdmin(GCSModule, Updatable):
         super().__init__()
 
         self.__quit_event = multiprocessing.Event()
-        self.__command_queue: multiprocessing.Queue[AdminCommands] = multiprocessing.Queue(1)
+        self.__command_queue: multiprocessing.Queue[AdminCommands] = (
+            multiprocessing.Queue(1)
+        )
         self.__admin_daemon = PiAdminDaemon(
             self.__command_queue,
             self.__quit_event,
@@ -43,6 +45,8 @@ class PiAdmin(GCSModule, Updatable):
             "pi-admin/restart/telemetry", self.restart_telemetry
         )
         request_manager.register_handler("pi-admin/restart/admin", self.restart_admin)
+        request_manager.register_handler("mapper/PI_POWEROFF", self.poweroff)
+        request_manager.register_handler("mapper/PI_REBOOT", self.reboot)
 
     def __send_command(self, command: AdminCommands):
         try:

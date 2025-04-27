@@ -1,9 +1,10 @@
 from enum import Enum
 
+
 class ROVCommands(Enum):
     """
     :class:`ROVCommands`
-    
+
     Provides commands for controlling the Remotely Operated Vehicle (ROV).
     """
 
