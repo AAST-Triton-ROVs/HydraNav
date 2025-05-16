@@ -4,7 +4,7 @@ from typing import Any
 import jsonschema
 import yaml
 import platformdirs
-from core.logger import system_logger
+from core.logger_mixin import LoggerMixin
 
 APP_NAME = "HydraNav"
 CONFIG_FILE_PATH = Path(platformdirs.user_config_dir(appname=APP_NAME), "config.yaml")
@@ -46,7 +46,7 @@ DEFAULT_CONFIG = {
                 "L2": "GRIPPER_PITCH_DOWN",
                 "R1": "GRIPPER_JAW_OPEN",
                 "L1": "GRIPPER_JAW_CLOSE",
-                "K_Q_LOWER": "QUIT",
+                # "K_Q_LOWER": "QUIT",
                 "K_ONE": "PUMP_ON",
                 "K_TWO": "PUMP_OFF",
             },
@@ -459,6 +459,7 @@ REQUIRED_FIELDS = {
         "neutralPWM",
         "gainLevels",
         "timeoutSec",
+        "rollIncDecAmount",
     ],
     "manfaloty": ["port"],
     "piTelemetry": ["port"],
@@ -484,36 +485,37 @@ class InvalidConfigItem(Exception):
     pass
 
 
-class ConfigManager:
+class ConfigManager(LoggerMixin):
     def __init__(self):
+        super().__init__()
         self.config: dict[str, Any] = {}
         if os.environ.get("HYDRANAV_TEST_MODE") is not None:
             self.config = TESTING_CONFIG
-            system_logger.info("Loaded test config")
+            self._logger.info("Loaded test config")
             return
 
         self.config = DEFAULT_CONFIG
 
         if not os.path.isfile(CONFIG_FILE_PATH):
-            system_logger.info(
+            self._logger.info(
                 f"'{CONFIG_FILE_PATH}' does not exist, using default config"
             )
         else:
-            system_logger.info(f"Reading config from `{CONFIG_FILE_PATH}`")
+            self._logger.info(f"Reading config from `{CONFIG_FILE_PATH}`")
             try:
                 self.config = self.load_from_config()
             except yaml.YAMLError as e:
-                system_logger.error(
+                self._logger.error(
                     f"Failed to read config from '{CONFIG_FILE_PATH}' with error {e}, falling back to default"
                 )
             else:
                 if self.__validate_config():
-                    system_logger.success("Config file is Valid")
+                    self._logger.info("Config file is Valid")
                 else:
-                    system_logger.error("Invalid config file, falling back to default")
+                    self._logger.error("Invalid config file, falling back to default")
                     self.config = DEFAULT_CONFIG
 
-        system_logger.debug(f"Loaded config: {self.config}")
+        self._logger.debug(f"Loaded config: {self.config}")
 
     def __validate_config(self) -> bool:
         # check that all the required objects exist
@@ -537,7 +539,7 @@ class ConfigManager:
                 try:
                     jsonschema.validate(config, CONTROLLER_CONFIG_SCHEMA)
                 except jsonschema.ValidationError as e:
-                    system_logger.error(
+                    self._logger.error(
                         f"Failed to parse controller config {config}; {e}"
                     )
                     controller_valid = False
@@ -560,13 +562,13 @@ class ConfigManager:
             with open(CONFIG_FILE_PATH, "w") as file:
                 yaml.dump(DEFAULT_CONFIG, file)
 
-            system_logger.success(f"Wrote default config to {CONFIG_FILE_PATH}")
+            self._logger.success(f"Wrote default config to {CONFIG_FILE_PATH}")
         except IOError as e:
-            system_logger.error(
+            self._logger.error(
                 f"Failed to write default config to '{CONFIG_FILE_PATH}', with error {e}"
             )
         except yaml.YAMLError as e:
-            system_logger.error(
+            self._logger.error(
                 f"Failed to serialize default config to yaml with error {e}"
             )
 
@@ -578,6 +580,14 @@ class ConfigManager:
             raise InvalidConfigItem(item)
 
         return self.config[module][item]
+
+    def __getitem__(self, item: Any) -> Any:
+        if not isinstance(item, tuple) or not len(item) == 2:
+            raise ValueError(
+                "This notation only accepts inputs in the form of [<MODULE>, <ITEM>]"
+            )
+
+        return self.get(item[0], item[1])
 
     def load_from_config(self) -> dict[str, Any]:
         with open(CONFIG_FILE_PATH) as file:

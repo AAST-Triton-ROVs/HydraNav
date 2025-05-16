@@ -1,7 +1,7 @@
 from typing import Callable, Dict
-from core.logger import system_logger
+from core.logger_mixin import LoggerMixin
 
-class RequestManager:
+class RequestManager(LoggerMixin):
     """
     Manages requests and their associated handlers.
     """
@@ -10,6 +10,7 @@ class RequestManager:
         """
         Initializes a new instance of the RequestManager, with an empty request handlers registery
         """
+        super().__init__()
         self.request_handlers: Dict[str, Callable] = {}
 
     def register_handler(self, name: str, handler: Callable):
@@ -27,7 +28,7 @@ class RequestManager:
             return
 
         self.request_handlers[name] = handler
-        system_logger.debug(f"{handler} registered to {name}")
+        self._logger.debug(f"{handler} registered to {name}")
 
     def remove_request(self, name: str):
         """
@@ -39,7 +40,7 @@ class RequestManager:
         :rtype: None
         """
         if self.request_handlers.get(name):
-            system_logger.debug(f"{self.request_handlers[name]} unregistered to {name}")
+            self._logger.debug(f"{self.request_handlers[name]} unregistered to {name}")
             del self.request_handlers[name]
 
     def request(self, name: str, *args, **kwargs):
@@ -55,7 +56,7 @@ class RequestManager:
         if not self.request_handlers.get(name):
             return
 
-        system_logger.debug(f"{name} is being requested, calling {self.request_handlers[name]}")
+        self._logger.debug(f"{name} is being requested, calling {self.request_handlers[name]}")
         self.request_handlers[name](*args, **kwargs)
 
 request_manager = RequestManager()

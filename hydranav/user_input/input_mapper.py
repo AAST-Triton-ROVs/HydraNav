@@ -1,20 +1,21 @@
 from typing import Optional
-from core import config_manager, event_dispatcher, system_logger, request_manager
+from core import config_manager, event_dispatcher, request_manager, LoggerMixin
 
 
-class InputMapper:
+class InputMapper(LoggerMixin):
     def __init__(self):
+        LoggerMixin.__init__(self)
         self.__mappings: list[dict[str, str]] = config_manager.get(
             "userInput", "mappings"
         )
-        system_logger.debug(f"Controller mappings: {self.__mappings}")
+        self._logger.debug(f"Controller mappings: {self.__mappings}")
 
         self.__current_mapping: Optional[dict[str, str]] = None
 
         try:
             self.__current_mapping = self.__mappings[0]
         except IndexError:
-            system_logger.warning("No input mapping, no mapping will be done.")
+            self._logger.warning("No input mapping, no mapping will be done.")
 
     def button_down(self, button: str):
         if self.__current_mapping is None:

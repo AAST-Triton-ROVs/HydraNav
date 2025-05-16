@@ -1,12 +1,14 @@
 import pygame
 import argparse
-from core import config_manager, system_logger, LogLevels, module_manager
-from user_input import UserInput
-from gui import GUI
+from core import config_manager, module_manager, LoggerMixin, TTS, LOG_LEVELS
+
+# from user_input import UserInput
+# from gui import GUI
+# from notifier import Notifier
 from manfaloty import Manfaloty
-from notifier import Notifier
 from pi_admin import PiAdmin
-from autopilot import Autopilot
+
+# from autopilot import Autopilot
 from pi_telemetry import PiTelemetry
 
 DESCRIPTION = "HydraNav, a revolutionary Ground Control System (GCS) for underwater ROVs, providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features."
@@ -24,27 +26,27 @@ def init_parser() -> argparse.ArgumentParser:
         "-l",
         "--loglevel",
         help="Set the logging level",
-        choices=[level.name.lower() for level in LogLevels],
+        choices=[level.lower() for level in LOG_LEVELS.keys()],
         type=str,
         default="info",
     )
     return parser
 
 
-class GCS:
-    def __init__(self):
-        parser = init_parser()
-        args = parser.parse_args()
+class GCS(LoggerMixin):
+    def __init__(self, args):
+        super().__init__()
 
-        system_logger.set_level_str(args.loglevel)
-        system_logger.info(f"Log level set to {args.loglevel.upper()}")
+        LoggerMixin.set_default_logging_level(args.loglevel.upper())
+        self._logger.info(f"Log level set to {args.loglevel.upper()}")
 
         self.companion_mode = args.companion
-        system_logger.info(
+        self._logger.info(
             f"Operating mode: {'Companion' if self.companion_mode else 'Normal'}"
         )
 
-        self.clock = pygame.time.Clock()
+        TTS.init()
+        TTS.update_and_generate_lines()
 
         module_manager.init_modules(
             [
@@ -59,22 +61,18 @@ class GCS:
             module_manager.init_modules(
                 [
                     Autopilot,
-                    Notifier,
                 ]
             )
 
-        system_logger.info(f"Loaded modules: {' '.join(module_manager.loaded_modules)}")
-        module_manager.UserInput.controller.update_connection_status()
+        self._logger.info(f"Loaded modules: {' '.join(module_manager.loaded_modules)}")
 
     def run(self):
         while True:
             module_manager.update_all()
 
-            system_logger.trace(str(self.clock.get_fps()))
-
-            self.clock.tick(60)
-
 
 if __name__ == "__main__":
-    gcs = GCS()
+    parser = init_parser()
+    args = parser.parse_args()
+    gcs = GCS(args)
     gcs.run()

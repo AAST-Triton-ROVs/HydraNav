@@ -2,7 +2,7 @@ import multiprocessing
 import queue
 import socket
 import struct
-from core import system_logger, config_manager
+from core import config_manager, LoggerMixin
 import time
 
 RETRY_DELAY = 2
@@ -12,7 +12,7 @@ PI_IP = config_manager.get("networking", "raspIP")
 PORT = config_manager.get("manfaloty", "port")
 
 
-class ManfalotyDaemon(multiprocessing.Process):
+class ManfalotyDaemon(multiprocessing.Process, LoggerMixin):
     """
     A daemon thread responsible for sending commands to the Manfaloty system.
     This thread continuously checks if any commands are available in the command queue.
@@ -35,7 +35,9 @@ class ManfalotyDaemon(multiprocessing.Process):
         command_queue: multiprocessing.Queue,
         quit_event: multiprocessing.synchronize.Event,
     ):
-        super().__init__(daemon=True)
+        multiprocessing.Process.__init__(self, daemon=True)
+        LoggerMixin.__init__(self)
+
         self.__address = BASE_IP, PORT
         self.__pi_address = PI_IP, PORT
         self.__server_socket = self.__create_socket()
@@ -53,13 +55,14 @@ class ManfalotyDaemon(multiprocessing.Process):
                 server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server_socket.settimeout(SOCKET_TIMEOUT)
-                # server_socket.bind(self.__address)
+                server_socket.setblocking(False)
+                server_socket.bind(self.__address)
             except Exception as e:
-                system_logger.error(f"Manfaloty daemon bounding error: {e}, retrying")
+                self._logger.error(f"Manfaloty daemon bounding error: {e}, retrying")
                 time.sleep(RETRY_DELAY)
                 continue
 
-            system_logger.success(
+            self._logger.success(
                 f"Manfaloty daemons bound to {self.__address[0]}:{self.__address[1]}"
             )
             return server_socket
@@ -69,24 +72,27 @@ class ManfalotyDaemon(multiprocessing.Process):
             try:
                 command = self.__command_queue.get(block=False)
             except queue.Empty:
-                system_logger.trace("Manfaloty daemon no new commands")
+                self._logger.debug("Manfaloty daemon no new commands")
                 continue
 
             try:
                 data = struct.pack("!i", command.value)
             except struct.error as e:
-                system_logger.critical(f"Manfaloty daemon packing error: {e}")
+                self._logger.critical(f"Manfaloty daemon packing error: {e}")
                 continue
 
             try:
                 self.__server_socket.sendto(data, self.__pi_address)
             except socket.timeout:
-                system_logger.warning("Manfaloty client not connected")
+                self._logger.warning("Manfaloty client not connected")
+                continue
+            except BlockingIOError:
+                self._logger.warning("OS networking buffer full")
                 continue
             except Exception as e:
-                system_logger.error(f"Manfaloty daemon error: {e}")
+                self._logger.error(f"Manfaloty daemon error: {e}")
                 continue
 
-            system_logger.success(
+            self._logger.success(
                 f"Sent {command.value} to {self.__pi_address[0]}:{self.__pi_address[1]}"
             )

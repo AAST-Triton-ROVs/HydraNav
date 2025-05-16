@@ -3,15 +3,14 @@ import queue
 import multiprocessing
 import socket
 import struct
-from core import config_manager
-from core import system_logger
+from core import config_manager, LoggerMixin
 
 SOCKET_TIMEOUT = config_manager.get("networking", "socketTimeout")
 BASE = config_manager.get("networking", "baseIP")
 PORT = config_manager.get("piAdmin", "port")
 
 
-class PiAdminDaemon(multiprocessing.Process):
+class PiAdminDaemon(multiprocessing.Process, LoggerMixin):
     """
     A daemon thread for listening to admin commands.
 
@@ -38,14 +37,16 @@ class PiAdminDaemon(multiprocessing.Process):
             A tuple with the host and port.
         :type address: Tuple[str, int]
         """
-        super().__init__(daemon=True)
+        multiprocessing.Process.__init__(self, daemon=True)
+        LoggerMixin.__init__(self)
+        
         self.__admin_queue = admin_queue
         self.__quit_event = quit_event
 
         self.__address = (BASE, PORT)
         self.server_socket = self.__create_socket()
 
-        system_logger.success(f"Admin daemon bound to {BASE}:{PORT}")
+        self._logger.success(f"Admin daemon bound to {BASE}:{PORT}")
 
     def __create_socket(self) -> socket.socket:
         while True:
@@ -55,7 +56,7 @@ class PiAdminDaemon(multiprocessing.Process):
                 server_socket.settimeout(SOCKET_TIMEOUT)
                 server_socket.bind(self.__address)
             except Exception as e:
-                system_logger.error(f"PiAdmin daemon bounding error: {e}")
+                self._logger.error(f"PiAdmin daemon bounding error: {e}")
                 continue
 
             return server_socket
@@ -72,10 +73,10 @@ class PiAdminDaemon(multiprocessing.Process):
             try:
                 connection, address = self.server_socket.accept()
             except socket.timeout:
-                system_logger.debug("Admin daemon no connection")
+                self._logger.debug("Admin daemon no connection")
                 continue
 
-            system_logger.success(f"Admin daemon accepted connection from {address}")
+            self._logger.success(f"Admin daemon accepted connection from {address}")
             try:
                 command = self.__admin_queue.get(block=False)
             except queue.Empty:
@@ -85,4 +86,4 @@ class PiAdminDaemon(multiprocessing.Process):
             try:
                 connection.send(data)
             except Exception as e:
-                system_logger.error(f"Admin daemon failed with error: {e}")
+                self._logger.error(f"Admin daemon failed with error: {e}")

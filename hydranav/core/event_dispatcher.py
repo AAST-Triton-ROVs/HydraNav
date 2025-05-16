@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict
-from core.logger import system_logger
+from core.logger_mixin import LoggerMixin
 
 class Event:
     """
@@ -15,7 +15,7 @@ class Event:
         self.data: Any = data
 
 
-class EventDispatcher:
+class EventDispatcher(LoggerMixin):
     """
     A dispatcher for events that allows listeners to subscribe, unsubscribe,
     and receive events when they are dispatched.
@@ -24,6 +24,7 @@ class EventDispatcher:
         """
         Initialize a new EventDispatcher instance with an empty listeners registry.
         """
+        super().__init__()
         self.listeners: Dict[str, list[Callable[[Any], None]]] = {}
 
     def subscribe(self, event_type: str, listener: Callable):
@@ -68,6 +69,6 @@ class EventDispatcher:
                 try:
                     listener(event.data)
                 except Exception as e:
-                    system_logger.critical(f"'{listener}' produced an error: {e}")
+                    self._logger.critical(f"'{listener}' produced an error: {e}")
 
 event_dispatcher = EventDispatcher()

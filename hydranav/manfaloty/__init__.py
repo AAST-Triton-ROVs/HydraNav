@@ -1,6 +1,6 @@
 import multiprocessing
 import queue
-from hydranav.manfaloty.daemon import ManfalotyDaemon
+from manfaloty.daemon import ManfalotyDaemon
 from manfaloty.enums import ManfalotyCommands
 from core import request_manager, event_dispatcher, GCSModule
 

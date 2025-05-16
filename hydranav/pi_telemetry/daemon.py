@@ -4,8 +4,7 @@ import struct
 import socket
 import multiprocessing
 import time
-from core.logger import system_logger
-from core import config_manager
+from core import config_manager, LoggerMixin
 from pi_telemetry.data import TelemetryData
 
 BUFFER_SIZE = struct.calcsize("!" + "I" * 7)
@@ -15,7 +14,7 @@ HOST = config_manager.get("networking", "baseIP")
 PORT = config_manager.get("piTelemetry", "port")
 
 
-class TelemetryDaemon(multiprocessing.Process):
+class TelemetryDaemon(multiprocessing.Process, LoggerMixin):
     """
     A daemon thread for receiving telemetry data packets over UDP.
 
@@ -32,7 +31,9 @@ class TelemetryDaemon(multiprocessing.Process):
         queue: multiprocessing.Queue,
         quit_event: multiprocessing.synchronize.Event,
     ):
-        super().__init__(daemon=True)
+        multiprocessing.Process.__init__(self, daemon=True)
+        LoggerMixin.__init__(self)
+
         self.address = (HOST, PORT)
         self.server_socket = self.__create_socket()
         self.queue = queue
@@ -55,11 +56,11 @@ class TelemetryDaemon(multiprocessing.Process):
                 server_socket.settimeout(SOCKET_TIMEOUT)
                 server_socket.bind(self.address)
             except Exception as e:
-                system_logger.error(f"Telemetry daemon bounding error: {e}, retrying")
+                self._logger.error(f"Telemetry daemon bounding error: {e}, retrying")
                 time.sleep(RECONNECT_DELAY)
                 continue
 
-            system_logger.success(
+            self._logger.success(
                 f"Telemetry daemon bound to {self.address[0]}:{self.address[1]}"
             )
             return server_socket
@@ -87,12 +88,12 @@ class TelemetryDaemon(multiprocessing.Process):
         while not self.__quit_event.is_set():
             try:
                 data, client = self.server_socket.recvfrom(BUFFER_SIZE)  # type: ignore
-                system_logger.info(f"Telemetry data packet recieved from {client}")
+                self._logger.info(f"Telemetry data packet recieved from {client}")
             except socket.timeout:
-                system_logger.debug("No new telemetry data")
+                self._logger.debug("No new telemetry data")
                 continue
             except Exception as e:
-                system_logger.error(f"Telemetry daemon socket error: {e}")
+                self._logger.error(f"Telemetry daemon socket error: {e}")
                 self.close_connection()
                 self.__create_socket()
                 continue
@@ -105,7 +106,7 @@ class TelemetryDaemon(multiprocessing.Process):
                 unpacked_data[3],
                 unpacked_data[4],
             )
-            system_logger.info(f"Recieved telemetry packet: {telemetry_data}")
+            self._logger.info(f"Recieved telemetry packet: {telemetry_data}")
 
             try:
                 self.queue.put(
@@ -113,5 +114,5 @@ class TelemetryDaemon(multiprocessing.Process):
                     block=False,
                 )
             except queue.Full:
-                system_logger.error("Unable to put telemetry data in queue")
+                self._logger.error("Unable to put telemetry data in queue")
                 return
