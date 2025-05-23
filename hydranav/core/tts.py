@@ -1,17 +1,17 @@
 import os
 from pathlib import Path
-import from_root  # type: ignore
-from playsound3 import playsound  # type: ignore
-from core.logger_mixin import LoggerMixin
-from core.event_dispatcher import event_dispatcher
+from playsound3 import playsound
+from hydranav.core.event_dispatcher import event_dispatcher
+from hydranav.core.config_manager import config_manager
+from hydranav.core.logger import LoggerMixin
 from dimits import Dimits  # type: ignore
 from xxhash import xxh3_128_hexdigest
 import multiprocessing
 
 LineID = str
-ASSETS_PATH = from_root.from_root("assets", "audio")
-TTS_MODEL = "en_GB-jenny_dioco-medium"
-TTS_LINE_GEN_TIMEOUT = 1
+ASSETS_PATH = config_manager["tts", "assetsPath"]
+TTS_MODEL = config_manager["tts", "piperModel"]
+TTS_LINE_GEN_TIMEOUT = config_manager["tts", "genTimeout"]
 
 
 class TextToSpeech(LoggerMixin):
@@ -22,9 +22,13 @@ class TextToSpeech(LoggerMixin):
         self.__lines_to_generate: dict[LineID, str] = {}
         self.__lines: dict[LineID, str] = {}
 
-        self.__lines_on_disk = [x.split(".")[0] for x in os.listdir(ASSETS_PATH)]
+        try:
+            self.__lines_on_disk = [x.split(".")[0] for x in os.listdir(ASSETS_PATH)]
+        except IOError as e:
+            self._logger.error(f"Failed tp read lines: {e}")
 
         self.__dt = None
+        self.__enabled = True
 
     def init(self):
         self.__dt = Dimits(TTS_MODEL)
@@ -41,6 +45,9 @@ class TextToSpeech(LoggerMixin):
         return line_id
 
     def play_line(self, line_id: LineID):
+        if not self.__enabled:
+            return
+
         if line_id not in self.__lines:
             return
 
@@ -58,9 +65,7 @@ class TextToSpeech(LoggerMixin):
 
     def update_and_generate_lines(self):
         unexpected_lines = [
-            line_id
-            for line_id in self.__lines_on_disk
-            if line_id not in self.__lines and line_id not in self.__lines_to_generate
+            line_id for line_id in self.__lines_on_disk if line_id not in self.__lines
         ]
         if unexpected_lines:
             self._logger.warning(f"Found unexpected lines on disk: {unexpected_lines}")
@@ -91,6 +96,12 @@ class TextToSpeech(LoggerMixin):
                 self._logger.success(f"Registered '{line}' with '{line_id}'")
             except FileNotFoundError:
                 self._logger.error(f"Failed to generate file for '{line}'.")
+    
+    def enable(self):
+        self.__enabled = True
+    
+    def disable(self):
+        self.__enabled = False
 
 
 TTS = TextToSpeech()
