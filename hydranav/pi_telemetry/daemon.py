@@ -4,8 +4,8 @@ import struct
 import socket
 import multiprocessing
 import time
-from core import config_manager, LoggerMixin
-from pi_telemetry.data import TelemetryData
+from hydranav.core import config_manager, LoggerMixin
+from hydranav.pi_telemetry.data import TelemetryData
 
 BUFFER_SIZE = struct.calcsize("!" + "I" * 7)
 RECONNECT_DELAY = config_manager.get("networking", "retryDelaySec")

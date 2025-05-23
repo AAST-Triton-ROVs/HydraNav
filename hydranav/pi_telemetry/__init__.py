@@ -1,10 +1,10 @@
 import queue
 import multiprocessing
 from multiprocessing import Queue
-from core import Updatable
-from pi_telemetry.data import TelemetryData
-from pi_telemetry.daemon import TelemetryDaemon
-from core import event_dispatcher, GCSModule
+from hydranav.pi_telemetry.data import TelemetryData
+from hydranav.pi_telemetry.daemon import TelemetryDaemon
+from hydranav.core import event_dispatcher, GCSModule, Updatable, HasWebGUI
+from nicegui import ui
 
 __all__ = ["PiTelemetry", "TelemetryData"]
 

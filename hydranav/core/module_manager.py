@@ -1,8 +1,12 @@
 import multiprocessing
 import os
 import signal
-from typing import Any, Optional
-from core import event_dispatcher, Updatable, GCSModule, LoggerMixin, TTS
+from typing import Any, Optional, TypeVar
+from hydranav.core.event_dispatcher import event_dispatcher
+from hydranav.core.tts import TTS
+from hydranav.core.updatable import Updatable
+from hydranav.core.gcs_module import GCSModule
+from hydranav.core.logger import LoggerMixin
 
 # time in seconds before forcefully exiting
 QUIT_TIMEOUT = 3

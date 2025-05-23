@@ -1,5 +1,6 @@
-from typing import Callable, Dict
-from core.logger_mixin import LoggerMixin
+from typing import Any, Callable, Dict
+from hydranav.core.logger import LoggerMixin
+
 
 class RequestManager(LoggerMixin):
     """
@@ -10,7 +11,7 @@ class RequestManager(LoggerMixin):
         """
         Initializes a new instance of the RequestManager, with an empty request handlers registery
         """
-        super().__init__()
+        self.request_handlers: Dict[str, list[Callable]] = {}
         self.request_handlers: Dict[str, Callable] = {}
 
     def register_handler(self, name: str, handler: Callable):

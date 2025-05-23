@@ -1,8 +1,11 @@
 import multiprocessing
 import queue
-from manfaloty.daemon import ManfalotyDaemon
-from manfaloty.enums import ManfalotyCommands
-from core import request_manager, event_dispatcher, GCSModule
+from hydranav.manfaloty.daemon import ManfalotyDaemon
+from hydranav.manfaloty.enums import ManfalotyCommands
+from hydranav.core import request_manager, event_dispatcher, GCSModule, TTS
+
+PUMP_ON_LINE = TTS.register_line("Pump On")
+PUMP_OFF_LINE = TTS.register_line("Pump OFF")
 
 
 class Manfaloty(GCSModule):

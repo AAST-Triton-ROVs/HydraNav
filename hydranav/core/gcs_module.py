@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from core.logger_mixin import LoggerMixin
+from hydranav.core.logger import LoggerMixin
 
 
 class GCSModule(ABC, LoggerMixin):

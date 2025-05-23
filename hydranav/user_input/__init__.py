@@ -1,7 +1,7 @@
-from core import GCSModule
-from core import Updatable
+from hydranav.core import GCSModule
+from hydranav.core import Updatable
 from user_input.controller import Controller
-from user_input.keyboard import Keyboard, KeyboardKeys  # noqa: F401
+from hydranav.keyboard_input import KeyboardInput, KeyboardKeys  # noqa: F401
 
 __all__ = ["UserInput", "KeyboardKeys"]
 

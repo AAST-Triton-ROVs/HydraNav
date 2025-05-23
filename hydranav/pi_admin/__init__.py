@@ -1,10 +1,8 @@
 import queue
 import multiprocessing
-from core import Updatable
-from core import request_manager
-from pi_admin.daemon import PiAdminDaemon
-from pi_admin.enums import AdminCommands
-from core import GCSModule
+from hydranav.pi_admin.daemon import PiAdminDaemon
+from hydranav.pi_admin.enums import AdminCommands
+from hydranav.core import GCSModule, Updatable, request_manager, HasWebGUI
 
 
 class PiAdmin(GCSModule, Updatable):

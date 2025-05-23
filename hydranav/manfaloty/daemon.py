@@ -1,15 +1,16 @@
 import multiprocessing
+import multiprocessing.synchronize
 import queue
 import socket
 import struct
-from core import config_manager, LoggerMixin
+from hydranav.core import config_manager, LoggerMixin
 import time
 
 RETRY_DELAY = 2
 SOCKET_TIMEOUT = 1.0
-BASE_IP = config_manager.get("networking", "baseIP")
-PI_IP = config_manager.get("networking", "raspIP")
-PORT = config_manager.get("manfaloty", "port")
+BASE_IP = config_manager["networking", "baseIP"]
+PI_IP = config_manager["networking", "raspIP"]
+PORT = config_manager["manfaloty", "port"]
 
 
 class ManfalotyDaemon(multiprocessing.Process, LoggerMixin):

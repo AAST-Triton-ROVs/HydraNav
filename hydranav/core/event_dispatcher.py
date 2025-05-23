@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict
-from core.logger_mixin import LoggerMixin
+from hydranav.core.logger import LoggerMixin
+
 
 class Event:
     """

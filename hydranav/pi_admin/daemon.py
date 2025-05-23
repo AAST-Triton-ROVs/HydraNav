@@ -3,11 +3,11 @@ import queue
 import multiprocessing
 import socket
 import struct
-from core import config_manager, LoggerMixin
+from hydranav.core import config_manager, LoggerMixin
 
-SOCKET_TIMEOUT = config_manager.get("networking", "socketTimeout")
-BASE = config_manager.get("networking", "baseIP")
-PORT = config_manager.get("piAdmin", "port")
+SOCKET_TIMEOUT = config_manager["networking", "socketTimeout"]
+BASE = config_manager["networking", "baseIP"]
+PORT = config_manager["piAdmin", "port"]
 
 
 class PiAdminDaemon(multiprocessing.Process, LoggerMixin):

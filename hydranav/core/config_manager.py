@@ -4,7 +4,7 @@ from typing import Any
 import jsonschema
 import yaml
 import platformdirs
-from core.logger_mixin import LoggerMixin
+from hydranav.core.logger import LoggerMixin
 
 APP_NAME = "HydraNav"
 CONFIG_FILE_PATH = Path(platformdirs.user_config_dir(appname=APP_NAME), "config.yaml")
