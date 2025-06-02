@@ -11,6 +11,10 @@ class GCSModule(ABC, LoggerMixin):
         """Returns Module name"""
         return cls.__name__
 
+    @classmethod
+    @abstractmethod
+    def init_order(cls): ...
+
     @abstractmethod
     def quit(self):
         """Quits module"""

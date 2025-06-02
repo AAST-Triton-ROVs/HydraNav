@@ -17,7 +17,11 @@ DEFAULT_CONFIG = {
         "retryDelaySec": 2,
         "socketTimeout": 1,
     },
-    "notifier": {"assetsPath": "./assets/audio"},
+    "tts": {
+        "assetsPath": "./assets/audio",
+        "piperModel": "en_GB-jenny_dioco-medium",
+        "genTimeout": 1,
+    },
     "autopilot": {
         "port": 2000,
         "maxBackwardPWM": 1100,

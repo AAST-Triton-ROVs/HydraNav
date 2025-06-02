@@ -5,14 +5,12 @@ from hydranav.pi_admin.enums import AdminCommands
 from hydranav.core import GCSModule, Updatable, request_manager, HasWebGUI
 
 
-class PiAdmin(GCSModule, Updatable):
+class PiAdmin(GCSModule, Updatable, HasWebGUI):
     """
     Manages administrative commands to the PiAdminDaemon.
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         """
         Initialize the PiAdmin object.
 
@@ -51,6 +49,16 @@ class PiAdmin(GCSModule, Updatable):
             self.__command_queue.put(command, block=False)
         except queue.Full:
             return
+
+    @classmethod
+    def init_order(cls):
+        return 1
+
+    def webgui_contents(self):
+        return
+
+    def webgui_icon_name(self):
+        return "terminal"
 
     def update(self):
         return

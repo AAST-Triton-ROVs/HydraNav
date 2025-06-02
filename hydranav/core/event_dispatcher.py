@@ -11,6 +11,7 @@ class Event:
     :param data: Optional data associated with the event.
     :type data: Any
     """
+
     def __init__(self, event_type: str, data: Any = None):
         self.event_type: str = event_type
         self.data: Any = data
@@ -21,6 +22,7 @@ class EventDispatcher(LoggerMixin):
     A dispatcher for events that allows listeners to subscribe, unsubscribe,
     and receive events when they are dispatched.
     """
+
     def __init__(self):
         """
         Initialize a new EventDispatcher instance with an empty listeners registry.
@@ -71,5 +73,6 @@ class EventDispatcher(LoggerMixin):
                     listener(event.data)
                 except Exception as e:
                     self._logger.critical(f"'{listener}' produced an error: {e}")
+
 
 event_dispatcher = EventDispatcher()

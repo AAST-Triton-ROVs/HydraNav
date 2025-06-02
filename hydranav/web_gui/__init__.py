@@ -48,6 +48,10 @@ class WebGUI(GCSModule, Updatable):
             host=SERVER_IP,
         )
 
+    @classmethod
+    def init_order(cls):
+        return 99
+
     def quit(self):
         """Quits module"""
         self.__daemon.terminate()

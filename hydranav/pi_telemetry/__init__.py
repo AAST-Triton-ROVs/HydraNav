@@ -9,7 +9,7 @@ from nicegui import ui
 __all__ = ["PiTelemetry", "TelemetryData"]
 
 
-class PiTelemetry(GCSModule, Updatable):
+class PiTelemetry(GCSModule, Updatable, HasWebGUI):
     """
     A class for handling telemetry data via a queue and threading.
 
@@ -42,6 +42,16 @@ class PiTelemetry(GCSModule, Updatable):
             self.__quit_event,
         )
         self.__listener_daemon.start()
+
+    @classmethod
+    def init_order(cls):
+        return 1
+
+    def webgui_contents(self):
+        return ui.label("Pi Telemetry")
+
+    def webgui_icon_name(self):
+        return "insights"
 
     def quit(self):
         self.__quit_event.set()

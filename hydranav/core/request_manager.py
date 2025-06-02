@@ -11,8 +11,8 @@ class RequestManager(LoggerMixin):
         """
         Initializes a new instance of the RequestManager, with an empty request handlers registery
         """
+        super().__init__()
         self.request_handlers: Dict[str, list[Callable]] = {}
-        self.request_handlers: Dict[str, Callable] = {}
 
     def register_handler(self, name: str, handler: Callable):
         """
@@ -25,10 +25,10 @@ class RequestManager(LoggerMixin):
         :return: None
         :rtype: None
         """
-        if self.request_handlers.get(name):
-            return
+        if self.request_handlers.get(name) is None:
+            self.request_handlers[name] = []
 
-        self.request_handlers[name] = handler
+        self.request_handlers[name].append(handler)
         self._logger.debug(f"{handler} registered to {name}")
 
     def remove_request(self, name: str):
@@ -44,9 +44,9 @@ class RequestManager(LoggerMixin):
             self._logger.debug(f"{self.request_handlers[name]} unregistered to {name}")
             del self.request_handlers[name]
 
-    def request(self, name: str, *args, **kwargs):
+    def request(self, name: str, *args, **kwargs) -> list[Any]:
         """
-        Invokes the handler for the specified request name with the provided arguments.
+        Invokes the handlers for the specified request name with the provided arguments.
         :param name: The name of the request to be invoked.
         :type name: str
         :param args: Positional arguments to pass to the handler.
@@ -55,9 +55,16 @@ class RequestManager(LoggerMixin):
         :rtype: None
         """
         if not self.request_handlers.get(name):
-            return
+            return []
 
-        self._logger.debug(f"{name} is being requested, calling {self.request_handlers[name]}")
-        self.request_handlers[name](*args, **kwargs)
+        self._logger.debug(
+            f"{name} is being requested, calling {self.request_handlers[name]}"
+        )
+        output = []
+        for handler in self.request_handlers[name]:
+            output.append(handler(*args, **kwargs))
+
+        return output
+
 
 request_manager = RequestManager()
