@@ -1,14 +1,17 @@
 from typing import Optional
-from core import config_manager, event_dispatcher, request_manager, LoggerMixin
+from hydranav.core.config_manager import config_manager
+from hydranav.core.event_dispatcher import event_dispatcher
+from hydranav.core.request_manager import request_manager
+from hydranav.core.logger import LoggerMixin
 
 
 class InputMapper(LoggerMixin):
     def __init__(self):
         LoggerMixin.__init__(self)
-        self.__mappings: list[dict[str, str]] = config_manager.get(
-            "userInput", "mappings"
-        )
-        self._logger.debug(f"Controller mappings: {self.__mappings}")
+        self.__mappings: list[dict[str, str]] = config_manager[
+            "inputMapper", "mappings"
+        ]
+        self._logger.debug(f"Input mappings: {self.__mappings}")
 
         self.__current_mapping: Optional[dict[str, str]] = None
 
@@ -17,7 +20,7 @@ class InputMapper(LoggerMixin):
         except IndexError:
             self._logger.warning("No input mapping, no mapping will be done.")
 
-    def button_down(self, button: str):
+    def digital_input(self, button: str):
         if self.__current_mapping is None:
             return
 
@@ -27,7 +30,7 @@ class InputMapper(LoggerMixin):
         event_dispatcher.dispatch(f"mapper/{self.__current_mapping[button]}")
         request_manager.request(f"mapper/{self.__current_mapping[button]}")
 
-    def button_hold(self, button: str):
+    def digital_input_hold(self, button: str):
         if self.__current_mapping is None or self.__current_mapping is None:
             return
 
