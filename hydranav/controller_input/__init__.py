@@ -50,8 +50,7 @@ class ControllerInput(GCSModule, Updatable):
             elif isinstance(event, ButtonHold):
                 input_mapper.digital_input_hold(event.button)
             elif isinstance(event, AbsoluteAxisMotion):
-                # TODO: CREATE INPUT MAPPER FOR ANALOGUE INPUT THAT TAKES IN AXIS NAME AND VALUE
-                ...
+                input_mapper.analogue_input(event.axis, event.value)
 
     def quit(self):
         self.__quit_event.set()

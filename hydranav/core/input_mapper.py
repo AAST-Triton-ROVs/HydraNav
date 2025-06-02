@@ -31,7 +31,7 @@ class InputMapper(LoggerMixin):
         request_manager.request(f"mapper/{self.__current_mapping[button]}")
 
     def digital_input_hold(self, button: str):
-        if self.__current_mapping is None or self.__current_mapping is None:
+        if self.__current_mapping is None:
             return
 
         if self.__current_mapping.get(button) is None:
@@ -39,6 +39,22 @@ class InputMapper(LoggerMixin):
 
         event_dispatcher.dispatch(f"mapper/hold/{self.__current_mapping[button]}")
         request_manager.request(f"mapper/{self.__current_mapping[button]}")
+
+    def analogue_input(self, axis: str, value: int | float):
+        if self.__current_mapping is None:
+            return
+
+        if self.__current_mapping.get(axis) is None:
+            return
+
+        event_dispatcher.dispatch(
+            f"mapper/analogue/{self.__current_mapping[axis]}",
+            value,
+        )
+        request_manager.request(
+            f"mapper/analogue/{self.__current_mapping[axis]}",
+            value,
+        )
 
     def set_mapping(self, name: str):
         for mapping in self.__mappings:
