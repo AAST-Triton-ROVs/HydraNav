@@ -6,11 +6,14 @@ import struct
 from hydranav.core import config_manager, LoggerMixin
 import time
 
+from hydranav.manfaloty.enums import ManfalotyCommands
+
 RETRY_DELAY = 2
 SOCKET_TIMEOUT = 1.0
 BASE_IP = config_manager["networking", "baseIP"]
 PI_IP = config_manager["networking", "raspIP"]
 PORT = config_manager["manfaloty", "port"]
+JAWS_BURST_FREQ = config_manager["manfaloty", "jawsBurstFreq"]
 
 
 class ManfalotyDaemon(multiprocessing.Process, LoggerMixin):
@@ -83,7 +86,14 @@ class ManfalotyDaemon(multiprocessing.Process, LoggerMixin):
                 continue
 
             try:
-                self.__server_socket.sendto(data, self.__pi_address)
+                if (
+                    command == ManfalotyCommands.GRIPPER_JAW_OPEN
+                    or command == ManfalotyCommands.GRIPPER_JAW_CLOSE
+                ):
+                    for _ in range(JAWS_BURST_FREQ):
+                        self.__server_socket.sendto(data, self.__pi_address)
+                else:
+                    self.__server_socket.sendto(data, self.__pi_address)
             except socket.timeout:
                 self._logger.warning("Manfaloty client not connected")
                 continue

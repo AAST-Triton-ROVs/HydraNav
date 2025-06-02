@@ -58,12 +58,19 @@ class Manfaloty(GCSModule):
         request_manager.register_handler("manfaloty/reset", self.reset_motors)
         request_manager.register_handler("manfaloty/start-pump", self.start_pump)
         request_manager.register_handler("manfaloty/stop-pump", self.stop_pump)
+        
+        TTS.attach_to_event(PUMP_ON_LINE, "manfaloty/pump-on")
+        TTS.attach_to_event(PUMP_OFF_LINE, "manfaloty/pump-off")
 
     def __send_command(self, command: ManfalotyCommands):
         try:
             self.__command_queue.put(command, block=False)
         except queue.Full:
             return
+    
+    @classmethod
+    def init_order(cls):
+        return 1
 
     def quit(self):
         self.__quit_event.set()
@@ -73,16 +80,18 @@ class Manfaloty(GCSModule):
         return self.__daemon.is_alive()
 
     def restart_arduino(self):
+        event_dispatcher.dispatch("manfaloty/arduino-restart")
         self.__send_command(ManfalotyCommands.RESTART_ARDUINO)
 
     def reset_motors(self):
+        event_dispatcher.dispatch("manfaloty/reset-motors")
         self.__send_command(ManfalotyCommands.RESET_MOTORS)
 
     def gripper_open_jaws(self):
-        self.__send_command(ManfalotyCommands.GRIPPER_TOGGLE_JAW_OPEN)
+        self.__send_command(ManfalotyCommands.GRIPPER_JAW_OPEN)
 
     def gripper_close_jaws(self):
-        self.__send_command(ManfalotyCommands.GRIPPER_TOGGLE_JAW_CLOSE)
+        self.__send_command(ManfalotyCommands.GRIPPER_JAW_CLOSE)
 
     def gripper_pitch_up(self):
         self.__send_command(ManfalotyCommands.GRIPPER_PITCH_UP)
@@ -103,7 +112,9 @@ class Manfaloty(GCSModule):
         self.__send_command(ManfalotyCommands.CAMERA_PITCH_DOWN)
 
     def start_pump(self):
+        event_dispatcher.dispatch("manfaloty/pump-on")
         self.__send_command(ManfalotyCommands.PUMP_ON)
 
     def stop_pump(self):
+        event_dispatcher.dispatch("manfaloty/pump-off")
         self.__send_command(ManfalotyCommands.PUMP_OFF)
