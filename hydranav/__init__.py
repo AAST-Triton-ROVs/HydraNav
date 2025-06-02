@@ -3,6 +3,7 @@ from hydranav.core import config_manager, module_manager, LoggerMixin, TTS, LOG_
 
 # from gui import GUI
 from hydranav.keyboard_input import KeyboardInput
+from hydranav.controller_input import ControllerInput
 from hydranav.manfaloty import Manfaloty
 from hydranav.pi_admin import PiAdmin
 from hydranav.autopilot import Autopilot
@@ -48,10 +49,11 @@ class GCS(LoggerMixin):
 
         module_manager.init_modules(
             [
-                # KeyboardInput,
+                ControllerInput,
                 PiTelemetry,
                 PiAdmin,
                 Manfaloty,
+                # KeyboardInput,
             ]
         )
 
