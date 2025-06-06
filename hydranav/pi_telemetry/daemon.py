@@ -98,13 +98,14 @@ class TelemetryDaemon(multiprocessing.Process, LoggerMixin):
                 self.__create_socket()
                 continue
 
-            unpacked_data = struct.unpack("!" + "I" * 5, data)
+            unpacked_data = struct.unpack("!" + "I" * 5 + "f", data)
             telemetry_data = TelemetryData(
                 unpacked_data[0],
                 unpacked_data[1],
                 unpacked_data[2],
                 unpacked_data[3],
                 unpacked_data[4],
+                unpacked_data[5],
             )
             self._logger.info(f"Recieved telemetry packet: {telemetry_data}")
 

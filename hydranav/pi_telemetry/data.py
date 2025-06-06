@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Tuple
 
+
 @dataclass
 class TelemetryData:
     """
@@ -19,11 +20,13 @@ class TelemetryData:
     :param network_usage: Network usage (download, upload) in bytes
     :type network_usage: Tuple[int, int]
     """
+
     cpu_usage: int
     cpu_temp: int
     ram_usage: int
     disk_usage: int
     gpu_temp: int
+    voltage: float
 
     def __str__(self) -> str:
         return (
@@ -32,4 +35,5 @@ class TelemetryData:
             f"RAM Usage: {self.ram_usage}% | "
             f"Disk Usage: {self.disk_usage}% | "
             f"GPU Temp: {self.gpu_temp}°C | "
+            f"Voltage: {round(self.voltage, 2)}V"
         )
