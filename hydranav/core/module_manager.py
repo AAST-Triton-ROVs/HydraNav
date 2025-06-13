@@ -16,6 +16,7 @@ QUIT_TIMEOUT = 3
 class TimeoutError(Exception):
     pass
 
+
 SHUTTING_DOWN_LINE = TTS.register_line("Shutting Down")
 MODULE_DOWN_LINE = TTS.register_line("Module Down")
 
@@ -55,7 +56,7 @@ class ModuleManager(LoggerMixin):
             self.register_module(module_class())
         except Exception as e:
             self._logger.error(
-                f"Failed to start module {module_class.__name__}, error: {e}"
+                f"Failed to start module {module_class.__name__}, {type(e).__name__}: {e}"
             )
         else:
             event_dispatcher.dispatch(
@@ -111,7 +112,9 @@ class ModuleManager(LoggerMixin):
                 try:
                     module.update()
                 except Exception as e:
-                    self._logger.error(f"Error while updating module: {e}")
+                    self._logger.error(
+                        f"Error while updating {module.module_name()}: {type(e).__name__} {e}"
+                    )
 
         for mod_name in broken_modules:
             self._logger.error(f"{mod_name} has stopped working; Unloading module")

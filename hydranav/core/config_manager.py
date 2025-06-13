@@ -14,6 +14,7 @@ DEFAULT_CONFIG = {
     "networking": {
         "baseIP": "0.0.0.0",
         "raspIP": "192.168.1.100",
+        # "raspIP": "0.0.0.0",
         "retryDelaySec": 2,
         "socketTimeout": 1,
     },
@@ -30,6 +31,13 @@ DEFAULT_CONFIG = {
         "gainLevels": [25, 40, 50, 75],
         "timeoutSec": 2,
         "sensorReadingRequestHz": 2,
+    },
+    "cameraStreamer": {
+        "basePort": 2030,
+        "targetWidth": 640,
+        "targetHeight": 480,
+        "maxCameraCount": 4,
+        "FPS": 30,
     },
     "inputMapper": {
         "mappings": [

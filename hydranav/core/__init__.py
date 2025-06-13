@@ -14,3 +14,4 @@ from hydranav.core.config_manager import config_manager
 from hydranav.core.request_manager import request_manager
 from hydranav.core.input_mapper import input_mapper
 from hydranav.core.event_dispatcher import event_dispatcher
+from hydranav.core.stream_manager import stream_dispatcher
