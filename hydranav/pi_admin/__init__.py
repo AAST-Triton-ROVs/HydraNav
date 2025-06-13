@@ -3,6 +3,7 @@ import multiprocessing
 from hydranav.pi_admin.daemon import PiAdminDaemon
 from hydranav.pi_admin.enums import AdminCommands
 from hydranav.core import GCSModule, Updatable, request_manager, HasWebGUI
+from nicegui import ui
 
 
 class PiAdmin(GCSModule, Updatable, HasWebGUI):
@@ -55,7 +56,37 @@ class PiAdmin(GCSModule, Updatable, HasWebGUI):
         return 1
 
     def webgui_contents(self):
-        return
+        container = ui.column(align_items="center").classes("w-full")
+        with container:
+            with ui.card().classes("w-1/2 justify-center items-center"):
+                ui.label("Pi Admin").classes(
+                    "mb-4 text-4xl font-extrabold md:text-5xl lg:text-6xl dark:text-white"
+                )
+                ui.button(
+                    "Power Off",
+                    on_click=self.poweroff,
+                ).classes("w-full")
+                ui.button(
+                    "Reboot",
+                    on_click=self.reboot,
+                ).classes("w-full")
+                ui.button(
+                    "Restart MAVProxy",
+                    on_click=self.restart_mavproxy,
+                ).classes("w-full")
+                ui.button(
+                    "Restart Manfaloty Bridge",
+                    on_click=self.restart_manfaloty_bridge,
+                ).classes("w-full")
+                ui.button(
+                    "Restart Telemetry",
+                    on_click=self.restart_telemetry,
+                ).classes("w-full")
+                ui.button(
+                    "Restart Admin",
+                    on_click=self.restart_admin,
+                ).classes("w-full")
+        return container
 
     def webgui_icon_name(self):
         return "terminal"

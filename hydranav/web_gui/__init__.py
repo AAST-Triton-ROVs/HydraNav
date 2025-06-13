@@ -1,4 +1,6 @@
+from functools import partial
 import logging
+import pickle
 from typing import Any, Callable, Optional, cast
 from hydranav.core import (
     GCSModule,
@@ -28,14 +30,12 @@ class WebGUI(GCSModule, Updatable):
     def __init__(self):
         super().__init__()
 
-        self.__daemon = multiprocessing.Process(
-            target=self.__run_server,
-            daemon=True,
-            name=SERVER_PROCESS_NAME,
-        )
-        self.__daemon.start()
+        self.__server_process = multiprocessing.Process(target=self.__run_server)
+        self.__server_process.start()
 
     def __run_server(self):
+        _generate_ui()
+
         app = FastAPI()
         ui.run_with(
             app,
@@ -54,22 +54,80 @@ class WebGUI(GCSModule, Updatable):
 
     def quit(self):
         """Quits module"""
-        self.__daemon.terminate()
-        self.__daemon.join()
+        self.__server_process.terminate()
+        self.__server_process.join()
 
     def status_ok(self) -> bool:
-        return self.__daemon.is_alive()
+        return self.__server_process.is_alive()
 
     def update(self):
         return
 
 
-@ui.page("/")
-def _index():
-    _build()
+def _generate_footer_button(module):
+    ui.button(
+        _camel_to_normal_case(module.module_name()),
+        icon=module.webgui_icon_name(),
+        on_click=lambda: ui.navigate.to(
+            f"/{_camel_to_dash_case(module.module_name())}"
+        ),
+    )
 
 
-def _build():
+def _generate_ui():
+    from hydranav.core import module_manager
+
+    ui.page("/")(_home_page_content)
+
+    modules = module_manager.filter_modules_by_parent(HasWebGUI)
+    for module in modules:
+        _create_module_page(module)
+
+
+def _create_module_page(module):
+    path = f"/{_camel_to_dash_case(module.module_name())}"
+    title = _camel_to_normal_case(module.module_name())
+
+    @ui.page(path, title=title)
+    def page():
+        with ui.column().classes("w-full"):
+            module.webgui_contents()
+
+        with ui.footer().classes("mt-auto justify-center"):
+            ui.button("Home", icon="home", on_click=lambda: ui.navigate.to("/"))
+
+            modules = module_manager.filter_modules_by_parent(HasWebGUI)
+            for m in modules:
+                _generate_footer_button(m)
+
+
+def _generate_page(contents_factory: Callable[[], ui.element]):
+    def generate_footer_button(module):
+        ui.button(
+            _camel_to_normal_case(module.module_name()),
+            icon=module.webgui_icon_name(),
+            on_click=lambda: ui.navigate.to(
+                f"/{_camel_to_dash_case(module.module_name())}"
+            ),
+        )
+
+    container = ui.column().classes("w-full")
+    with container:
+        contents_factory()
+
+    with ui.footer().classes("mt-auto justify-center"):
+        ui.button(
+            "Home",
+            icon="home",
+            on_click=lambda: ui.navigate.to("/"),
+        )
+
+        modules = module_manager.filter_modules_by_parent(HasWebGUI)
+        for module in modules:
+            generate_footer_button(module)
+
+
+def _home_page_content():
     contents_container = ui.column().classes("w-full")
     with contents_container:
         with ui.column(align_items="center").classes(
@@ -84,33 +142,16 @@ def _build():
                 ui.label(f"Also available at {local_ip}:{SERVER_PORT}").classes(
                     "text-lg font-normal text-gray-500 dark:text-gray-400"
                 )
-
-    with ui.footer().classes("mt-auto justify-center"):
-        _generate_footer_buttons(contents_container)
+    return _generate_page(lambda: contents_container)
 
 
-@ui.refreshable
-def _generate_footer_buttons(contents_container: ui.element):
-    modules = module_manager.filter_modules_by_parent(HasWebGUI)
-    for module in modules:
-        ui.button(
-            _class_name_to_words(module.module_name()),
-            icon=module.webgui_icon_name(),
-            on_click=lambda m=module: _update_contents(
-                contents_container, m.webgui_contents
-            ),
-        )
-
-
-@ui.refreshable
-def _update_contents(contents_container: ui.element, factory: Callable[[], ui.element]):
-    contents_container.clear()
-    with contents_container:
-        factory()
-
-
-def _class_name_to_words(name: str) -> str:
+def _camel_to_normal_case(name: str) -> str:
     return re.sub(r"(?<=[a-z])(?=[A-Z0-9])|(?<=[A-Z])(?=[A-Z][a-z])", " ", name)
+
+
+def _camel_to_dash_case(text: str) -> str:
+    dashed = re.sub(r"(?<!^)(?=[A-Z])", "-", text)
+    return dashed.lower()
 
 
 def _get_ip_address(interface) -> Optional[str]:

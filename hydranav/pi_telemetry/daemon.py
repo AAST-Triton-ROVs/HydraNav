@@ -111,7 +111,7 @@ class TelemetryDaemon(multiprocessing.Process, LoggerMixin):
 
             try:
                 self.queue.put(
-                    data,
+                    telemetry_data,
                     block=False,
                 )
             except queue.Full:
