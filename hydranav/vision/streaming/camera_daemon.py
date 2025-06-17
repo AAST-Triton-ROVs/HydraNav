@@ -3,7 +3,6 @@ import queue
 import socket
 import struct
 import time
-
 import cv2
 import numpy as np
 from hydranav.core import LoggerMixin, config_manager
@@ -85,4 +84,9 @@ class CameraDaemon(multiprocessing.Process, LoggerMixin):
                 try:
                     self.__data_queue.put(frame, block=False)
                 except queue.Full:
-                    continue
+                    try:
+                        self.__data_queue.get(block=False)
+                    except queue.Empty:
+                        continue
+
+                    self.__data_queue.put(frame, block=False)

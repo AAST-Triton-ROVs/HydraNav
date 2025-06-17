@@ -1,12 +1,8 @@
 import multiprocessing
-import multiprocessing.synchronize
 import queue
-import socket
 import struct
 import time
-
 import cv2
-from fastapi import Response
 import numpy as np
 from hydranav.core import (
     GCSModule,
@@ -14,9 +10,7 @@ from hydranav.core import (
     Updatable,
     stream_dispatcher,
 )
-from hydranav.core.has_webgui import HasWebGUI
 from hydranav.vision.streaming.camera_daemon import CameraDaemon
-from nicegui import app, ui, run
 
 
 RASP_IP = config_manager["networking", "raspIP"]
@@ -44,9 +38,8 @@ CAMERA_OFFLINE_FRAME = cv2.putText(
     (255, 255, 255),
     3,
 )
-_, CAMERA_OFFLINE_JPEG = cv2.imencode(".jpg", CAMERA_OFFLINE_FRAME)
 I_SIZE = struct.calcsize("!I")
-FRAME_RETRIEVAL_TIMEOUT = 0.03
+CAMERA_OFFLINE_TIMEOUT = 1.0
 
 
 def _convert(frame: np.ndarray) -> bytes:
@@ -59,7 +52,7 @@ def _convert(frame: np.ndarray) -> bytes:
     return imencode_image.tobytes()
 
 
-class CameraStreamer(GCSModule, Updatable, HasWebGUI):
+class CameraStreamer(GCSModule, Updatable):
     def __init__(self):
         super().__init__()
 
@@ -72,6 +65,14 @@ class CameraStreamer(GCSModule, Updatable, HasWebGUI):
         self.__ui_frame_3_pipe = stream_dispatcher.request_stream("camera-streamer/3")
         self.__ui_frame_4_pipe = stream_dispatcher.request_stream("camera-streamer/4")
 
+        self.__previous_frames: dict = {
+            2031: CAMERA_OFFLINE_FRAME,
+            2032: CAMERA_OFFLINE_FRAME,
+            2033: CAMERA_OFFLINE_FRAME,
+            2034: CAMERA_OFFLINE_FRAME,
+        }
+        self.__last_frame_time: dict[int, float] = {}
+
         for i in range(1, MAX_CAMERA_COUNT + 1):
             port = BASE_PORT + i
             data_queue: multiprocessing.Queue[np.ndarray] = multiprocessing.Queue(1)
@@ -80,60 +81,6 @@ class CameraStreamer(GCSModule, Updatable, HasWebGUI):
 
             self.__data_queues[port] = data_queue
             self.__daemons[port] = daemon
-
-    def webgui_contents(self):
-        container = ui.grid(columns=2, rows=2).classes("w-full")
-        with container:
-            frame_1 = ui.interactive_image(size=(TARGET_WIDTH, TARGET_HEIGHT)).classes(
-                "w-1/2"
-            )
-            frame_2 = ui.interactive_image(size=(TARGET_WIDTH, TARGET_HEIGHT)).classes(
-                "w-1/2"
-            )
-            frame_3 = ui.interactive_image(size=(TARGET_WIDTH, TARGET_HEIGHT)).classes(
-                "w-1/2"
-            )
-            frame_4 = ui.interactive_image(size=(TARGET_WIDTH, TARGET_HEIGHT)).classes(
-                "w-1/2"
-            )
-
-        @app.get("/camera-streamer/video/{camera_index}")
-        async def grab_video_frame(camera_index: int) -> Response:
-            match camera_index:
-                case 1:
-                    pipe = self.__ui_frame_1_pipe
-                case 2:
-                    pipe = self.__ui_frame_2_pipe
-                case 3:
-                    pipe = self.__ui_frame_3_pipe
-                case 4:
-                    pipe = self.__ui_frame_4_pipe
-                case _:
-                    return Response(content="Invalid camera index", status_code=400)
-
-            if pipe.poll(timeout=0.5):
-                frame = pipe.recv()
-                jpeg = await run.cpu_bound(_convert, frame)
-            else:
-                jpeg = CAMERA_OFFLINE_JPEG.tobytes()
-
-            return Response(content=jpeg, media_type="image/jpeg")
-
-        def update_frames():
-            frame_1.set_source(f"/camera-streamer/video/1?{time.time()}")
-            frame_2.set_source(f"/camera-streamer/video/2?{time.time()}")
-            frame_3.set_source(f"/camera-streamer/video/3?{time.time()}")
-            frame_4.set_source(f"/camera-streamer/video/4?{time.time()}")
-
-        ui.timer(
-            interval=0.029,
-            callback=update_frames,
-        )
-
-        return container
-
-    def webgui_icon_name(self):
-        return "videocam"
 
     @classmethod
     def init_order(cls):
@@ -150,20 +97,27 @@ class CameraStreamer(GCSModule, Updatable, HasWebGUI):
         return
 
     def update(self):
-        frames: dict[int, np.ndarray] = {}
+        frames: dict[int, np.ndarray] = self.__previous_frames
         for port, data_queue in self.__data_queues.items():
             try:
-                frame = data_queue.get(timeout=FRAME_RETRIEVAL_TIMEOUT)
+                frame = data_queue.get(block=False)
                 frames[port] = frame
             except queue.Empty:
-                continue
+                current_time = time.monotonic()
 
-        # for port, frame in frames.items():
-        #     stream_dispatcher.dispatch(f"camera-streamer/{port - BASE_PORT}", frame)
+                if port not in self.__last_frame_time:
+                    self.__last_frame_time[port] = current_time
 
-        for i in range(1, MAX_CAMERA_COUNT + 1):
-            if frames.get(BASE_PORT + i) is None:
-                frames[BASE_PORT + i] = CAMERA_OFFLINE_FRAME
+                if (
+                    current_time - self.__last_frame_time[port]
+                    >= CAMERA_OFFLINE_TIMEOUT
+                ):
+                    frames[port] = CAMERA_OFFLINE_FRAME
+            else:
+                if port in self.__last_frame_time:
+                    del self.__last_frame_time[port]
+
+        self.__previous_frames = frames
 
         columns = 2
         rows = (len(frames) + columns - 1) // columns
@@ -172,7 +126,7 @@ class CameraStreamer(GCSModule, Updatable, HasWebGUI):
             (
                 rows * TARGET_HEIGHT,
                 columns * TARGET_WIDTH,
-                frames[2031].shape[2],
+                3,
             ),
             dtype=np.uint8,
         )
@@ -186,6 +140,6 @@ class CameraStreamer(GCSModule, Updatable, HasWebGUI):
                 :,
             ] = frame
 
-        cv2.imshow("grid", grid_image)
+        cv2.imshow("HydraNav Cameras", grid_image)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             self.quit()
