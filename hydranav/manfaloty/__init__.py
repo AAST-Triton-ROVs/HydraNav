@@ -1,13 +1,46 @@
 import multiprocessing
 import queue
+import random
+import time
 from hydranav.core.has_webgui import HasWebGUI
 from hydranav.manfaloty.daemon import ManfalotyDaemon
 from hydranav.manfaloty.enums import ManfalotyCommands
 from hydranav.core import request_manager, event_dispatcher, GCSModule, TTS
 from nicegui import ui
+import threading
 
 PUMP_ON_LINE = TTS.register_line("Pump On")
 PUMP_OFF_LINE = TTS.register_line("Pump OFF")
+MORSE_LETTERS = {
+    "a": ".-",
+    "b": "-...",
+    "c": "-.-.",
+    "d": "-..",
+    "e": ".",
+    "f": "..-.",
+    "g": "--.",
+    "h": "....",
+    "i": "..",
+    "j": ".---",
+    "k": "-.-",
+    "l": ".-..",
+    "m": "--",
+    "n": "-.",
+    "o": "---",
+    "p": ".--.",
+    "q": "--.-",
+    "r": ".-.",
+    "s": "...",
+    "t": "-",
+    "u": "..-",
+    "v": "...-",
+    "w": ".--",
+    "x": "-..-",
+    "y": "-.--",
+    "z": "--..",
+}
+MORSE_CODE_DOT_TIME_S = 0.5
+PH_POSSIBILITIES = ["ACIDIC", "ALKALINE"]
 
 
 class Manfaloty(GCSModule, HasWebGUI):
@@ -29,6 +62,9 @@ class Manfaloty(GCSModule, HasWebGUI):
         )
         self.__daemon.start()
 
+        self.__webgui_morse_code_text_box: ui.input | None = None
+        self.__webgui_ph_reading_label: ui.label | None = None
+
         event_dispatcher.subscribe(
             "mapper/GRIPPER_JAW_OPEN", lambda _: self.gripper_open_jaws()
         )
@@ -41,25 +77,17 @@ class Manfaloty(GCSModule, HasWebGUI):
         event_dispatcher.subscribe(
             "mapper/hold/GRIPPER_JAW_CLOSE", lambda _: self.gripper_close_jaws()
         )
+        event_dispatcher.subscribe("mapper/PUMP_ON", lambda _: self.relay_on())
+        event_dispatcher.subscribe("mapper/PUMP_OFF", lambda _: self.relay_off())
         event_dispatcher.subscribe(
-            "mapper/GRIPPER_ROLL_LEFT", lambda _: self.gripper_roll_left()
+            "mapper/PH_TAKE_READING",
+            lambda _: self.take_ph_reading(),
         )
-        event_dispatcher.subscribe(
-            "mapper/GRIPPER_ROLL_RIGHT", lambda _: self.gripper_roll_right()
-        )
-        event_dispatcher.subscribe(
-            "mapper/GRIPPER_PITCH_UP", lambda _: self.gripper_pitch_up()
-        )
-        event_dispatcher.subscribe(
-            "mapper/GRIPPER_PITCH_DOWN", lambda _: self.gripper_pitch_down()
-        )
-        event_dispatcher.subscribe("mapper/PUMP_ON", lambda _: self.start_pump())
-        event_dispatcher.subscribe("mapper/PUMP_OFF", lambda _: self.stop_pump())
 
         request_manager.register_handler("manfaloty/restart", self.restart_arduino)
         request_manager.register_handler("manfaloty/reset", self.reset_motors)
-        request_manager.register_handler("manfaloty/start-pump", self.start_pump)
-        request_manager.register_handler("manfaloty/stop-pump", self.stop_pump)
+        request_manager.register_handler("manfaloty/start-pump", self.pump_on)
+        request_manager.register_handler("manfaloty/stop-pump", self.pump_off)
 
         TTS.attach_to_event(PUMP_ON_LINE, "manfaloty/pump-on")
         TTS.attach_to_event(PUMP_OFF_LINE, "manfaloty/pump-off")
@@ -92,34 +120,31 @@ class Manfaloty(GCSModule, HasWebGUI):
                         on_click=self.gripper_close_jaws,
                     ).classes("w-1/3")
                 with ui.row().classes("w-full justify-center"):
-                    ui.label("Gripper Pitch").classes("w-1/4 text-center")
-                    ui.button(
-                        "Up",
-                        on_click=self.gripper_pitch_up,
-                    ).classes("w-1/3")
-                    ui.button(
-                        "Down",
-                        on_click=self.gripper_pitch_down,
-                    ).classes("w-1/3")
-                with ui.row().classes("w-full justify-center"):
-                    ui.label("Gripper Roll").classes("w-1/4 text-center")
-                    ui.button(
-                        "Left",
-                        on_click=self.gripper_roll_left,
-                    ).classes("w-1/3")
-                    ui.button(
-                        "Right",
-                        on_click=self.gripper_roll_right,
-                    ).classes("w-1/3")
-                with ui.row().classes("w-full justify-center"):
                     ui.label("Pump").classes("w-1/4 text-center")
                     ui.button(
                         "On",
-                        on_click=self.start_pump,
+                        on_click=self.pump_on,
                     ).classes("w-1/3")
                     ui.button(
                         "Off",
-                        on_click=self.stop_pump,
+                        on_click=self.pump_off,
+                    ).classes("w-1/3")
+                with ui.row().classes("w-full justify-center"):
+                    self.__webgui_ph_reading_label = ui.label("VOID").classes(
+                        "w-1/2 text-center font-bold bg-blue-500 text-white text-xl h-12 flex items-center justify-center"
+                    )
+                    ui.button(
+                        "Take PH Reading",
+                        on_click=self.take_ph_reading,
+                    ).classes("w-1/3")
+                with ui.row().classes("w-full justify-center"):
+                    self.__webgui_morse_code_text_box = ui.input(
+                        label="Morse Code",
+                        placeholder="start typing",
+                    ).classes("w-1/3")
+                    ui.button(
+                        "Submit",
+                        on_click=self.morse_code_callback,
                     ).classes("w-1/3")
 
                 ui.button(
@@ -156,28 +181,85 @@ class Manfaloty(GCSModule, HasWebGUI):
     def gripper_close_jaws(self):
         self.__send_command(ManfalotyCommands.GRIPPER_JAW_CLOSE)
 
-    def gripper_pitch_up(self):
-        self.__send_command(ManfalotyCommands.GRIPPER_PITCH_UP)
-
-    def gripper_pitch_down(self):
-        self.__send_command(ManfalotyCommands.GRIPPER_PITCH_DOWN)
-
-    def gripper_roll_left(self):
-        self.__send_command(ManfalotyCommands.GRIPPER_ROLL_LEFT)
-
-    def gripper_roll_right(self):
-        self.__send_command(ManfalotyCommands.GRIPPER_ROLL_RIGHT)
-
-    def camera_pitch_up(self):
-        self.__send_command(ManfalotyCommands.CAMERA_PITCH_UP)
-
-    def camera_pitch_down(self):
-        self.__send_command(ManfalotyCommands.CAMERA_PITCH_DOWN)
-
-    def start_pump(self):
+    def pump_on(self):
         event_dispatcher.dispatch("manfaloty/pump-on")
-        self.__send_command(ManfalotyCommands.PUMP_ON)
+        self.relay_on()
 
-    def stop_pump(self):
+    def pump_off(self):
         event_dispatcher.dispatch("manfaloty/pump-off")
-        self.__send_command(ManfalotyCommands.PUMP_OFF)
+        self.relay_off()
+
+    def relay_on(self):
+        self.__send_command(ManfalotyCommands.RELAY_ON)
+
+    def relay_off(self):
+        self.__send_command(ManfalotyCommands.RELAY_OFF)
+
+    def take_ph_reading(self):
+        if self.__webgui_ph_reading_label is None:
+            return
+
+        event_dispatcher.dispatch("manfaloty/ph-take-reading")
+        # self.__send_command(ManfalotyCommands.PH_TAKE_READING)
+
+        self.__webgui_ph_reading_label.set_text("...")
+
+        def callback():
+            if self.__webgui_ph_reading_label is None:
+                return
+
+            choice = random.choice(PH_POSSIBILITIES)
+            self.__webgui_ph_reading_label.set_text(choice)
+            if choice == "ACIDIC":
+                self.__webgui_ph_reading_label.classes(
+                    "w-1/2 text-center font-bold bg-red-500 text-white text-xl h-12 flex items-center justify-center"
+                )
+            else:
+                self.__webgui_ph_reading_label.classes(
+                    "w-1/2 text-center font-bold bg-violet-500 text-white text-xl h-12 flex items-center justify-center"
+                )
+            self.__webgui_ph_reading_label.update()
+
+        ui.timer(
+            1.0,
+            callback,
+            once=True,
+        )
+
+    def morse_code_callback(self):
+        if self.__webgui_morse_code_text_box is None:
+            return
+
+        contents: str = self.__webgui_morse_code_text_box.value
+        threading.Thread(
+            target=self.play_morse_code,
+            args=(contents.lower().strip(),),
+            daemon=True,
+        ).start()
+
+    def play_morse_code(self, text: str):
+        # According to an International Telecommunication Union standard
+
+        # A dash is equal to three dots.
+        # The space between the signals forming the same letter is equal to one dot.
+        # The space between two letters is equal to three dots.
+        # The space between two words is equal to seven dots.
+
+        for letter in text:
+            if letter == " ":
+                time.sleep(MORSE_CODE_DOT_TIME_S * 7)
+                continue
+
+            morse_letter = MORSE_LETTERS[letter]
+
+            for char in morse_letter:
+                self.relay_on()
+                if char == ".":
+                    time.sleep(MORSE_CODE_DOT_TIME_S)
+                else:
+                    time.sleep(MORSE_CODE_DOT_TIME_S * 3)
+
+                self.relay_off()
+                time.sleep(MORSE_CODE_DOT_TIME_S)
+
+            time.sleep(MORSE_CODE_DOT_TIME_S * 3)
