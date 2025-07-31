@@ -40,7 +40,6 @@ MORSE_LETTERS = {
     "z": "--..",
 }
 MORSE_CODE_DOT_TIME_S = 1
-PH_POSSIBILITIES = ["ACIDIC", "ALKALINE"]
 
 
 class Manfaloty(GCSModule, HasWebGUI):
@@ -200,31 +199,9 @@ class Manfaloty(GCSModule, HasWebGUI):
             return
 
         event_dispatcher.dispatch("manfaloty/ph-take-reading")
-        # self.__send_command(ManfalotyCommands.PH_TAKE_READING)
+        self.__send_command(ManfalotyCommands.PH_TAKE_READING)
 
         self.__webgui_ph_reading_label.set_text("...")
-
-        def callback():
-            if self.__webgui_ph_reading_label is None:
-                return
-
-            choice = random.choice(PH_POSSIBILITIES)
-            self.__webgui_ph_reading_label.set_text(choice)
-            if choice == "ACIDIC":
-                self.__webgui_ph_reading_label.classes(
-                    "w-1/2 text-center font-bold bg-red-500 text-white text-xl h-12 flex items-center justify-center"
-                )
-            else:
-                self.__webgui_ph_reading_label.classes(
-                    "w-1/2 text-center font-bold bg-violet-500 text-white text-xl h-12 flex items-center justify-center"
-                )
-            self.__webgui_ph_reading_label.update()
-
-        ui.timer(
-            1.0,
-            callback,
-            once=True,
-        )
 
     def morse_code_callback(self):
         if self.__webgui_morse_code_text_box is None:
