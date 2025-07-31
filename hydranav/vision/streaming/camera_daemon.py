@@ -1,4 +1,5 @@
 import multiprocessing
+import multiprocessing.synchronize
 import queue
 import socket
 import struct
@@ -14,6 +15,7 @@ FPS = config_manager["cameraStreamer", "FPS"]
 
 I_SIZE = struct.calcsize("!I")
 TIMEOUT = 1 / FPS
+CLAHE = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
 
 
 class CameraDaemon(multiprocessing.Process, LoggerMixin):
@@ -22,12 +24,16 @@ class CameraDaemon(multiprocessing.Process, LoggerMixin):
         port: int,
         data_queue: multiprocessing.Queue,
         quit_event: multiprocessing.synchronize.Event,
+        use_enhancement: multiprocessing.synchronize.Event,
+        rotate180: multiprocessing.synchronize.Event,
     ):
         multiprocessing.Process.__init__(self, daemon=True)
         LoggerMixin.__init__(self)
         self.__data_queue = data_queue
         self.__quit_event = quit_event
         self.__port = port
+        self.__use_enhancement = use_enhancement
+        self.__rotate180 = rotate180
 
     def run(self):
         while not self.__quit_event.is_set():
@@ -81,6 +87,28 @@ class CameraDaemon(multiprocessing.Process, LoggerMixin):
                 nparr = np.frombuffer(msg_data, np.uint8)
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 frame = cv2.resize(frame, (TARGET_WIDTH, TARGET_HEIGHT))
+
+                # # Apply sharpening using unsharp masking
+                # gaussian_blur = cv2.GaussianBlur(frame, (0, 0), 3)
+                # unsharp_mask = cv2.addWeighted(frame, 1.5, gaussian_blur, -0.5, 0)
+                # frame = cv2.addWeighted(frame, 1.5, unsharp_mask, -0.5, 0)
+
+                if self.__use_enhancement.is_set():
+                    lab = cv2.cvtColor(
+                        frame, cv2.COLOR_BGR2LAB
+                    )  # convert from BGR to LAB color space
+                    l, a, b = cv2.split(  # noqa: E741
+                        lab
+                    )  # split on 3 different channels
+
+                    lab = cv2.merge((CLAHE.apply(l), a, b))  # merge channels
+                    frame = cv2.cvtColor(
+                        lab, cv2.COLOR_LAB2BGR
+                    )  # convert from LAB to BGR
+
+                if self.__rotate180.is_set():
+                    frame = cv2.rotate(frame, cv2.ROTATE_180)
+
                 try:
                     self.__data_queue.put(frame, block=False)
                 except queue.Full:
