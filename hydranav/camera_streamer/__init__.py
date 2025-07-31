@@ -9,10 +9,9 @@ from hydranav.core import (
     GCSModule,
     config_manager,
     Updatable,
-    stream_dispatcher,
 )
 from hydranav.core.has_webgui import HasWebGUI
-from hydranav.vision.streaming.camera_daemon import CameraDaemon
+from hydranav.camera_streamer.camera_daemon import CameraDaemon
 from nicegui import ui
 
 RASP_IP = config_manager["networking", "raspIP"]
