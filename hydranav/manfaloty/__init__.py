@@ -39,7 +39,7 @@ MORSE_LETTERS = {
     "y": "-.--",
     "z": "--..",
 }
-MORSE_CODE_DOT_TIME_S = 0.5
+MORSE_CODE_DOT_TIME_S = 1
 PH_POSSIBILITIES = ["ACIDIC", "ALKALINE"]
 
 
