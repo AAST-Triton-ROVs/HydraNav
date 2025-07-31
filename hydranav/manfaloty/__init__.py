@@ -1,6 +1,5 @@
 import multiprocessing
 import queue
-import random
 import time
 from hydranav.core.has_webgui import HasWebGUI
 from hydranav.manfaloty.daemon import ManfalotyDaemon
