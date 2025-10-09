@@ -81,8 +81,10 @@ class TextToSpeech(LoggerMixin):
 
     def update_and_generate_lines(self):
         unexpected_lines = [
-            line_id for line_id in self.__lines_on_disk if line_id not in self.__lines
+            line_id for line_id in self.__lines_on_disk if line_id not in self.__lines.keys()
         ]
+        self._logger.debug(f"{self.__lines_on_disk = }")
+        self._logger.debug(f"{self.__lines.keys() = }")
         if unexpected_lines:
             self._logger.warning(f"Found unexpected lines on disk: {unexpected_lines}")
 
