@@ -9,7 +9,6 @@ from hydranav.core.logger import LoggerMixin
 APP_NAME = "HydraNav"
 CONFIG_FILE_PATH = Path(platformdirs.user_config_dir(appname=APP_NAME), "config.yaml")
 
-
 DEFAULT_CONFIG = {
     "networking": {
         "baseIP": "0.0.0.0",
@@ -19,7 +18,6 @@ DEFAULT_CONFIG = {
         "socketTimeout": 1,
     },
     "tts": {
-        "assetsPath": "./assets/audio",
         "piperModel": "en_GB-jenny_dioco-medium",
         "genTimeout": 1,
     },
@@ -34,8 +32,8 @@ DEFAULT_CONFIG = {
     },
     "cameraStreamer": {
         "basePort": 2030,
-        "targetWidth": 640,
-        "targetHeight": 480,
+        "targetWidth": 960,
+        "targetHeight": 540,
         "maxCameraCount": 4,
         "FPS": 30,
     },
@@ -67,6 +65,7 @@ DEFAULT_CONFIG = {
     "manfaloty": {
         "port": 2005,
         "jawsBurstFreq": 4,
+        "morseCodeDotTimeSec": 1,
     },
     "piTelemetry": {"port": 2010},
     "piAdmin": {"port": 2015},
@@ -232,6 +231,8 @@ class ConfigManager(LoggerMixin):
         #             )
         #             controller_valid = False
         #             break
+
+        # TODO: should probably implement this functionality at some point
 
         return all(
             [
