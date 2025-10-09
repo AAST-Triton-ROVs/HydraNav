@@ -76,7 +76,7 @@ class ManfalotyDaemon(multiprocessing.Process, LoggerMixin):
             try:
                 command = self.__command_queue.get(block=False)
             except queue.Empty:
-                self._logger.debug("Manfaloty daemon no new commands")
+                # self._logger.debug("Manfaloty daemon no new commands")
                 continue
 
             try:

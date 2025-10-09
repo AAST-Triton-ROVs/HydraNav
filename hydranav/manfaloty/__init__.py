@@ -4,7 +4,7 @@ import time
 from hydranav.core.has_webgui import HasWebGUI
 from hydranav.manfaloty.daemon import ManfalotyDaemon
 from hydranav.manfaloty.enums import ManfalotyCommands
-from hydranav.core import request_manager, event_dispatcher, GCSModule, TTS
+from hydranav.core import config_manager, request_manager, event_dispatcher, GCSModule, TTS
 from nicegui import ui
 import threading
 
@@ -38,7 +38,7 @@ MORSE_LETTERS = {
     "y": "-.--",
     "z": "--..",
 }
-MORSE_CODE_DOT_TIME_S = 1
+MORSE_CODE_DOT_TIME_S = config_manager["manfaloty", "morseCodeDotTimeSec"]
 
 
 class Manfaloty(GCSModule, HasWebGUI):
@@ -97,7 +97,7 @@ class Manfaloty(GCSModule, HasWebGUI):
             return
 
     @classmethod
-    def init_order(cls):
+    def init_order(cls) -> int:
         return 1
 
     def webgui_contents(self):

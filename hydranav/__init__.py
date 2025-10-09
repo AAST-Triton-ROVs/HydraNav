@@ -1,14 +1,13 @@
 import argparse
 from hydranav.core import config_manager, module_manager, LoggerMixin, TTS, LOG_LEVELS
 
-# from gui import GUI
 from hydranav.keyboard_input import KeyboardInput
 from hydranav.controller_input import ControllerInput
 from hydranav.manfaloty import Manfaloty
 from hydranav.pi_admin import PiAdmin
 from hydranav.autopilot import Autopilot
 from hydranav.pi_telemetry import PiTelemetry
-from hydranav.vision.streaming import CameraStreamer
+from hydranav.camera_streamer import CameraStreamer
 from hydranav.web_gui import WebGUI
 
 DESCRIPTION = "HydraNav, a revolutionary Ground Control System (GCS) for underwater ROVs, providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features."

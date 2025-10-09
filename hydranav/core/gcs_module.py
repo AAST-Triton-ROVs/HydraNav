@@ -7,13 +7,13 @@ class GCSModule(ABC, LoggerMixin):
         super().__init__()
 
     @classmethod
-    def module_name(cls):
+    def module_name(cls) -> str:
         """Returns Module name"""
         return cls.__name__
 
     @classmethod
     @abstractmethod
-    def init_order(cls): ...
+    def init_order(cls) -> int: ...
 
     @abstractmethod
     def quit(self):
