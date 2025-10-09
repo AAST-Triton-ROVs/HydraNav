@@ -26,6 +26,8 @@ HydraNav is a modular, Python-based Ground Control Station designed for underwat
   - [Current Status: Retirement](#current-status-retirement)
   - [Future Potential](#future-potential)
   - [Legacy](#legacy)
+  - [Open Source Release](#open-source-release)
+  - [Backlog: Planned but Unimplemented Features](#backlog-planned-but-unimplemented-features)
 - [License](#license)
 
 ## WebGUI Screenshots
@@ -203,6 +205,30 @@ The codebase, documentation, and implementation approach might be useful for:
 While active development has ended, the code remains available for anyone who might find it useful or want to build upon it. The GPL license ensures that any modifications remain accessible to others.
 
 The 2025 season may have ended, but the knowledge, experience, and satisfaction gained from this journey will endure far beyond any single competition or deadline.
+
+### Backlog: Planned but Unimplemented Features
+
+This table contains the project backlog before it was concluded.
+
+| Feature | Issue | Size | Priority |
+|---------|-------|------|----------|
+| Support multi handler requests | [#38](https://github.com/AAST-Triton-ROVs/HydraNav/issues/38) | S | Critical |
+| Rewrite controller input system | [#36](https://github.com/AAST-Triton-ROVs/HydraNav/issues/36) | L | Critical |
+| Move controller to a separate process | [#37](https://github.com/AAST-Triton-ROVs/HydraNav/issues/37) | S | Critical |
+| ReWork Autopilot Module | [#35](https://github.com/AAST-Triton-ROVs/HydraNav/issues/35) | L | Critical |
+| Controller disconnect or Vehicle disconnection not automatically reconnecting | [#26](https://github.com/AAST-Triton-ROVs/HydraNav/issues/26) | S | Critical |
+| Create Vision module | [#43](https://github.com/AAST-Triton-ROVs/HydraNav/issues/43) | L | Critical |
+| Update PiAdmin | [#44](https://github.com/AAST-Triton-ROVs/HydraNav/issues/44) | M | Important |
+| Support setting autopilot parameters | [#11](https://github.com/AAST-Triton-ROVs/HydraNav/issues/11) | S | Important |
+| Request sensor readings from autopilot | [#12](https://github.com/AAST-Triton-ROVs/HydraNav/issues/12) | S | Important |
+| Support individual thruster testing | [#18](https://github.com/AAST-Triton-ROVs/HydraNav/issues/18) | S | Important |
+| Add new movement backend | [#15](https://github.com/AAST-Triton-ROVs/HydraNav/issues/15) | L | Minor |
+| Usage guide | [#16](https://github.com/AAST-Triton-ROVs/HydraNav/issues/16) | S | Minor |
+| Rewrite documentation | [#17](https://github.com/AAST-Triton-ROVs/HydraNav/issues/17) | M | Minor |
+| Auto load GCSModules on startup from config | [#45](https://github.com/AAST-Triton-ROVs/HydraNav/issues/45) | M | Minor |
+| Create a TUI | [#41](https://github.com/AAST-Triton-ROVs/HydraNav/issues/41) | M | Minor |
+| Move from argparse to use typer | [#32](https://github.com/AAST-Triton-ROVs/HydraNav/issues/32) | M | Minor |
+
 
 ## License
 
