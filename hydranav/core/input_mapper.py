@@ -1,0 +1,78 @@
+from typing import Optional
+from hydranav.core.config_manager import config_manager
+from hydranav.core.event_dispatcher import event_dispatcher
+from hydranav.core.request_manager import request_manager
+from hydranav.core.logger import LoggerMixin
+
+
+class InputMapper(LoggerMixin):
+    def __init__(self):
+        LoggerMixin.__init__(self)
+        self.__mappings: list[dict[str, str]] = config_manager[
+            "inputMapper", "mappings"
+        ]
+        self._logger.debug(f"Input mappings: {self.__mappings}")
+
+        self.__current_mapping: Optional[dict[str, str]] = None
+
+        try:
+            self.__current_mapping = self.__mappings[0]
+        except IndexError:
+            self._logger.warning("No input mapping, no mapping will be done.")
+
+    def digital_input(self, button: str):
+        if self.__current_mapping is None:
+            return
+
+        if self.__current_mapping.get(button) is None:
+            return
+
+        event_dispatcher.dispatch(f"mapper/{self.__current_mapping[button]}")
+        request_manager.request(f"mapper/{self.__current_mapping[button]}")
+
+    def digital_input_hold(self, button: str):
+        if self.__current_mapping is None:
+            return
+
+        if self.__current_mapping.get(button) is None:
+            return
+
+        event_dispatcher.dispatch(f"mapper/hold/{self.__current_mapping[button]}")
+        request_manager.request(f"mapper/{self.__current_mapping[button]}")
+
+    def analogue_input(self, axis: str, value: int | float):
+        if self.__current_mapping is None:
+            return
+
+        if self.__current_mapping.get(axis) is None:
+            return
+
+        event_dispatcher.dispatch(
+            f"mapper/analogue/{self.__current_mapping[axis]}",
+            value,
+        )
+        request_manager.request(
+            f"mapper/analogue/{self.__current_mapping[axis]}",
+            value,
+        )
+
+    def set_mapping(self, name: str):
+        for mapping in self.__mappings:
+            if mapping["name"] == name:
+                self.__current_mapping = mapping
+                return
+
+        raise ValueError(f"'{name}' is not a valid mapping name")
+
+    @property
+    def current_mapping_name(self) -> Optional[str]:
+        if self.__current_mapping:
+            return self.__current_mapping["name"]
+        return None
+
+    @property
+    def mapping_names(self) -> list[str]:
+        return [config["name"] for config in self.__mappings]
+
+
+input_mapper = InputMapper()
