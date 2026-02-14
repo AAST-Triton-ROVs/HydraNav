@@ -1,9 +1,6 @@
 ![Banner](./.github/banner.png)
 
 
-#2026 Commands and guidance 
-
-
 
 # HydraNav
 
