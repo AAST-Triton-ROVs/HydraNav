@@ -3,12 +3,17 @@
 
 
 ## Commands and Guidance
-
-Quick reference for common commands, runtime flags, and operational guidance for HydraNav (use this as a cheat-sheet when running or debugging the system).
-
-
-Notes:
-- Replace example entrypoint/paths above with the exact commands you use in your environment. If you want, tell me the exact run commands you use and I'll paste them into this section and commit the change on branch `2026`.
+-Steps to run the pixHAWK 2026 system:
+    ON STATION:
+    - Run hydranav :
+                    python3 -m hydranav -c
+    -Run QGROUND
+    
+    ON RPI:
+    - Run MAVPROXY Service :
+                   .local/bin/mavproxy.py   --master=/dev/serial/by-id/usb-ArduPilot_Pixhawk1_200024000351333237373938-if00   --baudrate 115200   --out=udp:192.168.1.50:14550
+    -Run mnflty-router daemon from Pi-daemons:
+                         poetry run mnflty_router 0.0.0.0:6000
 # HydraNav
 
 Revolutionary Ground Control Station (GCS) from TritonROVs - A comprehensive control system for underwater ROVs providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features.
