@@ -1,19 +1,29 @@
 ![Banner](./.github/banner.png)
 
 
-
 ## Commands and Guidance
--Steps to run the pixHAWK 2026 system:
-    ON STATION:
-    - Run hydranav :
-                    python3 -m hydranav -c
-    -Run QGROUND
-    
-    ON RPI:
-    - Run MAVPROXY Service :
-                   .local/bin/mavproxy.py   --master=/dev/serial/by-id/usb-ArduPilot_Pixhawk1_200024000351333237373938-if00   --baudrate 115200   --out=udp:192.168.1.50:14550
-    -Run mnflty-router daemon from Pi-daemons:
-                         poetry run mnflty_router 0.0.0.0:6000
+
+Steps to run the pixHAWK 2026 system:
+
+### On station
+- Run hydranav:
+```bash
+python3 -m hydranav -c
+```
+
+- Run QGround (QGroundControl)
+
+### On Raspberry Pi (RPI)
+- Run the MAVProxy service:
+```bash
+.local/bin/mavproxy.py --master=/dev/serial/by-id/usb-ArduPilot_Pixhawk1_200024000351333237373938-if00 --baudrate 115200 --out=udp:192.168.1.50:14550
+```
+
+
+- Run the mnflty-router daemon (from Pi-daemons):
+```bash
+poetry run mnflty_router 0.0.0.0:6000
+```
 # HydraNav
 
 Revolutionary Ground Control Station (GCS) from TritonROVs - A comprehensive control system for underwater ROVs providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features.
