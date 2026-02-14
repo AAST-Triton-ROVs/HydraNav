@@ -1,5 +1,10 @@
 ![Banner](./.github/banner.png)
 
+
+#2026 Commands and guidance 
+
+
+
 # HydraNav
 
 Revolutionary Ground Control Station (GCS) from TritonROVs - A comprehensive control system for underwater ROVs providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features.
