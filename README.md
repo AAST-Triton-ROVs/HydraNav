@@ -2,6 +2,13 @@
 
 
 
+## Commands and Guidance
+
+Quick reference for common commands, runtime flags, and operational guidance for HydraNav (use this as a cheat-sheet when running or debugging the system).
+
+
+Notes:
+- Replace example entrypoint/paths above with the exact commands you use in your environment. If you want, tell me the exact run commands you use and I'll paste them into this section and commit the change on branch `2026`.
 # HydraNav
 
 Revolutionary Ground Control Station (GCS) from TritonROVs - A comprehensive control system for underwater ROVs providing seamless integration with various controllers, real-time telemetry, and advanced autopilot features.
